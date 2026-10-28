@@ -153,12 +153,13 @@ function renderWelcome({ firstRun }) {
     : '';
 
   root.innerHTML = `
-    ${firstRun ? '' : '<header class="bar"><button class="icon-btn" id="back" aria-label="Назад">←</button></header>'}
+    ${firstRun ? '' : '<button class="icon-btn welcome-back" id="back" aria-label="Назад">←</button>'}
     <main class="welcome">
       <div class="welcome-hero" aria-hidden="true">
         <div class="demo-card demo-back">6 × 4 = <span class="blank">24</span></div>
         <div class="demo-card demo-front">8 + 7 = <span class="blank ok">15</span></div>
       </div>
+      <span class="beta-badge">🌱 Рання версія</span>
       <h1>Математика без підручника</h1>
       <p class="welcome-lead">Тренажер прикладів за програмою НУШ. Обери клас і тему — і одразу розв'язуй.</p>
       <ul class="welcome-points">
@@ -168,6 +169,7 @@ function renderWelcome({ firstRun }) {
       </ul>
       <button class="btn btn-primary btn-cta" id="start">${firstRun ? 'Почати тренування' : 'До тренажера'}</button>
       <p class="welcome-note muted">${esc(availableText)}<br>Безкоштовно і без реєстрації. Прогрес зберігається на цьому пристрої.</p>
+      <p class="welcome-disclaimer">Застосунок ще розвивається, тож подекуди можуть траплятися неточності. Ми постійно їх виправляємо.</p>
     </main>`;
 
   root.querySelector('#start').addEventListener('click', () => {
