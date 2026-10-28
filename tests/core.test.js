@@ -6,7 +6,7 @@ import { evaluate, formatExpression } from '../js/core/expr.js';
 import { generateInstance, fillText, pluralUk } from '../js/core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswer, formatAnswer, MAX_QUESTION_MS } from '../js/core/session.js';
 import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers.js';
-import { hintDelayMs, shouldOfferHint } from '../js/core/hints.js';
+import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js/core/hints.js';
 import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord } from '../js/core/progress.js';
 import { validateTopic } from '../js/core/validate.js';
 
@@ -292,6 +292,17 @@ test('підказки: у сесії, лічильник, валідація', 
   eq([summarize(s).hintsUsed, summarize(s).stars], [1, 3], 'зірки не знімаються');
   const long = validateTopic({ ...topic, exercises: [{ ...topic.exercises[0], hint: 'х'.repeat(201) }] });
   eq([long.topic.exercises.length, long.topic.exercises[0].hint, long.errors.length], [1, undefined, 1]);
+});
+
+test('підказки: правила й схема', () => {
+  eq(normalizeHint('просто текст'), { rules: ['просто текст'], scheme: [] });
+  eq(normalizeHint({ rules: ['a'], scheme: ['b'] }), { rules: ['a'], scheme: ['b'] });
+  eq(normalizeHint(undefined), null);
+  eq(hintProblems({ rules: ['a', 'b'], scheme: ['c'] }), []);
+  eq(hintProblems({ rules: [] }).length, 1, 'потрібне хоча б одне правило');
+  eq(hintProblems({ rules: ['1', '2', '3', '4', '5'] }).length, 1, 'не більше 4 правил');
+  eq(hintProblems({ rules: ['х'.repeat(121)] }).length, 1, 'рядок до 120 символів');
+  eq(hintProblems(42).length, 1);
 });
 
 test('валідація відсіює зламані завдання', () => {

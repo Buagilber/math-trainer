@@ -10,7 +10,40 @@ export const HINT_MIN_SEC = { 1: 15, 2: 20, 3: 25 };
 export const TEXT_TASK_EXTRA_SEC = 10;
 export const HINT_MAX_SEC = 45;
 export const INPUT_IDLE_MS = 8000;
-export const MAX_HINT_LENGTH = 200;
+export const MAX_HINT_LENGTH = 200; // підказка-рядок
+export const MAX_HINT_RULES = 4;
+export const MAX_HINT_SCHEME = 4;
+export const MAX_HINT_LINE = 120; // один рядок правила чи схеми
+
+// Підказка в даних — рядок або { rules: [...], scheme: [...] }.
+//   rules  — що робити, кожне правило окремим рядком;
+//   scheme — назви частин прикладу («зменшуване − від'ємник = різниця»).
+// Повертає { rules, scheme } або null, якщо підказки немає.
+export function normalizeHint(hint) {
+  if (!hint) return null;
+  if (typeof hint === 'string') return { rules: [hint], scheme: [] };
+  return { rules: [].concat(hint.rules ?? []), scheme: [].concat(hint.scheme ?? []) };
+}
+
+// Перелік порушень формату (порожній — підказка коректна).
+export function hintProblems(hint) {
+  if (hint === undefined) return [];
+  if (typeof hint === 'string') {
+    return hint.length > MAX_HINT_LENGTH ? [`підказка довша за ${MAX_HINT_LENGTH} символів`] : [];
+  }
+  if (!hint || typeof hint !== 'object' || !Array.isArray(hint.rules ?? []) || !Array.isArray(hint.scheme ?? [])) {
+    return ['підказка має бути рядком або { rules: [...], scheme: [...] }'];
+  }
+  const { rules, scheme } = normalizeHint(hint);
+  const problems = [];
+  if (!rules.length) problems.push('у підказці немає правил (rules)');
+  if (rules.length > MAX_HINT_RULES) problems.push(`у підказці більше ${MAX_HINT_RULES} правил`);
+  if (scheme.length > MAX_HINT_SCHEME) problems.push(`у схемі підказки більше ${MAX_HINT_SCHEME} рядків`);
+  if ([...rules, ...scheme].some((l) => typeof l !== 'string' || l.length > MAX_HINT_LINE)) {
+    problems.push(`рядок підказки довший за ${MAX_HINT_LINE} символів`);
+  }
+  return problems;
+}
 
 const isTextTask = (item) => !item.text.includes('□');
 

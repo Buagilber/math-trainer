@@ -4,7 +4,7 @@
 
 import { generateInstance, GENERATORS } from './generators.js';
 import { createRng } from './rng.js';
-import { MAX_HINT_LENGTH } from './hints.js';
+import { hintProblems } from './hints.js';
 
 // Скільки цифр можна ввести у відповідь (обмеження екранної клавіатури).
 export const MAX_ANSWER_DIGITS = 7;
@@ -19,13 +19,12 @@ export function validateTopic(topic, { samples = 20 } = {}) {
     return { topic: null, errors };
   }
 
-  // Задовга підказка не ламає завдання — просто не показується.
+  // Некоректна підказка не ламає завдання — просто не показується.
   const checkHint = (owner, where) => {
-    if (owner.hint !== undefined && (typeof owner.hint !== 'string' || owner.hint.length > MAX_HINT_LENGTH)) {
-      errors.push(`${where}: підказка довша за ${MAX_HINT_LENGTH} символів`);
-      return { ...owner, hint: undefined };
-    }
-    return owner;
+    const problems = hintProblems(owner.hint);
+    if (!problems.length) return owner;
+    errors.push(...problems.map((p) => `${where}: ${p}`));
+    return { ...owner, hint: undefined };
   };
   topic = checkHint(topic, topic.id);
 

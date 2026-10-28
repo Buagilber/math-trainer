@@ -9,7 +9,7 @@ import { createRng } from '../core/rng.js';
 import { pluralUk } from '../core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, levelsOf, formatAnswer } from '../core/session.js';
 import { sessionRecord, topicProgress, levelProgress, compareWithPrevious } from '../core/progress.js';
-import { hintDelayMs, shouldOfferHint } from '../core/hints.js';
+import { hintDelayMs, shouldOfferHint, normalizeHint } from '../core/hints.js';
 import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
 import { progressStore, storage } from './storage.js';
@@ -324,9 +324,6 @@ function renderSession() {
   // Місце для 💡 зарезервоване завжди, тож поява кнопки нічого не зсуває.
   const h = state.hint;
   const hintButton = `<button class="hint-btn${h.visible && !fb ? ' shown' : ''}${h.fresh ? ' fresh' : ''}${h.open ? ' active' : ''}" id="hint" aria-label="Підказка" ${h.visible && !fb ? '' : 'tabindex="-1" aria-hidden="true" disabled'}>💡</button>`;
-  const hintCard = h.open && !fb
-    ? `<div class="hint-card"><p>${mathHtml(item.hint)}</p><button class="link-btn" id="hint-close">Зрозуміло</button></div>`
-    : '';
   h.fresh = false;
 
   root.innerHTML = `
@@ -340,7 +337,6 @@ function renderSession() {
       <p class="session-topic muted">${esc(topic?.title ?? '')} · ${esc(levelName(s.level))}</p>
       <div class="task ${hasInlineBlank ? 'task-inline' : 'task-text'} ${hasInlineBlank && item.text.length > 16 ? 'task-long' : ''}">${prompt}</div>
       ${answerRow}
-      ${hintCard}
       ${feedback}
     </main>
     ${keypadHtml(item, state.input, !!fb)}`;
@@ -364,7 +360,7 @@ function renderSession() {
     renderSession();
   };
   root.querySelector('#hint').addEventListener('click', () => state.hint.visible && toggleHint());
-  root.querySelector('#hint-close')?.addEventListener('click', toggleHint);
+  if (h.open && !fb) renderHintLayer(item, toggleHint);
   root.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => pressKey(b.dataset.key)));
   root.querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => answer(b.dataset.choice)));
   if (!fb) {
@@ -375,6 +371,42 @@ function renderSession() {
     }));
   }
 }
+
+// Картка підказки — окремим шаром поверх екрана. Вона стоїть одразу під
+// прикладом і може перекрити клавіатуру, але не більше ніж наполовину;
+// якщо текст довший, прокручується лише він, а «Зрозуміло» завжди видно.
+// Тап поза карткою закриває її (і не натискає клавішу під нею).
+function renderHintLayer(item, close) {
+  const hint = normalizeHint(item.hint);
+  if (!hint) return;
+  const layer = document.createElement('div');
+  layer.className = 'hint-layer';
+  layer.innerHTML = `
+    <div class="hint-card" role="dialog" aria-label="Підказка">
+      <div class="hint-body">
+        <ul class="hint-rules">${hint.rules.map((r) => `<li>${mathHtml(r)}</li>`).join('')}</ul>
+        ${hint.scheme.length ? `<div class="hint-scheme">${hint.scheme.map((l) => `<div>${mathHtml(l)}</div>`).join('')}</div>` : ''}
+      </div>
+      <div class="hint-footer"><button class="link-btn" id="hint-close">Зрозуміло</button></div>
+    </div>`;
+  root.append(layer);
+
+  const card = layer.querySelector('.hint-card');
+  const anchor = (root.querySelector('.answer-row') ?? root.querySelector('.task')).getBoundingClientRect();
+  const pad = root.querySelector('.numpad, .choices')?.getBoundingClientRect();
+  const width = Math.min(520, innerWidth - 32);
+  const left = Math.min(Math.max(anchor.left + anchor.width / 2 - width / 2, 16), innerWidth - width - 16);
+  const top = anchor.bottom + 12;
+  // Клавіатура під карткою (а не збоку, як на планшеті) — перекриваємо не більше половини.
+  const overlapsPad = pad && left < pad.right && left + width > pad.left;
+  const bottomLimit = overlapsPad ? pad.top + pad.height / 2 : innerHeight - 16;
+  Object.assign(card.style, { top: `${top}px`, left: `${left}px`, width: `${width}px`, maxHeight: `${Math.max(bottomLimit - top, 140)}px` });
+
+  layer.addEventListener('click', (e) => { if (e.target === layer) close(); });
+  layer.querySelector('#hint-close').addEventListener('click', close);
+}
+
+window.addEventListener('resize', () => { if (onSessionScreen() && state.hint.open) renderSession(); });
 
 const currentItem = () => state.session.items[state.session.index];
 
@@ -443,6 +475,14 @@ document.addEventListener('keydown', (e) => {
   if (!onSessionScreen()) return;
   if (state.feedback) {
     if (e.key === 'Enter' && !state.feedback.correct) advance();
+    return;
+  }
+  // Поки відкрита підказка, клавіші не вводять відповідь; Esc або Enter її закривають.
+  if (state.hint.open) {
+    if (e.key === 'Escape' || e.key === 'Enter') {
+      state.hint.open = false;
+      renderSession();
+    }
     return;
   }
   const item = currentItem();
