@@ -4,17 +4,120 @@
   "icon": "🔢",
   "sessionSize": 10,
   "exercises": [
-    { "id": "compare-4", "kind": "generator", "generator": "compare", "difficulty": 1,
-      "params": { "left": { "number": [1000, 9999] }, "right": { "near": 90 } } },
-    { "id": "round-10", "kind": "generator", "generator": "template", "difficulty": 1,
-      "params": { "text": "Округли {n} до десятків", "vars": { "n": [101, 9999] }, "where": ["n % 10 != 0"], "answer": "n + 5 - (n + 5) % 10" } },
-    { "id": "compare-6", "kind": "generator", "generator": "compare", "difficulty": 2,
-      "params": { "left": { "number": [10000, 999999] }, "right": { "near": 900 } } },
-    { "id": "round-100", "kind": "generator", "generator": "template", "difficulty": 2,
-      "params": { "text": "Округли {n} до сотень", "vars": { "n": [1001, 99999] }, "where": ["n % 100 != 0"], "answer": "n + 50 - (n + 50) % 100" } },
-    { "id": "round-1000", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "Округли {n} до тисяч", "vars": { "n": [10001, 999999] }, "where": ["n % 1000 != 0"], "answer": "n + 500 - (n + 500) % 1000" } },
-    { "id": "compare-expr", "kind": "generator", "generator": "compare", "difficulty": 3,
-      "params": { "left": { "expr": "a + b", "vars": { "a": [10000, 90000], "b": [1000, 9999] } }, "right": { "near": 500 } } }
+    {
+      "id": "compare-4",
+      "kind": "generator",
+      "generator": "compare",
+      "difficulty": 1,
+      "params": {
+        "left": {
+          "number": [
+            1000,
+            9999
+          ]
+        },
+        "right": {
+          "near": 90
+        }
+      }
+    },
+    {
+      "id": "round-10",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "params": {
+        "text": "Округли до десятків: {n} ≈ □0",
+        "vars": {
+          "n": [
+            101,
+            9994
+          ]
+        },
+        "where": [
+          "n % 10 != 0"
+        ],
+        "answer": "(n + 5 - (n + 5) % 10) / 10"
+      }
+    },
+    {
+      "id": "compare-6",
+      "kind": "generator",
+      "generator": "compare",
+      "difficulty": 2,
+      "params": {
+        "left": {
+          "number": [
+            10000,
+            999999
+          ]
+        },
+        "right": {
+          "near": 900
+        }
+      }
+    },
+    {
+      "id": "round-100",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "Округли до сотень: {n} ≈ □00",
+        "vars": {
+          "n": [
+            1001,
+            99949
+          ]
+        },
+        "where": [
+          "n % 100 != 0"
+        ],
+        "answer": "(n + 50 - (n + 50) % 100) / 100"
+      }
+    },
+    {
+      "id": "round-1000",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "params": {
+        "text": "Округли до тисяч: {n} ≈ □ 000",
+        "vars": {
+          "n": [
+            10001,
+            999499
+          ]
+        },
+        "where": [
+          "n % 1000 != 0"
+        ],
+        "answer": "(n + 500 - (n + 500) % 1000) / 1000"
+      }
+    },
+    {
+      "id": "compare-expr",
+      "kind": "generator",
+      "generator": "compare",
+      "difficulty": 3,
+      "params": {
+        "left": {
+          "expr": "a + b",
+          "vars": {
+            "a": [
+              10000,
+              90000
+            ],
+            "b": [
+              1000,
+              9999
+            ]
+          }
+        },
+        "right": {
+          "near": 500
+        }
+      }
+    }
   ]
 }
