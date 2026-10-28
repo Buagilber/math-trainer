@@ -9,6 +9,7 @@ import { createRng } from '../core/rng.js';
 import { pluralUk } from '../core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, levelsOf } from '../core/session.js';
 import { sessionRecord, topicProgress, levelProgress, compareWithPrevious } from '../core/progress.js';
+import { MAX_ANSWER_DIGITS } from '../core/validate.js';
 import { loadContent } from './content.js';
 import { progressStore, storage } from './storage.js';
 
@@ -39,6 +40,10 @@ function formatDuration(ms) {
   const min = Math.floor(sec / 60);
   return `${min} хв ${Math.round(sec - min * 60)} с`;
 }
+
+// Розряди у великих числах: 345678 → «345 678» (вузький нерозривний пробіл).
+// Чотиризначні числа не ділимо — так прийнято в підручниках.
+const groupDigits = (s) => String(s).replace(/\d{5,}/g, (n) => n.replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'));
 
 function starsHtml(count, max = 3) {
   return `<span class="stars" aria-label="${count} з ${max} зірок">${'★'.repeat(count)}<span class="stars-off">${'★'.repeat(max - count)}</span></span>`;
@@ -297,17 +302,17 @@ function renderSession() {
   const shown = fb ? (fb.correct ? state.input : state.input || '?') : state.input;
 
   const blankClass = `blank ${fb ? (fb.correct ? 'ok' : 'bad') : ''} ${!fb && !state.input ? 'empty' : ''}`;
-  const blank = `<span class="${blankClass}">${esc(shown || ' ')}</span>`;
+  const blank = `<span class="${blankClass}">${esc(groupDigits(shown || '\u00a0'))}</span>`;
   const hasInlineBlank = item.text.includes('□');
   // Нерозривний пробіл після числа, щоб «7 см» не розривалось між рядками.
-  const text = esc(item.text).replace(/(\d) (?=\S)/g, '$1 ');
+  const text = groupDigits(esc(item.text)).replace(/(\d) (?=\S)/g, '$1\u00a0');
   const prompt = hasInlineBlank ? text.replace('□', blank) : text;
   const answerRow = hasInlineBlank ? '' : `<div class="answer-row">Відповідь: ${blank} ${esc(item.unit ?? '')}</div>`;
 
   const feedback = fb
     ? fb.correct
       ? '<div class="feedback ok">Молодець! 🎉</div>'
-      : `<div class="feedback bad">Правильна відповідь: <b>${esc(fb.answer)}</b></div>
+      : `<div class="feedback bad">Правильна відповідь: <b>${esc(groupDigits(fb.answer))}</b></div>
          <button class="btn btn-primary next" id="next">Далі</button>`
     : '';
 
@@ -328,7 +333,7 @@ function renderSession() {
     </header>
     <main class="session">
       <p class="session-topic muted">${esc(topic?.title ?? '')} · ${esc(levelName(s.level))}</p>
-      <div class="task ${hasInlineBlank ? 'task-inline' : 'task-text'}">${prompt}</div>
+      <div class="task ${hasInlineBlank ? 'task-inline' : 'task-text'} ${hasInlineBlank && item.text.length > 16 ? 'task-long' : ''}">${prompt}</div>
       ${answerRow}
       ${feedback}
     </main>
@@ -355,7 +360,7 @@ function pressKey(key) {
   if (state.feedback) return;
   if (key === 'del') state.input = state.input.slice(0, -1);
   else if (key === 'ok') { if (state.input) answer(state.input); return; }
-  else if (state.input.length < 4) state.input = state.input === '0' ? key : state.input + key;
+  else if (state.input.length < MAX_ANSWER_DIGITS) state.input = state.input === '0' ? key : state.input + key;
   renderSession();
 }
 
@@ -436,7 +441,7 @@ function renderSummary() {
   const mistakes = sum.mistakes.length
     ? `<h2>Помилки</h2><ul class="mistakes">${sum.mistakes.map((m) => {
         const text = m.text.includes('□') ? m.text.replace('□', String(m.answer)) : `${m.text} — ${m.answer}`;
-        return `<li><span>${esc(text)}</span> <span class="given">твоя відповідь: ${esc(m.given)}</span></li>`;
+        return `<li><span>${esc(groupDigits(text))}</span> <span class="given">твоя відповідь: ${esc(groupDigits(m.given))}</span></li>`;
       }).join('')}</ul>`
     : '';
 

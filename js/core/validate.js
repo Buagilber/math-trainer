@@ -5,6 +5,9 @@
 import { generateInstance, GENERATORS } from './generators.js';
 import { createRng } from './rng.js';
 
+// Скільки цифр можна ввести у відповідь (обмеження екранної клавіатури).
+export const MAX_ANSWER_DIGITS = 7;
+
 export function validateTopic(topic, { samples = 20 } = {}) {
   const errors = [];
   if (!topic || typeof topic !== 'object') return { topic: null, errors: ['Розділ не є об’єктом'] };
@@ -34,7 +37,12 @@ export function validateTopic(topic, { samples = 20 } = {}) {
     }
     try {
       const n = ex.kind === 'fixed' ? 1 : samples;
-      for (let i = 0; i < n; i++) generateInstance(ex, rng);
+      for (let i = 0; i < n; i++) {
+        const { answer, answerType } = generateInstance(ex, rng);
+        if (answerType === 'number' && String(answer).length > MAX_ANSWER_DIGITS) {
+          throw new Error(`відповідь ${answer} довша за ${MAX_ANSWER_DIGITS} цифр — її неможливо ввести`);
+        }
+      }
       goodExercises.push(ex);
     } catch (e) {
       errors.push(`${where}: ${e.message}`);

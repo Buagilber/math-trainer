@@ -248,6 +248,7 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .task { font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
 .task-inline { font-size: clamp(2rem, 9vw, 3.4rem); }
 .task-text { font-size: clamp(1.2rem, 4.5vw, 1.6rem); font-weight: 500; max-width: 720px; }
+.task-inline.task-long { font-size: clamp(1.5rem, 6.5vw, 2.6rem); overflow-wrap: normal; }
 
 .answer-row { font-size: 1.4rem; font-weight: 600; }
 

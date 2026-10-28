@@ -196,6 +196,8 @@ test('валідація відсіює зламані завдання', () => 
   });
   eq(topic.exercises.map((e) => e.id), ['ok']);
   eq(errors.length, 3);
+  const long = validateTopic({ id: 'l', title: 'L', exercises: [{ id: 'big', kind: 'fixed', text: '□', answer: 12345678 }] });
+  eq([long.topic.exercises.length, long.errors.length], [0, 1]);
 });
 
 test('весь контент з data/ валідний', async () => {
