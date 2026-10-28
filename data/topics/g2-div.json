@@ -1,0 +1,78 @@
+{
+  "id": "g2-div",
+  "title": "Ділення (на 2–5)",
+  "icon": "➗",
+  "sessionSize": 10,
+  "exercises": [
+    {
+      "id": "by-2-3",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 1,
+      "params": {
+        "op": "/",
+        "b": [
+          2,
+          3
+        ],
+        "result": [
+          1,
+          10
+        ]
+      }
+    },
+    {
+      "id": "by-4-5",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 2,
+      "params": {
+        "op": "/",
+        "b": [
+          4,
+          5
+        ],
+        "result": [
+          1,
+          10
+        ]
+      }
+    },
+    {
+      "id": "mixed",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 3,
+      "weight": 2,
+      "params": {
+        "op": "/",
+        "b": [
+          2,
+          5
+        ],
+        "result": [
+          2,
+          10
+        ]
+      }
+    },
+    {
+      "id": "missing",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 3,
+      "params": {
+        "op": "/",
+        "b": [
+          2,
+          5
+        ],
+        "result": [
+          2,
+          10
+        ],
+        "missing": "any"
+      }
+    }
+  ]
+}

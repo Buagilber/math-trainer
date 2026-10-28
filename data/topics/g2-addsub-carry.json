@@ -1,0 +1,18 @@
+{
+  "id": "g2-addsub-carry",
+  "title": "Додавання і віднімання з переходом через десяток",
+  "icon": "🔟",
+  "sessionSize": 10,
+  "exercises": [
+    { "id": "add-20", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
+      "params": { "op": "+", "a": [2, 9], "b": [2, 9], "carry": "required" } },
+    { "id": "sub-20", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
+      "params": { "op": "-", "a": [11, 18], "b": [2, 9], "carry": "required" } },
+    { "id": "two-one", "kind": "generator", "generator": "arithmetic", "difficulty": 2,
+      "params": { "op": ["+", "-"], "a": [11, 89], "b": [2, 9], "result": [0, 100], "carry": "required" } },
+    { "id": "two-two", "kind": "generator", "generator": "arithmetic", "difficulty": 3, "weight": 2,
+      "params": { "op": ["+", "-"], "a": [11, 89], "b": [11, 89], "result": [0, 100], "carry": "required" } },
+    { "id": "round", "kind": "generator", "generator": "arithmetic", "difficulty": 3,
+      "params": { "op": "-", "a": [20, 100, 10], "b": [11, 89], "result": [1, 100], "carry": "required" } }
+  ]
+}

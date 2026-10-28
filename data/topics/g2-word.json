@@ -1,0 +1,251 @@
+{
+  "id": "g2-word",
+  "title": "Текстові задачі",
+  "icon": "📖",
+  "sessionSize": 6,
+  "exercises": [
+    {
+      "id": "had-gave",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "params": {
+        "text": "У {name} було {a} {a|яблуко|яблука|яблук}. Вона віддала подрузі {b}. Скільки яблук залишилось?",
+        "vars": {
+          "name": {
+            "oneOf": [
+              "Марійки",
+              "Оленки",
+              "Соломії",
+              "Дарини"
+            ]
+          },
+          "a": [
+            5,
+            20
+          ],
+          "b": [
+            1,
+            9
+          ]
+        },
+        "where": [
+          "a > b"
+        ],
+        "answer": "a - b",
+        "unit": "ябл."
+      }
+    },
+    {
+      "id": "more-came",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "params": {
+        "text": "На гілці сиділо {a} {a|горобець|горобці|горобців}. Прилетіло ще {b}. Скільки горобців стало на гілці?",
+        "vars": {
+          "a": [
+            3,
+            15
+          ],
+          "b": [
+            2,
+            9
+          ]
+        },
+        "answer": "a + b",
+        "unit": "гор."
+      }
+    },
+    {
+      "id": "how-much-more",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "{name1} прочитав {a} {a|сторінку|сторінки|сторінок}, а {name2} — {b}. На скільки сторінок більше прочитав {name1}?",
+        "vars": {
+          "name1": {
+            "oneOf": [
+              "Остап",
+              "Тарас",
+              "Максим"
+            ]
+          },
+          "name2": {
+            "oneOf": [
+              "Іван",
+              "Богдан",
+              "Андрій"
+            ]
+          },
+          "a": [
+            20,
+            60
+          ],
+          "b": [
+            5,
+            40
+          ]
+        },
+        "where": [
+          "a > b"
+        ],
+        "answer": "a - b",
+        "unit": "стор."
+      }
+    },
+    {
+      "id": "perimeter-triangle",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "Сторони трикутника дорівнюють {a} см, {b} см і {c} см. Знайди периметр трикутника.",
+        "vars": {
+          "a": [
+            2,
+            9
+          ],
+          "b": [
+            2,
+            9
+          ],
+          "c": [
+            2,
+            9
+          ]
+        },
+        "where": [
+          "a + b > c",
+          "a + c > b",
+          "b + c > a"
+        ],
+        "answer": "a + b + c",
+        "unit": "см"
+      }
+    },
+    {
+      "id": "boxes",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "У {n} {n|коробці|коробках|коробках} по {k} {k|олівцю|олівці|олівців}. Скільки всього олівців?",
+        "vars": {
+          "n": [
+            2,
+            5
+          ],
+          "k": [
+            2,
+            10
+          ]
+        },
+        "answer": "n * k",
+        "unit": "олів."
+      }
+    },
+    {
+      "id": "share",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "{k * q} {k * q|цукерку|цукерки|цукерок} розділили порівну між {k} дітьми. Скільки цукерок отримала кожна дитина?",
+        "vars": {
+          "k": [
+            2,
+            5
+          ],
+          "q": [
+            2,
+            9
+          ]
+        },
+        "answer": "q",
+        "unit": "цук.",
+        "where": [
+          "k * q <= 50"
+        ]
+      }
+    },
+    {
+      "id": "two-steps",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "params": {
+        "text": "У класі {a} {a|учень|учні|учнів}. На екскурсію поїхали {b} хлопчиків і {c} дівчаток. Скільки учнів залишилось у класі?",
+        "vars": {
+          "a": [
+            20,
+            35
+          ],
+          "b": [
+            3,
+            10
+          ],
+          "c": [
+            3,
+            10
+          ]
+        },
+        "where": [
+          "a > b + c"
+        ],
+        "answer": "a - b - c",
+        "unit": "уч."
+      }
+    },
+    {
+      "id": "two-steps-more",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "params": {
+        "text": "У першому кошику {a} {a|гриб|гриби|грибів}, а в другому — на {b} більше. Скільки грибів у двох кошиках разом?",
+        "vars": {
+          "a": [
+            10,
+            40
+          ],
+          "b": [
+            2,
+            15
+          ]
+        },
+        "answer": "a + a + b",
+        "result": [
+          0,
+          100
+        ],
+        "unit": "гр."
+      }
+    },
+    {
+      "id": "perimeter-rect",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "params": {
+        "text": "Довжина прямокутника {a} см, а ширина — {b} см. Знайди периметр прямокутника.",
+        "vars": {
+          "a": [
+            3,
+            12
+          ],
+          "b": [
+            2,
+            8
+          ]
+        },
+        "where": [
+          "a > b"
+        ],
+        "answer": "(a + b) * 2",
+        "unit": "см"
+      }
+    }
+  ]
+}

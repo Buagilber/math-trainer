@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "levels": {
+    "1": "Легко",
+    "2": "Середньо",
+    "3": "Складно"
+  },
+  "grades": [
+    {
+      "id": "g1",
+      "grade": 1,
+      "title": "1 клас",
+      "topics": []
+    },
+    {
+      "id": "g2",
+      "grade": 2,
+      "title": "2 клас",
+      "topics": [
+        "topics/g2-addsub-no-carry.json",
+        "topics/g2-addsub-carry.json",
+        "topics/g2-compare.json",
+        "topics/g2-equations.json",
+        "topics/g2-order.json",
+        "topics/g2-mul.json",
+        "topics/g2-div.json",
+        "topics/g2-units.json",
+        "topics/g2-word.json"
+      ]
+    },
+    {
+      "id": "g3",
+      "grade": 3,
+      "title": "3 клас",
+      "topics": []
+    },
+    {
+      "id": "g4",
+      "grade": 4,
+      "title": "4 клас",
+      "topics": []
+    },
+    {
+      "id": "g5",
+      "grade": 5,
+      "title": "5 клас",
+      "topics": []
+    },
+    {
+      "id": "g6",
+      "grade": 6,
+      "title": "6 клас",
+      "topics": []
+    },
+    {
+      "id": "g7",
+      "grade": 7,
+      "title": "7 клас",
+      "topics": []
+    },
+    {
+      "id": "g8",
+      "grade": 8,
+      "title": "8 клас",
+      "topics": []
+    },
+    {
+      "id": "g9",
+      "grade": 9,
+      "title": "9 клас",
+      "topics": []
+    },
+    {
+      "id": "g10",
+      "grade": 10,
+      "title": "10 клас",
+      "topics": []
+    },
+    {
+      "id": "g11",
+      "grade": 11,
+      "title": "11 клас",
+      "topics": []
+    }
+  ]
+}

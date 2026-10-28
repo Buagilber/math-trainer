@@ -1,0 +1,29 @@
+{
+  "id": "g2-units",
+  "title": "Величини: довжина, час, гроші",
+  "icon": "📏",
+  "sessionSize": 8,
+  "exercises": [
+    { "id": "dm-cm", "kind": "generator", "generator": "template", "difficulty": 1,
+      "params": { "text": "{a} дм = □ см", "vars": { "a": [1, 9] }, "answer": "a * 10" } },
+    { "id": "cm-dm", "kind": "generator", "generator": "template", "difficulty": 1,
+      "params": { "text": "{a * 10} см = □ дм", "vars": { "a": [1, 9] }, "answer": "a" } },
+    { "id": "m-dm", "kind": "generator", "generator": "template", "difficulty": 1,
+      "params": { "text": "{a} м = □ дм", "vars": { "a": [1, 9] }, "answer": "a * 10" } },
+    { "id": "m-cm", "kind": "fixed", "difficulty": 1, "text": "1 м = □ см", "answer": 100 },
+    { "id": "h-min", "kind": "fixed", "difficulty": 1, "text": "1 год = □ хв", "answer": 60 },
+    { "id": "grn-kop", "kind": "fixed", "difficulty": 1, "text": "1 грн = □ коп.", "answer": 100 },
+    { "id": "dm-cm-mixed", "kind": "generator", "generator": "template", "difficulty": 2,
+      "params": { "text": "{a} дм {b} см = □ см", "vars": { "a": [1, 9], "b": [1, 9] }, "answer": "a * 10 + b" } },
+    { "id": "cm-dm-mixed", "kind": "generator", "generator": "template", "difficulty": 2,
+      "params": { "text": "{a * 10 + b} см = {a} дм □ см", "vars": { "a": [1, 9], "b": [1, 9] }, "answer": "b" } },
+    { "id": "m-dm-mixed", "kind": "generator", "generator": "template", "difficulty": 2,
+      "params": { "text": "{a} м {b} дм = □ дм", "vars": { "a": [1, 9], "b": [1, 9] }, "answer": "a * 10 + b" } },
+    { "id": "h-min-mixed", "kind": "generator", "generator": "template", "difficulty": 3,
+      "params": { "text": "1 год {b} хв = □ хв", "vars": { "b": [5, 55, 5] }, "answer": "60 + b" } },
+    { "id": "min-sum", "kind": "generator", "generator": "template", "difficulty": 3,
+      "params": { "text": "{a} хв + {b} хв = 1 год □ хв", "vars": { "a": [25, 55, 5], "b": [10, 55, 5] }, "where": ["a + b > 60"], "answer": "a + b - 60" } },
+    { "id": "grn-kop-mixed", "kind": "generator", "generator": "template", "difficulty": 3,
+      "params": { "text": "{a} грн {b} коп. = □ коп.", "vars": { "a": [1, 5], "b": [5, 95, 5] }, "answer": "a * 100 + b" } }
+  ]
+}

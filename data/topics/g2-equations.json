@@ -1,0 +1,16 @@
+{
+  "id": "g2-equations",
+  "title": "Знайди невідоме число",
+  "icon": "❓",
+  "sessionSize": 10,
+  "exercises": [
+    { "id": "within-20", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
+      "params": { "op": ["+", "-"], "a": [2, 20], "b": [1, 9], "result": [0, 20], "missing": "operand" } },
+    { "id": "within-100", "kind": "generator", "generator": "arithmetic", "difficulty": 2,
+      "params": { "op": ["+", "-"], "a": [11, 99], "b": [2, 50], "result": [0, 100], "carry": "forbidden", "missing": "operand" } },
+    { "id": "within-100-carry", "kind": "generator", "generator": "arithmetic", "difficulty": 3,
+      "params": { "op": ["+", "-"], "a": [11, 99], "b": [2, 50], "result": [0, 100], "carry": "required", "missing": "operand" } },
+    { "id": "mul", "kind": "generator", "generator": "arithmetic", "difficulty": 3,
+      "params": { "op": "*", "a": [2, 5], "b": [2, 10], "missing": "operand" } }
+  ]
+}

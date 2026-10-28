@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Тести core</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 16px; background: #fff; color: #111; }
+    li.ok::marker { content: '✅ '; } li.fail::marker { content: '❌ '; }
+    .err { color: #c00; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <h1 id="title">Тести…</h1>
+  <ul id="list"></ul>
+  <script type="module">
+    import { run } from './core.test.js';
+    const results = await run();
+    const failed = results.filter((r) => !r.ok).length;
+    document.getElementById('title').textContent = failed ? `Провалено: ${failed} з ${results.length}` : `Усі тести пройдено (${results.length})`;
+    document.getElementById('list').innerHTML = results.map((r) =>
+      `<li class="${r.ok ? 'ok' : 'fail'}">${r.name}${r.ok ? '' : `<div class="err">${r.error}</div>`}</li>`).join('');
+    window.testResults = results;
+  </script>
+</body>
+</html>

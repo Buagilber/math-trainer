@@ -1,0 +1,14 @@
+{
+  "id": "g2-order",
+  "title": "Порядок дій і дужки",
+  "icon": "🧮",
+  "sessionSize": 8,
+  "exercises": [
+    { "id": "no-brackets", "kind": "generator", "generator": "expression", "difficulty": 1,
+      "params": { "expr": ["a + b - c", "a - b + c", "a - b - c"], "vars": { "a": [10, 50], "b": [1, 20], "c": [1, 20] }, "result": [0, 100], "steps": [0, 100] } },
+    { "id": "brackets", "kind": "generator", "generator": "expression", "difficulty": 2,
+      "params": { "expr": ["a - (b + c)", "(a - b) + c", "a + (b - c)", "(a + b) - c"], "vars": { "a": [20, 80], "b": [2, 30], "c": [2, 30] }, "result": [0, 100], "steps": [0, 100] } },
+    { "id": "with-mul", "kind": "generator", "generator": "expression", "difficulty": 3,
+      "params": { "expr": ["a * b + c", "c + a * b", "c - a * b", "a * (b + d)"], "vars": { "a": [2, 5], "b": [2, 5], "c": [10, 60], "d": [1, 4] }, "result": [0, 100], "steps": [0, 100] } }
+  ]
+}
