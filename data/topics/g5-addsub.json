@@ -1,0 +1,18 @@
+{
+  "id": "g5-addsub",
+  "title": "Додавання і віднімання багатоцифрових чисел",
+  "icon": "➕",
+  "sessionSize": 8,
+  "exercises": [
+    { "id": "four-three", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
+      "params": { "op": ["+", "-"], "a": [1000, 9999], "b": [100, 999], "result": [0, 99999] } },
+    { "id": "round-thousands", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
+      "params": { "op": ["+", "-"], "a": [1000, 90000, 1000], "b": [1000, 50000, 1000], "result": [0, 100000] } },
+    { "id": "five-four", "kind": "generator", "generator": "arithmetic", "difficulty": 2,
+      "params": { "op": ["+", "-"], "a": [10000, 99999], "b": [1000, 9999], "result": [0, 999999] } },
+    { "id": "six-five", "kind": "generator", "generator": "arithmetic", "difficulty": 3,
+      "params": { "op": ["+", "-"], "a": [100000, 899999], "b": [10000, 99999], "result": [0, 999999] } },
+    { "id": "from-round", "kind": "generator", "generator": "arithmetic", "difficulty": 3,
+      "params": { "op": "-", "a": [10000, 100000, 10000], "b": [1001, 9999], "result": [1, 100000] } }
+  ]
+}

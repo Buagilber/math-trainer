@@ -1,0 +1,155 @@
+{
+  "id": "g5-remainder",
+  "title": "Ділення з остачею",
+  "icon": "🧩",
+  "sessionSize": 8,
+  "exercises": [
+    {
+      "id": "quotient-small",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "params": {
+        "text": "{a} : {b} = □ (ост. {a % b})",
+        "vars": {
+          "a": [
+            11,
+            89
+          ],
+          "b": [
+            2,
+            9
+          ]
+        },
+        "where": [
+          "a % b != 0",
+          "a > b"
+        ],
+        "answer": "(a - a % b) / b"
+      }
+    },
+    {
+      "id": "remainder-small",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "params": {
+        "text": "{a} : {b} = {(a - a % b) / b} (ост. □)",
+        "vars": {
+          "a": [
+            11,
+            89
+          ],
+          "b": [
+            2,
+            9
+          ]
+        },
+        "where": [
+          "a % b != 0",
+          "a > b"
+        ],
+        "answer": "a % b"
+      }
+    },
+    {
+      "id": "quotient-big",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "{a} : {b} = □ (ост. {a % b})",
+        "vars": {
+          "a": [
+            100,
+            999
+          ],
+          "b": [
+            3,
+            9
+          ]
+        },
+        "where": [
+          "a % b != 0"
+        ],
+        "answer": "(a - a % b) / b"
+      }
+    },
+    {
+      "id": "remainder-word",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "{a} {a|цукерку|цукерки|цукерок} розклали в пакети по {b}. Скільки цукерок залишилось?",
+        "vars": {
+          "a": [
+            20,
+            99
+          ],
+          "b": [
+            3,
+            9
+          ]
+        },
+        "where": [
+          "a % b != 0"
+        ],
+        "answer": "a % b",
+        "unit": "цук."
+      }
+    },
+    {
+      "id": "find-dividend",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "params": {
+        "text": "□ : {b} = {q} (ост. {r})",
+        "vars": {
+          "b": [
+            3,
+            12
+          ],
+          "q": [
+            5,
+            40
+          ],
+          "r": [
+            1,
+            11
+          ]
+        },
+        "where": [
+          "r < b"
+        ],
+        "answer": "b * q + r"
+      }
+    },
+    {
+      "id": "boxes-needed",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "params": {
+        "text": "На екскурсію записалося {a} {a|учень|учні|учнів}. В один автобус вміщується {b} осіб. Скільки автобусів потрібно?",
+        "vars": {
+          "a": [
+            50,
+            300
+          ],
+          "b": [
+            20,
+            45
+          ]
+        },
+        "where": [
+          "a % b != 0",
+          "a > b"
+        ],
+        "answer": "(a - a % b) / b + 1",
+        "unit": "авт."
+      }
+    }
+  ]
+}

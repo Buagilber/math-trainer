@@ -1,0 +1,20 @@
+{
+  "id": "g5-order",
+  "title": "Порядок дій і степінь числа",
+  "icon": "🧮",
+  "sessionSize": 8,
+  "exercises": [
+    { "id": "two-ops", "kind": "generator", "generator": "expression", "difficulty": 1,
+      "params": { "expr": ["a * b + c", "c - a * b", "c + d / b"], "vars": { "a": [2, 12], "b": [2, 9], "c": [100, 500], "d": [20, 90] }, "result": [0, 100000], "steps": [0, 100000] } },
+    { "id": "square", "kind": "generator", "generator": "template", "difficulty": 1,
+      "params": { "text": "{a}² = □", "vars": { "a": [2, 15] }, "answer": "a * a" } },
+    { "id": "cube", "kind": "generator", "generator": "template", "difficulty": 2,
+      "params": { "text": "{a}³ = □", "vars": { "a": [2, 6] }, "answer": "a * a * a" } },
+    { "id": "brackets", "kind": "generator", "generator": "expression", "difficulty": 2,
+      "params": { "expr": ["(a + b) * c", "a * (b - c)", "(a - b) / c"], "vars": { "a": [20, 99], "b": [2, 19], "c": [2, 9] }, "result": [0, 100000], "steps": [0, 100000] } },
+    { "id": "square-expr", "kind": "generator", "generator": "template", "difficulty": 3,
+      "params": { "text": "{a}² + {b} × {c} = □", "vars": { "a": [2, 12], "b": [2, 15], "c": [2, 9] }, "answer": "a * a + b * c" } },
+    { "id": "four-ops", "kind": "generator", "generator": "expression", "difficulty": 3,
+      "params": { "expr": ["a * b - c / d", "(a + b) * c - d", "a * (b + c) / d"], "vars": { "a": [10, 60], "b": [2, 20], "c": [10, 90], "d": [2, 9] }, "result": [0, 100000], "steps": [0, 100000] } }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "g5-muldiv",
+  "title": "Множення і ділення натуральних чисел",
+  "icon": "✖️",
+  "sessionSize": 8,
+  "exercises": [
+    { "id": "mul-2x1", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
+      "params": { "op": "*", "a": [12, 99], "b": [2, 9], "commutative": true } },
+    { "id": "mul-round", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
+      "params": { "op": "*", "a": [2, 9], "b": [10, 900, 10] } },
+    { "id": "div-by-1", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
+      "params": { "op": "/", "b": [2, 9], "result": [11, 30] } },
+    { "id": "mul-3x1", "kind": "generator", "generator": "arithmetic", "difficulty": 2,
+      "params": { "op": "*", "a": [101, 999], "b": [2, 9] } },
+    { "id": "div-3by1", "kind": "generator", "generator": "arithmetic", "difficulty": 2,
+      "params": { "op": "/", "b": [2, 9], "result": [21, 150] } },
+    { "id": "mul-2x2", "kind": "generator", "generator": "arithmetic", "difficulty": 3,
+      "params": { "op": "*", "a": [12, 99], "b": [11, 49] } },
+    { "id": "div-by-2", "kind": "generator", "generator": "arithmetic", "difficulty": 3,
+      "params": { "op": "/", "b": [11, 49], "result": [11, 60] } }
+  ]
+}
