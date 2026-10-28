@@ -2,6 +2,7 @@
 // Чисті функції без DOM і сховища — стан передається явно.
 
 import { generateInstance } from './generators.js';
+import { parseDecimal, decimalsEqual, fractionsEqual, formatFraction } from './numbers.js';
 
 export const DEFAULT_SESSION_SIZE = 10;
 
@@ -46,10 +47,49 @@ export function buildSession(topic, level, rng, size = topic.sessionSize ?? DEFA
   };
 }
 
+// Типи відповіді:
+//   number   — ціле число (answer: 42);
+//   decimal  — десятковий дріб (answer: "12,35"), зараховується і «12,350»;
+//   fraction — звичайний дріб (answer: { num, den } або { whole, num, den }).
+//              Рівні дроби зараховуються (2/4 = 1/2). Якщо очікується мішане
+//              число, ціла частина має збігатися, а дробова — бути правильною;
+//   choice   — один з варіантів (answer: "<").
+// given для fraction — { whole, num, den } (рядки з поля вводу), для решти — рядок.
+
+const toInt = (v) => (v === '' || v === undefined || v === null ? null : Number(v));
+
 export function checkAnswer(instance, given) {
   if (given === '' || given === null || given === undefined) return false;
-  if (instance.answerType === 'choice') return String(given) === String(instance.answer);
-  return Number(given) === instance.answer;
+  switch (instance.answerType) {
+    case 'choice':
+      return String(given) === String(instance.answer);
+    case 'decimal': {
+      const g = parseDecimal(given);
+      const a = parseDecimal(instance.answer);
+      return !!g && !!a && decimalsEqual(g, a);
+    }
+    case 'fraction': {
+      const g = { whole: toInt(given.whole), num: toInt(given.num), den: toInt(given.den) };
+      if (g.num === null || !g.den) return false;
+      const a = instance.answer;
+      if (a.whole) {
+        if (g.whole !== a.whole || g.num >= g.den) return false;
+      } else if (g.whole) {
+        return false;
+      }
+      return fractionsEqual({ ...g, whole: g.whole ?? 0 }, a);
+    }
+    default:
+      return Number(given) === instance.answer;
+  }
+}
+
+// Відповідь у вигляді тексту для екрана й журналу: «1 2/7», «12,35», «42».
+export function formatAnswer(answerType, value) {
+  if (answerType === 'fraction' && value && typeof value === 'object') {
+    return formatFraction({ whole: toInt(value.whole), num: value.num, den: value.den });
+  }
+  return String(value ?? '');
 }
 
 // Повертає новий стан сесії та результат відповіді.
@@ -60,7 +100,8 @@ export function submitAnswer(session, given, ms = 0) {
     exerciseId: item.exerciseId,
     text: item.text,
     answer: item.answer,
-    given: String(given),
+    answerText: formatAnswer(item.answerType, item.answer),
+    given: formatAnswer(item.answerType, given),
     correct,
     ms,
   };

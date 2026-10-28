@@ -4,7 +4,8 @@
 import { createRng } from '../js/core/rng.js';
 import { evaluate, formatExpression } from '../js/core/expr.js';
 import { generateInstance, fillText, pluralUk } from '../js/core/generators.js';
-import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswer, MAX_QUESTION_MS } from '../js/core/session.js';
+import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswer, formatAnswer, MAX_QUESTION_MS } from '../js/core/session.js';
+import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers.js';
 import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord } from '../js/core/progress.js';
 import { validateTopic } from '../js/core/validate.js';
 
@@ -183,6 +184,82 @@ test('порівняння з попередньою сесією: швидкі�
   eq([down.accuracy.trend, down.accuracy.diffPct, down.speed], ['down', -40, null]);
   eq(compareWithPrevious({ total: 10, correct: 5, avgMs: 1 }, null).first, true);
   eq(compareWithPrevious({ total: 10, correct: 7, avgMs: 4000 }, { total: 10, correct: 7 }).speed, null); // старий запис без часу
+});
+
+test('десяткові: запис, розбір, порівняння', () => {
+  eq(formatDecimal({ units: 235, scale: 2 }), '2,35');
+  eq(formatDecimal({ units: 5, scale: 2 }), '0,05');
+  eq(formatDecimal({ units: 350, scale: 2 }), '3,50');
+  eq(parseDecimal('12,50'), { units: 125, scale: 1 });
+  eq(parseDecimal('12.5'), { units: 125, scale: 1 });
+  eq([parseDecimal('1,'), parseDecimal(',5'), parseDecimal('a')], [null, null, null]);
+  assert(compareDecimals(parseDecimal('3,5'), parseDecimal('3,48')) > 0);
+});
+
+const decVal = (s) => { const d = parseDecimal(s.trim()); return d.units / 10 ** d.scale; };
+
+test('decimal: дії, округлення, порівняння', () => {
+  const rng = createRng(21);
+  const ops = { id: 'd', kind: 'generator', generator: 'decimal', params: { op: ['+', '-', '*'], a: [11, 99], aScale: 1, b: [11, 99], bScale: 2, range: [0, 100] } };
+  for (let i = 0; i < 300; i++) {
+    const it = generateInstance(ops, rng);
+    const [a, sign, b] = it.text.split(' ');
+    const expect = sign === '+' ? decVal(a) + decVal(b) : sign === '−' ? decVal(a) - decVal(b) : decVal(a) * decVal(b);
+    assert(Math.abs(decVal(it.answer) - expect) < 1e-9, `${it.text} ${it.answer}`);
+    assert(!/,\d*0$/.test(it.answer), `зайвий нуль у ${it.answer}`);
+  }
+  const div = { id: 'v', kind: 'generator', generator: 'decimal', params: { op: '/', b: [2, 9], result: [11, 99], aScale: 1 } };
+  for (let i = 0; i < 200; i++) {
+    const it = generateInstance(div, rng);
+    const [a, , b] = it.text.split(' ');
+    assert(Math.abs(decVal(a) / Number(b) - decVal(it.answer)) < 1e-9, it.text);
+  }
+  const round = { id: 'r', kind: 'generator', generator: 'decimal', params: { op: 'round', a: [101, 999], aScale: 2, to: 1, label: 'десятих' } };
+  for (let i = 0; i < 200; i++) {
+    const it = generateInstance(round, rng);
+    const a = decVal(it.text.split(': ')[1].split(' ≈')[0]);
+    assert(Math.abs(Math.round(a * 10 + 1e-9) / 10 - decVal(it.answer)) < 1e-9, `${it.text} ${it.answer}`);
+  }
+  const cmp = { id: 'c', kind: 'generator', generator: 'decimal', params: { op: 'compare', a: [10, 99], aScale: 1, bScale: 2, near: 20 } };
+  for (let i = 0; i < 200; i++) {
+    const it = generateInstance(cmp, rng);
+    const [l, r] = it.text.split(' □ ').map(decVal);
+    eq(it.answer, l < r ? '<' : l > r ? '>' : '=', it.text);
+  }
+  assert(checkAnswer({ answerType: 'decimal', answer: '2,5' }, '2,50'));
+  assert(!checkAnswer({ answerType: 'decimal', answer: '2,5' }, '25'));
+});
+
+test('fraction: генерація і перевірка', () => {
+  const rng = createRng(22);
+  const ex = { id: 'f', kind: 'generator', generator: 'fraction', params: { mode: ['add', 'sub', 'toMixed', 'toImproper', 'addMixed', 'subMixed'], den: [3, 12], carry: true } };
+  for (let i = 0; i < 300; i++) {
+    const it = generateInstance(ex, rng);
+    const a = it.answer;
+    assert(a.num > 0 && a.num < (a.whole ? a.den : Infinity), JSON.stringify(it));
+    assert(checkAnswer(it, { whole: a.whole ? String(a.whole) : '', num: String(a.num), den: String(a.den) }), it.text);
+  }
+  const mixed = { answerType: 'fraction', answer: { whole: 1, num: 2, den: 4 } };
+  assert(checkAnswer(mixed, { whole: '1', num: '1', den: '2' }), 'рівні дроби зараховуються');
+  assert(!checkAnswer(mixed, { whole: '', num: '6', den: '4' }), 'мішане число обов’язкове');
+  assert(!checkAnswer(mixed, { whole: '0', num: '6', den: '4' }), 'дробова частина має бути правильною');
+  const proper = { answerType: 'fraction', answer: { num: 5, den: 7 } };
+  assert(checkAnswer(proper, { whole: '', num: '10', den: '14' }));
+  assert(!checkAnswer(proper, { whole: '', num: '5', den: '' }));
+  eq(formatAnswer('fraction', { whole: 2, num: 1, den: 3 }), '2 1/3');
+  const cmp = generateInstance({ id: 'c', kind: 'generator', generator: 'fraction', params: { mode: 'compare', den: [5, 9] } }, rng);
+  eq(cmp.answerType, 'choice');
+});
+
+test('template з вибором відповіді', () => {
+  const rng = createRng(23);
+  const ex = { id: 't', kind: 'generator', generator: 'template', params: { text: 'Чи ділиться {n} на 3?', vars: { n: [10, 99] }, answer: 'n % 3 == 0', choices: ['Так', 'Ні'] } };
+  for (let i = 0; i < 100; i++) {
+    const it = generateInstance(ex, rng);
+    const n = Number(it.text.match(/\d+/)[0]);
+    eq(it.answer, n % 3 === 0 ? 'Так' : 'Ні', it.text);
+  }
+  eq(generateInstance({ id: 'i', kind: 'generator', generator: 'template', params: { text: '7', vars: {}, answer: '1', choices: ['просте', 'складене'] } }, rng).answer, 'складене');
 });
 
 test('валідація відсіює зламані завдання', () => {

@@ -7,9 +7,9 @@
 import { CONFIG } from '../config.js';
 import { createRng } from '../core/rng.js';
 import { pluralUk } from '../core/generators.js';
-import { buildSession, submitAnswer, isFinished, summarize, levelsOf } from '../core/session.js';
+import { buildSession, submitAnswer, isFinished, summarize, levelsOf, formatAnswer } from '../core/session.js';
 import { sessionRecord, topicProgress, levelProgress, compareWithPrevious } from '../core/progress.js';
-import { MAX_ANSWER_DIGITS } from '../core/validate.js';
+import { esc, mathHtml, emptyInput, applyKey, isComplete, selectField, answerHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
 import { progressStore, storage } from './storage.js';
 
@@ -21,12 +21,10 @@ const state = {
   session: null, // активна сесія (core/session.js)
   sessionStartedAt: 0,
   questionStartedAt: 0,
-  input: '',
-  feedback: null, // { correct, answer, item } після відповіді
+  input: '', // рядок або { whole, num, den, field } для дробів (див. answer-input.js)
+  feedback: null, // { correct, item } після відповіді
 };
 
-const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
 
 const findGrade = (id) => state.content.grades.find((g) => g.id === id);
 const findTopic = (id) => state.content.grades.flatMap((g) => g.topics).find((t) => t.id === id);
@@ -40,10 +38,6 @@ function formatDuration(ms) {
   const min = Math.floor(sec / 60);
   return `${min} хв ${Math.round(sec - min * 60)} с`;
 }
-
-// Розряди у великих числах: 345678 → «345 678» (вузький нерозривний пробіл).
-// Чотиризначні числа не ділимо — так прийнято в підручниках.
-const groupDigits = (s) => String(s).replace(/\d{5,}/g, (n) => n.replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'));
 
 function starsHtml(count, max = 3) {
   return `<span class="stars" aria-label="${count} з ${max} зірок">${'★'.repeat(count)}<span class="stars-off">${'★'.repeat(max - count)}</span></span>`;
@@ -287,7 +281,7 @@ function startSession(topic, level, { replace = false } = {}) {
   state.session = buildSession(topic, level, createRng());
   state.sessionStartedAt = Date.now();
   state.questionStartedAt = Date.now();
-  state.input = '';
+  state.input = emptyInput(state.session.items[0]);
   state.feedback = null;
   go(`/topic/${topic.id}/play`, { replace });
 }
@@ -301,31 +295,18 @@ function renderSession() {
   const item = fb ? fb.item : s.items[s.index];
   const number = fb ? s.index : s.index + 1;
   const topic = findTopic(s.topicId);
-  const shown = fb ? (fb.correct ? state.input : state.input || '?') : state.input;
 
-  const blankClass = `blank ${fb ? (fb.correct ? 'ok' : 'bad') : ''} ${!fb && !state.input ? 'empty' : ''}`;
-  const blank = `<span class="${blankClass}">${esc(groupDigits(shown || '\u00a0'))}</span>`;
+  const answerBox = answerHtml(item, state.input, fb ? (fb.correct ? 'ok' : 'bad') : null);
   const hasInlineBlank = item.text.includes('□');
-  // Нерозривний пробіл після числа, щоб «7 см» не розривалось між рядками.
-  const text = groupDigits(esc(item.text)).replace(/(\d) (?=\S)/g, '$1\u00a0');
-  const prompt = hasInlineBlank ? text.replace('□', blank) : text;
-  const answerRow = hasInlineBlank ? '' : `<div class="answer-row">Відповідь: ${blank} ${esc(item.unit ?? '')}</div>`;
+  const prompt = hasInlineBlank ? mathHtml(item.text).replace('□', answerBox) : mathHtml(item.text);
+  const answerRow = hasInlineBlank ? '' : `<div class="answer-row">Відповідь: ${answerBox} ${esc(item.unit ?? '')}</div>`;
 
   const feedback = fb
     ? fb.correct
       ? '<div class="feedback ok">Молодець! 🎉</div>'
-      : `<div class="feedback bad">Правильна відповідь: <b>${esc(groupDigits(fb.answer))}</b></div>
+      : `<div class="feedback bad">Правильна відповідь: <b>${mathHtml(formatAnswer(item.answerType, item.answer))}</b></div>
          <button class="btn btn-primary next" id="next">Далі</button>`
     : '';
-
-  const input = item.answerType === 'choice'
-    ? `<div class="choices">${item.choices.map((c) => `<button class="key choice" data-choice="${esc(c)}" ${fb ? 'disabled' : ''}>${esc(c)}</button>`).join('')}</div>`
-    : `<div class="numpad">
-        ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button class="key" data-key="${d}" ${fb ? 'disabled' : ''}>${d}</button>`).join('')}
-        <button class="key key-del" data-key="del" ${fb ? 'disabled' : ''} aria-label="Стерти">⌫</button>
-        <button class="key" data-key="0" ${fb ? 'disabled' : ''}>0</button>
-        <button class="key key-ok" data-key="ok" ${fb || !state.input ? 'disabled' : ''} aria-label="Перевірити">✓</button>
-      </div>`;
 
   root.innerHTML = `
     <header class="bar">
@@ -339,7 +320,7 @@ function renderSession() {
       ${answerRow}
       ${feedback}
     </main>
-    ${input}`;
+    ${keypadHtml(item, state.input, !!fb)}`;
 
   root.querySelector('#quit').addEventListener('click', async () => {
     // Якщо ще нічого не розв'язано, втрачати нічого — виходимо без питань.
@@ -356,23 +337,34 @@ function renderSession() {
   root.querySelector('#next')?.addEventListener('click', advance);
   root.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => pressKey(b.dataset.key)));
   root.querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => answer(b.dataset.choice)));
+  if (!fb) {
+    root.querySelectorAll('[data-field]').forEach((el) => el.addEventListener('click', () => {
+      state.input = selectField(state.input, el.dataset.field);
+      renderSession();
+    }));
+  }
 }
+
+const currentItem = () => state.session.items[state.session.index];
 
 function pressKey(key) {
   if (state.feedback) return;
-  if (key === 'del') state.input = state.input.slice(0, -1);
-  else if (key === 'ok') { if (state.input) answer(state.input); return; }
-  else if (state.input.length < MAX_ANSWER_DIGITS) state.input = state.input === '0' ? key : state.input + key;
+  const item = currentItem();
+  if (key === 'ok') {
+    if (isComplete(item, state.input)) answer(state.input);
+    return;
+  }
+  state.input = applyKey(item, state.input, key);
   renderSession();
 }
 
 function answer(given) {
   if (state.feedback) return;
-  const item = state.session.items[state.session.index];
+  const item = currentItem();
   const { session, result } = submitAnswer(state.session, given, Date.now() - state.questionStartedAt);
   state.session = session;
-  state.input = String(given);
-  state.feedback = { correct: result.correct, answer: item.answer, item };
+  state.input = given;
+  state.feedback = { correct: result.correct, item };
   renderSession();
   if (result.correct) setTimeout(advance, CONFIG.correctAdvanceMs);
 }
@@ -380,12 +372,12 @@ function answer(given) {
 function advance() {
   if (!state.feedback) return;
   state.feedback = null;
-  state.input = '';
   state.questionStartedAt = Date.now();
   if (isFinished(state.session)) {
     progressStore.add(sessionRecord(state.session, { startedAt: state.sessionStartedAt }));
     go(`/topic/${state.session.topicId}/result`, { replace: true });
   } else {
+    state.input = emptyInput(currentItem());
     renderSession();
   }
 }
@@ -399,14 +391,16 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !state.feedback.correct) advance();
     return;
   }
-  const item = state.session.items[state.session.index];
+  const item = currentItem();
   if (item?.answerType === 'choice') {
     if (['<', '>', '='].includes(e.key)) answer(e.key);
     return;
   }
-  if (/^[0-9]$/.test(e.key)) pressKey(e.key);
-  else if (e.key === 'Backspace') pressKey('del');
-  else if (e.key === 'Enter') pressKey('ok');
+  const key = physicalKey(item, e);
+  if (key) {
+    e.preventDefault();
+    pressKey(key);
+  }
 });
 
 // ---------- підсумок ----------
@@ -442,8 +436,9 @@ function renderSummary() {
 
   const mistakes = sum.mistakes.length
     ? `<h2>Помилки</h2><ul class="mistakes">${sum.mistakes.map((m) => {
-        const text = m.text.includes('□') ? m.text.replace('□', String(m.answer)) : `${m.text} — ${m.answer}`;
-        return `<li><span>${esc(groupDigits(text))}</span> <span class="given">твоя відповідь: ${esc(groupDigits(m.given))}</span></li>`;
+        const answerText = m.answerText ?? String(m.answer);
+        const text = m.text.includes('□') ? m.text.replace('□', answerText) : `${m.text} — ${answerText}`;
+        return `<li><span>${mathHtml(text)}</span> <span class="given">твоя відповідь: ${mathHtml(m.given)}</span></li>`;
       }).join('')}</ul>`
     : '';
 

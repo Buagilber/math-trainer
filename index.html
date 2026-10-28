@@ -18,6 +18,18 @@
 <body>
   <div id="app"></div>
   <noscript>Для роботи застосунку потрібен JavaScript.</noscript>
+  <script>
+    // Запобіжник: якщо модулі не завантажились (наприклад, одразу після оновлення
+    // браузер змішав старі файли з кешу з новими), показуємо зрозуміле повідомлення
+    // замість порожнього екрана. GitHub Pages кешує файли до 10 хвилин.
+    setTimeout(function () {
+      var app = document.getElementById('app');
+      if (app.childElementCount) return;
+      app.innerHTML = '<div class="center"><p>Застосунок щойно оновився і ще завантажується.</p>'
+        + '<p class="muted">Спробуйте оновити сторінку за кілька хвилин.</p>'
+        + '<button class="btn" onclick="location.reload()">Оновити</button></div>';
+    }, 5000);
+  </script>
   <script type="module" src="js/app/main.js"></script>
 </body>
 </html>

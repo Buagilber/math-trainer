@@ -39,8 +39,11 @@ export function validateTopic(topic, { samples = 20 } = {}) {
       const n = ex.kind === 'fixed' ? 1 : samples;
       for (let i = 0; i < n; i++) {
         const { answer, answerType } = generateInstance(ex, rng);
-        if (answerType === 'number' && String(answer).length > MAX_ANSWER_DIGITS) {
-          throw new Error(`відповідь ${answer} довша за ${MAX_ANSWER_DIGITS} цифр — її неможливо ввести`);
+        const parts = answerType === 'fraction' ? [answer.whole ?? '', answer.num, answer.den]
+          : answerType === 'choice' ? []
+          : [String(answer).replace(',', '')];
+        if (parts.some((p) => String(p).length > MAX_ANSWER_DIGITS)) {
+          throw new Error(`відповідь ${String(answer)} довша за ${MAX_ANSWER_DIGITS} цифр — її неможливо ввести`);
         }
       }
       goodExercises.push(ex);
