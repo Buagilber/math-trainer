@@ -6,6 +6,7 @@ import { evaluate, formatExpression } from '../js/core/expr.js';
 import { generateInstance, fillText, pluralUk } from '../js/core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswer, formatAnswer, MAX_QUESTION_MS } from '../js/core/session.js';
 import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers.js';
+import { hintDelayMs, shouldOfferHint } from '../js/core/hints.js';
 import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord } from '../js/core/progress.js';
 import { validateTopic } from '../js/core/validate.js';
 
@@ -260,6 +261,37 @@ test('template з вибором відповіді', () => {
     eq(it.answer, n % 3 === 0 ? 'Так' : 'Ні', it.text);
   }
   eq(generateInstance({ id: 'i', kind: 'generator', generator: 'template', params: { text: '7', vars: {}, answer: '1', choices: ['просте', 'складене'] } }, rng).answer, 'складене');
+});
+
+test('підказки: поріг появи', () => {
+  const inline = { text: '2 + 3 = □', hint: 'h' };
+  const textTask = { text: 'Задача без поля', hint: 'h' };
+  eq(hintDelayMs(inline, 1, null), 15000, 'мінімум рівня 1');
+  eq(hintDelayMs(textTask, 1, null), 25000, 'текстова задача +10 с');
+  eq(hintDelayMs(inline, 2, 4000), 20000, 'швидка дитина — мінімум рівня');
+  eq(hintDelayMs(inline, 2, 15000), 30000, '2 × середній час');
+  eq(hintDelayMs(inline, 3, 60000), 45000, 'не пізніше 45 с');
+  eq(hintDelayMs({ ...inline, hintAfterSec: 7 }, 3, 60000), 7000, 'свій поріг завдання');
+  const base = { item: inline, elapsedMs: 16000, sinceInputMs: 0, inputEmpty: true, delayMs: 15000 };
+  assert(shouldOfferHint(base));
+  assert(!shouldOfferHint({ ...base, elapsedMs: 10000 }), 'ще рано');
+  assert(!shouldOfferHint({ ...base, inputEmpty: false, sinceInputMs: 3000 }), 'дитина вводить відповідь');
+  assert(shouldOfferHint({ ...base, inputEmpty: false, sinceInputMs: 9000 }), 'поле давно не змінювалось');
+  assert(!shouldOfferHint({ ...base, item: { text: 'x = □' } }), 'без тексту підказки кнопки немає');
+});
+
+test('підказки: у сесії, лічильник, валідація', () => {
+  const topic = { id: 't', title: 'T', hint: 'розділ', exercises: [
+    { id: 'a', kind: 'fixed', text: '1 + 1 = □', answer: 2, hint: 'своя' },
+    { id: 'b', kind: 'fixed', text: '2 + 2 = □', answer: 4 },
+  ] };
+  let s = buildSession(topic, 1, createRng(3), 2);
+  eq(s.items.map((i) => i.hint).sort(), ['розділ', 'своя']);
+  ({ session: s } = submitAnswer(s, s.items[0].answer, 1000, { hintUsed: true }));
+  ({ session: s } = submitAnswer(s, s.items[1].answer, 1000));
+  eq([summarize(s).hintsUsed, summarize(s).stars], [1, 3], 'зірки не знімаються');
+  const long = validateTopic({ ...topic, exercises: [{ ...topic.exercises[0], hint: 'х'.repeat(201) }] });
+  eq([long.topic.exercises.length, long.topic.exercises[0].hint, long.errors.length], [1, undefined, 1]);
 });
 
 test('валідація відсіює зламані завдання', () => {

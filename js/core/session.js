@@ -31,7 +31,8 @@ export function buildSession(topic, level, rng, size = topic.sessionSize ?? DEFA
     const available = pool.filter((e) => !(e.kind === 'fixed' && usedFixed.has(e.id)));
     if (!available.length) break;
     const exercise = rng.weighted(available, (e) => e.weight ?? 1);
-    const instance = generateInstance(exercise, rng);
+    // Підказка: своя в завдання або запасна з розділу.
+    const instance = { ...generateInstance(exercise, rng), hint: exercise.hint ?? topic.hint, hintAfterSec: exercise.hintAfterSec };
     if (seenTexts.has(instance.text) && guard > size) continue; // уникаємо повторів
     if (exercise.kind === 'fixed') usedFixed.add(exercise.id);
     seenTexts.add(instance.text);
@@ -93,7 +94,7 @@ export function formatAnswer(answerType, value) {
 }
 
 // Повертає новий стан сесії та результат відповіді.
-export function submitAnswer(session, given, ms = 0) {
+export function submitAnswer(session, given, ms = 0, { hintUsed = false } = {}) {
   const item = session.items[session.index];
   const correct = checkAnswer(item, given);
   const result = {
@@ -104,6 +105,7 @@ export function submitAnswer(session, given, ms = 0) {
     given: formatAnswer(item.answerType, given),
     correct,
     ms,
+    hintUsed,
   };
   return {
     session: { ...session, index: session.index + 1, results: [...session.results, result] },
@@ -141,6 +143,7 @@ export function summarize(session) {
     correct,
     stars: starsFor(correct, total),
     avgMs: averageMs(session.results),
+    hintsUsed: session.results.filter((r) => r.hintUsed).length,
     mistakes: session.results.filter((r) => !r.correct),
   };
 }

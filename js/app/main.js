@@ -9,7 +9,8 @@ import { createRng } from '../core/rng.js';
 import { pluralUk } from '../core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, levelsOf, formatAnswer } from '../core/session.js';
 import { sessionRecord, topicProgress, levelProgress, compareWithPrevious } from '../core/progress.js';
-import { esc, mathHtml, emptyInput, applyKey, isComplete, selectField, answerHtml, keypadHtml, physicalKey } from './answer-input.js';
+import { hintDelayMs, shouldOfferHint } from '../core/hints.js';
+import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
 import { progressStore, storage } from './storage.js';
 
@@ -23,6 +24,16 @@ const state = {
   questionStartedAt: 0,
   input: '', // рядок або { whole, num, den, field } для дробів (див. answer-input.js)
   feedback: null, // { correct, item } після відповіді
+  // Підказка до поточного прикладу: visible — кнопка 💡 показана, open — картка
+  // відкрита, used — дитина відкривала підказку, fresh — щойно з'явилась (анімація).
+  hint: { visible: false, open: false, used: false, fresh: false },
+  lastInputAt: 0,
+  hintBaseAvgMs: null, // середній час на приклад в останній сесії цього рівня
+};
+
+const resetHint = () => {
+  state.hint = { visible: false, open: false, used: false, fresh: false };
+  state.lastInputAt = Date.now();
 };
 
 
@@ -283,6 +294,8 @@ function startSession(topic, level, { replace = false } = {}) {
   state.questionStartedAt = Date.now();
   state.input = emptyInput(state.session.items[0]);
   state.feedback = null;
+  state.hintBaseAvgMs = levelProgress(progressStore.all(), topic.id, level).lastAvgMs;
+  resetHint();
   go(`/topic/${topic.id}/play`, { replace });
 }
 
@@ -308,16 +321,26 @@ function renderSession() {
          <button class="btn btn-primary next" id="next">Далі</button>`
     : '';
 
+  // Місце для 💡 зарезервоване завжди, тож поява кнопки нічого не зсуває.
+  const h = state.hint;
+  const hintButton = `<button class="hint-btn${h.visible && !fb ? ' shown' : ''}${h.fresh ? ' fresh' : ''}${h.open ? ' active' : ''}" id="hint" aria-label="Підказка" ${h.visible && !fb ? '' : 'tabindex="-1" aria-hidden="true" disabled'}>💡</button>`;
+  const hintCard = h.open && !fb
+    ? `<div class="hint-card"><p>${mathHtml(item.hint)}</p><button class="link-btn" id="hint-close">Зрозуміло</button></div>`
+    : '';
+  h.fresh = false;
+
   root.innerHTML = `
     <header class="bar">
       <button class="icon-btn" id="quit" aria-label="Завершити">✕</button>
       <div class="progress"><div class="progress-fill" style="width:${(s.index / s.items.length) * 100}%"></div></div>
+      ${hintButton}
       <span class="counter">${number}/${s.items.length}</span>
     </header>
     <main class="session">
       <p class="session-topic muted">${esc(topic?.title ?? '')} · ${esc(levelName(s.level))}</p>
       <div class="task ${hasInlineBlank ? 'task-inline' : 'task-text'} ${hasInlineBlank && item.text.length > 16 ? 'task-long' : ''}">${prompt}</div>
       ${answerRow}
+      ${hintCard}
       ${feedback}
     </main>
     ${keypadHtml(item, state.input, !!fb)}`;
@@ -335,11 +358,19 @@ function renderSession() {
     up(`/topic/${s.topicId}`);
   });
   root.querySelector('#next')?.addEventListener('click', advance);
+  const toggleHint = () => {
+    state.hint.open = !state.hint.open;
+    if (state.hint.open) state.hint.used = true;
+    renderSession();
+  };
+  root.querySelector('#hint').addEventListener('click', () => state.hint.visible && toggleHint());
+  root.querySelector('#hint-close')?.addEventListener('click', toggleHint);
   root.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => pressKey(b.dataset.key)));
   root.querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => answer(b.dataset.choice)));
   if (!fb) {
     root.querySelectorAll('[data-field]').forEach((el) => el.addEventListener('click', () => {
       state.input = selectField(state.input, el.dataset.field);
+      state.lastInputAt = Date.now();
       renderSession();
     }));
   }
@@ -355,15 +386,17 @@ function pressKey(key) {
     return;
   }
   state.input = applyKey(item, state.input, key);
+  state.lastInputAt = Date.now();
   renderSession();
 }
 
 function answer(given) {
   if (state.feedback) return;
   const item = currentItem();
-  const { session, result } = submitAnswer(state.session, given, Date.now() - state.questionStartedAt);
+  const { session, result } = submitAnswer(state.session, given, Date.now() - state.questionStartedAt, { hintUsed: state.hint.used });
   state.session = session;
   state.input = given;
+  state.hint.open = false;
   state.feedback = { correct: result.correct, item };
   renderSession();
   if (result.correct) setTimeout(advance, CONFIG.correctAdvanceMs);
@@ -373,6 +406,7 @@ function advance() {
   if (!state.feedback) return;
   state.feedback = null;
   state.questionStartedAt = Date.now();
+  resetHint();
   if (isFinished(state.session)) {
     progressStore.add(sessionRecord(state.session, { startedAt: state.sessionStartedAt }));
     go(`/topic/${state.session.topicId}/result`, { replace: true });
@@ -383,6 +417,26 @@ function advance() {
 }
 
 const onSessionScreen = () => currentRoute().sub === 'play' && state.session;
+
+// Раз на секунду перевіряємо, чи пора тихо показати 💡 (правило — core/hints.js).
+setInterval(() => {
+  if (!onSessionScreen() || state.feedback || state.hint.visible) return;
+  const item = currentItem();
+  if (!item) return;
+  const now = Date.now();
+  const offer = shouldOfferHint({
+    item,
+    elapsedMs: now - state.questionStartedAt,
+    sinceInputMs: now - state.lastInputAt,
+    inputEmpty: isEmpty(item, state.input),
+    delayMs: hintDelayMs(item, state.session.level, state.hintBaseAvgMs),
+  });
+  if (offer) {
+    state.hint.visible = true;
+    state.hint.fresh = true;
+    renderSession();
+  }
+}, 1000);
 
 // Фізична клавіатура (планшет з клавіатурою, десктоп).
 document.addEventListener('keydown', (e) => {
@@ -421,6 +475,9 @@ function renderSummary() {
     : cmp.accuracy?.trend === 'down'
       ? `<p class="trend slow">▼ Точність нижча, ніж минулого разу, на ${-cmp.accuracy.diffPct}%</p>`
       : '';
+  const hintLine = sum.hintsUsed
+    ? `<p class="trend muted">Підказкою скористались: ${sum.hintsUsed} ${pluralUk(sum.hintsUsed, 'раз', 'рази', 'разів')}</p>`
+    : '';
   const timeLine = sum.avgMs != null
     ? `<p class="summary-time">Середній час на приклад: <b>${formatDuration(sum.avgMs)}</b></p>`
     : '';
@@ -451,6 +508,7 @@ function renderSummary() {
       ${accuracyLine}
       ${timeLine}
       ${speedLine}
+      ${hintLine}
       ${mistakes}
       <div class="summary-actions">
         <button class="btn btn-primary" id="again">Ще раз</button>

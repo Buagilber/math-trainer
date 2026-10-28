@@ -4,6 +4,7 @@
 
 import { generateInstance, GENERATORS } from './generators.js';
 import { createRng } from './rng.js';
+import { MAX_HINT_LENGTH } from './hints.js';
 
 // Скільки цифр можна ввести у відповідь (обмеження екранної клавіатури).
 export const MAX_ANSWER_DIGITS = 7;
@@ -17,6 +18,16 @@ export function validateTopic(topic, { samples = 20 } = {}) {
     errors.push(`${topic.id}: немає масиву exercises`);
     return { topic: null, errors };
   }
+
+  // Задовга підказка не ламає завдання — просто не показується.
+  const checkHint = (owner, where) => {
+    if (owner.hint !== undefined && (typeof owner.hint !== 'string' || owner.hint.length > MAX_HINT_LENGTH)) {
+      errors.push(`${where}: підказка довша за ${MAX_HINT_LENGTH} символів`);
+      return { ...owner, hint: undefined };
+    }
+    return owner;
+  };
+  topic = checkHint(topic, topic.id);
 
   const ids = new Set();
   const goodExercises = [];
@@ -46,7 +57,7 @@ export function validateTopic(topic, { samples = 20 } = {}) {
           throw new Error(`відповідь ${String(answer)} довша за ${MAX_ANSWER_DIGITS} цифр — її неможливо ввести`);
         }
       }
-      goodExercises.push(ex);
+      goodExercises.push(checkHint(ex, where));
     } catch (e) {
       errors.push(`${where}: ${e.message}`);
     }
