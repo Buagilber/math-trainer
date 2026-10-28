@@ -26,13 +26,13 @@ const state = {
   feedback: null, // { correct, item } після відповіді
   // Підказка до поточного прикладу: visible — кнопка 💡 показана, open — картка
   // відкрита, used — дитина відкривала підказку, fresh — щойно з'явилась (анімація).
-  hint: { visible: false, open: false, used: false, fresh: false },
+  hint: { visible: false, open: false, used: false, fresh: false, animate: false },
   lastInputAt: 0,
   hintBaseAvgMs: null, // середній час на приклад в останній сесії цього рівня
 };
 
 const resetHint = () => {
-  state.hint = { visible: false, open: false, used: false, fresh: false };
+  state.hint = { visible: false, open: false, used: false, fresh: false, animate: false };
   state.lastInputAt = Date.now();
 };
 
@@ -355,12 +355,15 @@ function renderSession() {
   });
   root.querySelector('#next')?.addEventListener('click', advance);
   const toggleHint = () => {
-    state.hint.open = !state.hint.open;
-    if (state.hint.open) state.hint.used = true;
+    if (state.hint.open) return closeHint();
+    state.hint.open = true;
+    state.hint.used = true;
+    state.hint.animate = true;
     renderSession();
   };
   root.querySelector('#hint').addEventListener('click', () => state.hint.visible && toggleHint());
-  if (h.open && !fb) renderHintLayer(item, toggleHint);
+  if (h.open && !fb) renderHintLayer(item, h.animate);
+  h.animate = false;
   root.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => pressKey(b.dataset.key)));
   root.querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => answer(b.dataset.choice)));
   if (!fb) {
@@ -376,7 +379,16 @@ function renderSession() {
 // прикладом і може перекрити клавіатуру, але не більше ніж наполовину;
 // якщо текст довший, прокручується лише він, а «Зрозуміло» завжди видно.
 // Тап поза карткою закриває її (і не натискає клавішу під нею).
-function renderHintLayer(item, close) {
+//
+// Якщо картка не вміщається над клавіатурою, блок прикладу на час підказки
+// піднімається — рівно на стільки, скільки бракує, але не вище ніж на
+// HINT_SHIFT_TOP_GAP під верхньою панеллю. Зсув менший за HINT_SHIFT_MIN
+// не робимо: він не звільняє місця, лише смикає екран. Отже, якщо від панелі
+// до прикладу менше ніж 12 + 40 = 52 px, приклад не рухається.
+const HINT_SHIFT_TOP_GAP = 12;
+const HINT_SHIFT_MIN = 40;
+
+function renderHintLayer(item, animate) {
   const hint = normalizeHint(item.hint);
   if (!hint) return;
   const layer = document.createElement('div');
@@ -392,18 +404,47 @@ function renderHintLayer(item, close) {
   root.append(layer);
 
   const card = layer.querySelector('.hint-card');
+  const main = root.querySelector('.session');
+  const header = root.querySelector('.bar').getBoundingClientRect();
+  const blockTop = main.firstElementChild.getBoundingClientRect().top;
   const anchor = (root.querySelector('.answer-row') ?? root.querySelector('.task')).getBoundingClientRect();
   const pad = root.querySelector('.numpad, .choices')?.getBoundingClientRect();
   const width = Math.min(520, innerWidth - 32);
   const left = Math.min(Math.max(anchor.left + anchor.width / 2 - width / 2, 16), innerWidth - width - 16);
-  const top = anchor.bottom + 12;
-  // Клавіатура під карткою (а не збоку, як на планшеті) — перекриваємо не більше половини.
+  // Клавіатура під карткою (а не збоку, як на планшеті).
   const overlapsPad = pad && left < pad.right && left + width > pad.left;
-  const bottomLimit = overlapsPad ? pad.top + pad.height / 2 : innerHeight - 16;
-  Object.assign(card.style, { top: `${top}px`, left: `${left}px`, width: `${width}px`, maxHeight: `${Math.max(bottomLimit - top, 140)}px` });
 
-  layer.addEventListener('click', (e) => { if (e.target === layer) close(); });
-  layer.querySelector('#hint-close').addEventListener('click', close);
+  // Природна висота картки та скільки місця не вистачає над клавіатурою.
+  Object.assign(card.style, { left: `${left}px`, width: `${width}px`, top: '0px' });
+  const naturalHeight = card.getBoundingClientRect().height;
+  const freeBottom = overlapsPad ? pad.top - 8 : innerHeight - 16;
+  const lacking = naturalHeight - (freeBottom - (anchor.bottom + 12));
+  const room = blockTop - header.bottom - HINT_SHIFT_TOP_GAP;
+  let shift = lacking > 0 ? Math.min(lacking, room) : 0;
+  if (shift < HINT_SHIFT_MIN) shift = 0;
+
+  if (shift) {
+    if (!animate) main.style.transition = 'none';
+    main.getBoundingClientRect(); // зафіксувати початкову позицію для анімації
+    main.style.transform = `translateY(${-shift}px)`;
+    if (!animate) requestAnimationFrame(() => { main.style.transition = ''; });
+  }
+
+  const top = anchor.bottom - shift + 12;
+  const bottomLimit = overlapsPad ? pad.top + pad.height / 2 : innerHeight - 16;
+  Object.assign(card.style, { top: `${top}px`, maxHeight: `${Math.max(bottomLimit - top, 140)}px` });
+
+  layer.addEventListener('click', (e) => { if (e.target === layer) closeHint(); });
+  layer.querySelector('#hint-close').addEventListener('click', closeHint);
+}
+
+// Закриття без перемальовування екрана, щоб приклад плавно повернувся на місце.
+function closeHint() {
+  state.hint.open = false;
+  root.querySelector('.hint-layer')?.remove();
+  root.querySelector('#hint')?.classList.remove('active');
+  const main = root.querySelector('.session');
+  if (main) main.style.transform = '';
 }
 
 window.addEventListener('resize', () => { if (onSessionScreen() && state.hint.open) renderSession(); });
@@ -479,10 +520,7 @@ document.addEventListener('keydown', (e) => {
   }
   // Поки відкрита підказка, клавіші не вводять відповідь; Esc або Enter її закривають.
   if (state.hint.open) {
-    if (e.key === 'Escape' || e.key === 'Enter') {
-      state.hint.open = false;
-      renderSession();
-    }
+    if (e.key === 'Escape' || e.key === 'Enter') closeHint();
     return;
   }
   const item = currentItem();

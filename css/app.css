@@ -258,6 +258,8 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
   text-align: center;
 }
 .session-topic { margin: 0; font-size: 0.9rem; }
+/* Плавний зсув прикладу вгору, поки відкрита підказка (і назад). */
+.session { transition: transform 0.25s ease-out; }
 
 .task { font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
 .task-inline { font-size: clamp(2rem, 9vw, 3.4rem); }
