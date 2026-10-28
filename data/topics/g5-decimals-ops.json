@@ -1,0 +1,20 @@
+{
+  "id": "g5-decimals-ops",
+  "title": "Дії з десятковими дробами",
+  "icon": "🔹",
+  "sessionSize": 8,
+  "exercises": [
+    { "id": "addsub-same", "kind": "generator", "generator": "decimal", "difficulty": 1,
+      "params": { "op": ["+", "-"], "a": [11, 99], "aScale": 1, "b": [11, 99], "bScale": 1, "range": [0, 100] } },
+    { "id": "addsub-mixed", "kind": "generator", "generator": "decimal", "difficulty": 2,
+      "params": { "op": ["+", "-"], "a": [11, 999], "aScale": 1, "b": [101, 999], "bScale": 2, "range": [0, 1000] } },
+    { "id": "mul-10", "kind": "generator", "generator": "decimal", "difficulty": 2,
+      "params": { "op": "*", "a": [101, 9999], "aScale": 2, "b": { "oneOf": [10, 100, 1000] }, "bScale": 0 } },
+    { "id": "mul-int", "kind": "generator", "generator": "decimal", "difficulty": 3,
+      "params": { "op": "*", "a": [11, 99], "aScale": 1, "b": [2, 9], "bScale": 0 } },
+    { "id": "mul-dec", "kind": "generator", "generator": "decimal", "difficulty": 3,
+      "params": { "op": "*", "a": [11, 49], "aScale": 1, "b": [11, 49], "bScale": 1 } },
+    { "id": "div-int", "kind": "generator", "generator": "decimal", "difficulty": 3,
+      "params": { "op": "/", "b": [2, 9], "result": [11, 99], "aScale": 1 } }
+  ]
+}

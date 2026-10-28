@@ -49,8 +49,13 @@
         "topics/g5-addsub.json",
         "topics/g5-muldiv.json",
         "topics/g5-remainder.json",
+        "topics/g5-divisibility.json",
         "topics/g5-order.json",
         "topics/g5-equations.json",
+        "topics/g5-fractions.json",
+        "topics/g5-decimals-basics.json",
+        "topics/g5-decimals-ops.json",
+        "topics/g5-percent.json",
         "topics/g5-geometry.json",
         "topics/g5-units.json",
         "topics/g5-word.json"

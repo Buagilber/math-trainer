@@ -1,0 +1,26 @@
+{
+  "id": "g5-fractions",
+  "title": "Звичайні дроби",
+  "icon": "🍕",
+  "sessionSize": 8,
+  "exercises": [
+    { "id": "compare", "kind": "generator", "generator": "fraction", "difficulty": 1,
+      "params": { "mode": "compare", "den": [5, 15] } },
+    { "id": "add", "kind": "generator", "generator": "fraction", "difficulty": 1, "weight": 2,
+      "params": { "mode": "add", "den": [5, 15] } },
+    { "id": "sub", "kind": "generator", "generator": "fraction", "difficulty": 2,
+      "params": { "mode": "sub", "den": [5, 15] } },
+    { "id": "to-mixed", "kind": "generator", "generator": "fraction", "difficulty": 2,
+      "params": { "mode": "toMixed", "den": [3, 9], "whole": [1, 5] } },
+    { "id": "to-improper", "kind": "generator", "generator": "fraction", "difficulty": 2,
+      "params": { "mode": "toImproper", "den": [3, 9], "whole": [1, 5] } },
+    { "id": "of-number", "kind": "generator", "generator": "template", "difficulty": 2,
+      "params": { "text": "Знайди {a}/{b} від числа {b * k}", "vars": { "a": [1, 8], "b": [2, 9], "k": [2, 12] }, "where": ["a < b"], "answer": "a * k" } },
+    { "id": "add-mixed", "kind": "generator", "generator": "fraction", "difficulty": 3,
+      "params": { "mode": "addMixed", "den": [4, 12], "whole": [1, 6], "carry": true } },
+    { "id": "sub-mixed", "kind": "generator", "generator": "fraction", "difficulty": 3,
+      "params": { "mode": "subMixed", "den": [4, 12], "whole": [1, 8], "carry": true } },
+    { "id": "number-by-part", "kind": "generator", "generator": "template", "difficulty": 3,
+      "params": { "text": "Знайди число, {a}/{b} якого дорівнюють {a * k}", "vars": { "a": [1, 8], "b": [2, 9], "k": [2, 12] }, "where": ["a < b"], "answer": "b * k" } }
+  ]
+}
