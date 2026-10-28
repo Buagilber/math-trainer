@@ -2,23 +2,229 @@
   "id": "g5-divisibility",
   "title": "Подільність натуральних чисел",
   "icon": "🔍",
+  "hint": "Ознаки подільності: на 2 — парна остання цифра; на 5 — 0 або 5; на 10 — 0; на 3 і 9 — сума цифр ділиться на 3 чи 9.",
   "sessionSize": 10,
   "exercises": [
-    { "id": "by-2-5-10", "kind": "generator", "generator": "template", "difficulty": 1, "weight": 2,
-      "params": { "text": "Чи ділиться {n} на {k}?", "vars": { "n": [10, 999], "k": { "oneOf": [2, 5, 10] } }, "answer": "n % k == 0", "choices": ["Так", "Ні"] } },
-    { "id": "smallest-multiple", "kind": "generator", "generator": "template", "difficulty": 1,
-      "params": { "text": "Найменше двоцифрове число, кратне {k}", "vars": { "k": [3, 9] }, "answer": "10 + (k - 10 % k) % k" } },
-    { "id": "by-3-9", "kind": "generator", "generator": "template", "difficulty": 2, "weight": 2,
-      "params": { "text": "Чи ділиться {n} на {k}?", "vars": { "n": [100, 9999], "k": { "oneOf": [3, 9] } }, "answer": "n % k == 0", "choices": ["Так", "Ні"] } },
-    { "id": "prime", "kind": "generator", "generator": "template", "difficulty": 2,
-      "params": { "text": "Число {n} — просте чи складене?", "vars": { "n": { "oneOf": [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97] } }, "answer": "0", "choices": ["Просте", "Складене"] } },
-    { "id": "composite", "kind": "generator", "generator": "template", "difficulty": 2,
-      "params": { "text": "Число {n} — просте чи складене?", "vars": { "n": { "oneOf": [4, 6, 8, 9, 15, 21, 25, 27, 33, 35, 39, 49, 51, 57, 63, 69, 77, 81, 87, 91, 93] } }, "answer": "1", "choices": ["Просте", "Складене"] } },
-    { "id": "largest-multiple", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "Найбільше трицифрове число, кратне {k}", "vars": { "k": [4, 19] }, "answer": "999 - 999 % k" } },
-    { "id": "count-multiples", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "Скільки чисел від 1 до {n} діляться на {k}?", "vars": { "n": [30, 200], "k": [3, 12] }, "answer": "(n - n % k) / k" } },
-    { "id": "by-6", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "Чи ділиться {n} на 6?", "vars": { "n": [100, 9999] }, "answer": "n % 6 == 0", "choices": ["Так", "Ні"] } }
+    {
+      "id": "by-2-5-10",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "weight": 2,
+      "hint": "На 2 — остання цифра парна; на 5 — остання цифра 0 або 5; на 10 — остання цифра 0.",
+      "params": {
+        "text": "Чи ділиться {n} на {k}?",
+        "vars": {
+          "n": [
+            10,
+            999
+          ],
+          "k": {
+            "oneOf": [
+              2,
+              5,
+              10
+            ]
+          }
+        },
+        "answer": "n % k == 0",
+        "choices": [
+          "Так",
+          "Ні"
+        ]
+      }
+    },
+    {
+      "id": "smallest-multiple",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "hint": "Кратні числа k: k, 2k, 3k… Знайди перше з них, у якого дві цифри.",
+      "params": {
+        "text": "Найменше двоцифрове число, кратне {k}",
+        "vars": {
+          "k": [
+            3,
+            9
+          ]
+        },
+        "answer": "10 + (k - 10 % k) % k"
+      }
+    },
+    {
+      "id": "by-3-9",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "weight": 2,
+      "hint": "Додай усі цифри числа. Якщо сума ділиться на 3 (на 9), то й число ділиться на 3 (на 9).",
+      "params": {
+        "text": "Чи ділиться {n} на {k}?",
+        "vars": {
+          "n": [
+            100,
+            9999
+          ],
+          "k": {
+            "oneOf": [
+              3,
+              9
+            ]
+          }
+        },
+        "answer": "n % k == 0",
+        "choices": [
+          "Так",
+          "Ні"
+        ]
+      }
+    },
+    {
+      "id": "prime",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "Просте число має лише два дільники: 1 і саме себе. Якщо є ще дільник — число складене.",
+      "params": {
+        "text": "Число {n} — просте чи складене?",
+        "vars": {
+          "n": {
+            "oneOf": [
+              2,
+              3,
+              5,
+              7,
+              11,
+              13,
+              17,
+              19,
+              23,
+              29,
+              31,
+              37,
+              41,
+              43,
+              47,
+              53,
+              59,
+              61,
+              67,
+              71,
+              73,
+              79,
+              83,
+              89,
+              97
+            ]
+          }
+        },
+        "answer": "0",
+        "choices": [
+          "Просте",
+          "Складене"
+        ]
+      }
+    },
+    {
+      "id": "composite",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "Просте число має лише два дільники: 1 і саме себе. Якщо є ще дільник — число складене.",
+      "params": {
+        "text": "Число {n} — просте чи складене?",
+        "vars": {
+          "n": {
+            "oneOf": [
+              4,
+              6,
+              8,
+              9,
+              15,
+              21,
+              25,
+              27,
+              33,
+              35,
+              39,
+              49,
+              51,
+              57,
+              63,
+              69,
+              77,
+              81,
+              87,
+              91,
+              93
+            ]
+          }
+        },
+        "answer": "1",
+        "choices": [
+          "Просте",
+          "Складене"
+        ]
+      }
+    },
+    {
+      "id": "largest-multiple",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Поділи 999 на це число з остачею і відніми остачу від 999.",
+      "params": {
+        "text": "Найбільше трицифрове число, кратне {k}",
+        "vars": {
+          "k": [
+            4,
+            19
+          ]
+        },
+        "answer": "999 - 999 % k"
+      }
+    },
+    {
+      "id": "count-multiples",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Поділи n на k з остачею: неповна частка й дорівнює кількості кратних.",
+      "params": {
+        "text": "Скільки чисел від 1 до {n} діляться на {k}?",
+        "vars": {
+          "n": [
+            30,
+            200
+          ],
+          "k": [
+            3,
+            12
+          ]
+        },
+        "answer": "(n - n % k) / k"
+      }
+    },
+    {
+      "id": "by-6",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Число ділиться на 6, якщо воно ділиться і на 2, і на 3.",
+      "params": {
+        "text": "Чи ділиться {n} на 6?",
+        "vars": {
+          "n": [
+            100,
+            9999
+          ]
+        },
+        "answer": "n % 6 == 0",
+        "choices": [
+          "Так",
+          "Ні"
+        ]
+      }
+    }
   ]
 }

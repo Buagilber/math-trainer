@@ -2,19 +2,178 @@
   "id": "g2-addsub-no-carry",
   "title": "Додавання і віднімання без переходу через десяток",
   "icon": "➕",
+  "hint": "Додавай або віднімай окремо десятки й окремо одиниці, а потім склади результат.",
   "sessionSize": 10,
   "exercises": [
-    { "id": "tens", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
-      "params": { "op": ["+", "-"], "a": [10, 90, 10], "b": [10, 90, 10], "result": [0, 100] } },
-    { "id": "two-one", "kind": "generator", "generator": "arithmetic", "difficulty": 1, "weight": 2,
-      "params": { "op": ["+", "-"], "a": [11, 98], "b": [1, 9], "result": [0, 100], "carry": "forbidden" } },
-    { "id": "two-tens", "kind": "generator", "generator": "arithmetic", "difficulty": 2,
-      "params": { "op": ["+", "-"], "a": [11, 99], "b": [10, 80, 10], "result": [0, 100] } },
-    { "id": "two-two", "kind": "generator", "generator": "arithmetic", "difficulty": 2, "weight": 2,
-      "params": { "op": ["+", "-"], "a": [11, 89], "b": [11, 89], "result": [0, 100], "carry": "forbidden" } },
-    { "id": "two-two-missing", "kind": "generator", "generator": "arithmetic", "difficulty": 3,
-      "params": { "op": ["+", "-"], "a": [11, 89], "b": [11, 89], "result": [0, 100], "carry": "forbidden", "missing": "operand" } },
-    { "id": "three-numbers", "kind": "generator", "generator": "expression", "difficulty": 3,
-      "params": { "expr": ["a + b + c", "a + b - c", "a - b - c"], "vars": { "a": [10, 60], "b": [1, 30], "c": [1, 30] }, "result": [0, 100], "steps": [0, 100] } }
+    {
+      "id": "tens",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 1,
+      "hint": "Круглі числа рахуй десятками: 30 + 40 — це 3 десятки + 4 десятки = 7 десятків, тобто 70.",
+      "params": {
+        "op": [
+          "+",
+          "-"
+        ],
+        "a": [
+          10,
+          90,
+          10
+        ],
+        "b": [
+          10,
+          90,
+          10
+        ],
+        "result": [
+          0,
+          100
+        ]
+      }
+    },
+    {
+      "id": "two-one",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 1,
+      "weight": 2,
+      "hint": "Одиниці додавай до одиниць, десятки не змінюються: 42 + 5 → 2 + 5 = 7, отже 47.",
+      "params": {
+        "op": [
+          "+",
+          "-"
+        ],
+        "a": [
+          11,
+          98
+        ],
+        "b": [
+          1,
+          9
+        ],
+        "result": [
+          0,
+          100
+        ],
+        "carry": "forbidden"
+      }
+    },
+    {
+      "id": "two-tens",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 2,
+      "hint": "Десятки додавай до десятків, одиниці не змінюються: 36 + 20 → 30 + 20 = 50, разом 56.",
+      "params": {
+        "op": [
+          "+",
+          "-"
+        ],
+        "a": [
+          11,
+          99
+        ],
+        "b": [
+          10,
+          80,
+          10
+        ],
+        "result": [
+          0,
+          100
+        ]
+      }
+    },
+    {
+      "id": "two-two",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 2,
+      "weight": 2,
+      "hint": "Розклади на десятки й одиниці: 34 + 25 → 30 + 20 = 50, 4 + 5 = 9, разом 59.",
+      "params": {
+        "op": [
+          "+",
+          "-"
+        ],
+        "a": [
+          11,
+          89
+        ],
+        "b": [
+          11,
+          89
+        ],
+        "result": [
+          0,
+          100
+        ],
+        "carry": "forbidden"
+      }
+    },
+    {
+      "id": "two-two-missing",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 3,
+      "hint": "Невідомий доданок = сума − відомий доданок. Невідоме зменшуване = різниця + від'ємник. Невідомий від'ємник = зменшуване − різниця.",
+      "params": {
+        "op": [
+          "+",
+          "-"
+        ],
+        "a": [
+          11,
+          89
+        ],
+        "b": [
+          11,
+          89
+        ],
+        "result": [
+          0,
+          100
+        ],
+        "carry": "forbidden",
+        "missing": "operand"
+      }
+    },
+    {
+      "id": "three-numbers",
+      "kind": "generator",
+      "generator": "expression",
+      "difficulty": 3,
+      "hint": "Виконуй дії по черзі зліва направо: спочатку з першими двома числами, потім із третім.",
+      "params": {
+        "expr": [
+          "a + b + c",
+          "a + b - c",
+          "a - b - c"
+        ],
+        "vars": {
+          "a": [
+            10,
+            60
+          ],
+          "b": [
+            1,
+            30
+          ],
+          "c": [
+            1,
+            30
+          ]
+        },
+        "result": [
+          0,
+          100
+        ],
+        "steps": [
+          0,
+          100
+        ]
+      }
+    }
   ]
 }

@@ -2,17 +2,120 @@
   "id": "g5-equations",
   "title": "Рівняння",
   "icon": "❓",
+  "hint": "Доданок = сума − доданок. Зменшуване = різниця + від'ємник. Від'ємник = зменшуване − різниця. Множник = добуток : множник. Ділене = частка × дільник.",
   "sessionSize": 8,
   "exercises": [
-    { "id": "addsub", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
-      "params": { "op": ["+", "-"], "a": [100, 999], "b": [10, 500], "result": [0, 9999], "missing": "operand" } },
-    { "id": "mul", "kind": "generator", "generator": "arithmetic", "difficulty": 2,
-      "params": { "op": "*", "a": [2, 9], "b": [11, 99], "missing": "operand" } },
-    { "id": "div", "kind": "generator", "generator": "arithmetic", "difficulty": 2,
-      "params": { "op": "/", "b": [2, 9], "result": [11, 99], "missing": "operand" } },
-    { "id": "big-addsub", "kind": "generator", "generator": "arithmetic", "difficulty": 3,
-      "params": { "op": ["+", "-"], "a": [10000, 99999], "b": [1000, 50000], "result": [0, 999999], "missing": "operand" } },
-    { "id": "two-step", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "{k} × □ + {b} = {k * x + b}", "vars": { "k": [2, 9], "x": [2, 30], "b": [5, 99] }, "answer": "x" } }
+    {
+      "id": "addsub",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 1,
+      "params": {
+        "op": [
+          "+",
+          "-"
+        ],
+        "a": [
+          100,
+          999
+        ],
+        "b": [
+          10,
+          500
+        ],
+        "result": [
+          0,
+          9999
+        ],
+        "missing": "operand"
+      }
+    },
+    {
+      "id": "mul",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 2,
+      "params": {
+        "op": "*",
+        "a": [
+          2,
+          9
+        ],
+        "b": [
+          11,
+          99
+        ],
+        "missing": "operand"
+      }
+    },
+    {
+      "id": "div",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 2,
+      "hint": "Невідоме ділене = частка × дільник. Невідомий дільник = ділене : частка.",
+      "params": {
+        "op": "/",
+        "b": [
+          2,
+          9
+        ],
+        "result": [
+          11,
+          99
+        ],
+        "missing": "operand"
+      }
+    },
+    {
+      "id": "big-addsub",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 3,
+      "params": {
+        "op": [
+          "+",
+          "-"
+        ],
+        "a": [
+          10000,
+          99999
+        ],
+        "b": [
+          1000,
+          50000
+        ],
+        "result": [
+          0,
+          999999
+        ],
+        "missing": "operand"
+      }
+    },
+    {
+      "id": "two-step",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Спочатку відніми відоме число від правої частини, а потім поділи результат на множник.",
+      "params": {
+        "text": "{k} × □ + {b} = {k * x + b}",
+        "vars": {
+          "k": [
+            2,
+            9
+          ],
+          "x": [
+            2,
+            30
+          ],
+          "b": [
+            5,
+            99
+          ]
+        },
+        "answer": "x"
+      }
+    }
   ]
 }

@@ -2,17 +2,123 @@
   "id": "g2-addsub-carry",
   "title": "Додавання і віднімання з переходом через десяток",
   "icon": "🔟",
+  "hint": "Доповнюй до круглого десятка: 8 + 5 = 8 + 2 + 3 = 13.",
   "sessionSize": 10,
   "exercises": [
-    { "id": "add-20", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
-      "params": { "op": "+", "a": [2, 9], "b": [2, 9], "carry": "required" } },
-    { "id": "sub-20", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
-      "params": { "op": "-", "a": [11, 18], "b": [2, 9], "carry": "required" } },
-    { "id": "two-one", "kind": "generator", "generator": "arithmetic", "difficulty": 2,
-      "params": { "op": ["+", "-"], "a": [11, 89], "b": [2, 9], "result": [0, 100], "carry": "required" } },
-    { "id": "two-two", "kind": "generator", "generator": "arithmetic", "difficulty": 3, "weight": 2,
-      "params": { "op": ["+", "-"], "a": [11, 89], "b": [11, 89], "result": [0, 100], "carry": "required" } },
-    { "id": "round", "kind": "generator", "generator": "arithmetic", "difficulty": 3,
-      "params": { "op": "-", "a": [20, 100, 10], "b": [11, 89], "result": [1, 100], "carry": "required" } }
+    {
+      "id": "add-20",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 1,
+      "hint": "Доповни перше число до 10, а решту додай: 8 + 5 = 8 + 2 + 3 = 13.",
+      "params": {
+        "op": "+",
+        "a": [
+          2,
+          9
+        ],
+        "b": [
+          2,
+          9
+        ],
+        "carry": "required"
+      }
+    },
+    {
+      "id": "sub-20",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 1,
+      "hint": "Віднімай частинами через 10: 14 − 6 = 14 − 4 − 2 = 8.",
+      "params": {
+        "op": "-",
+        "a": [
+          11,
+          18
+        ],
+        "b": [
+          2,
+          9
+        ],
+        "carry": "required"
+      }
+    },
+    {
+      "id": "two-one",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 2,
+      "hint": "Спочатку до круглого десятка, потім решту: 38 + 5 = 38 + 2 + 3 = 43; 42 − 7 = 42 − 2 − 5 = 35.",
+      "params": {
+        "op": [
+          "+",
+          "-"
+        ],
+        "a": [
+          11,
+          89
+        ],
+        "b": [
+          2,
+          9
+        ],
+        "result": [
+          0,
+          100
+        ],
+        "carry": "required"
+      }
+    },
+    {
+      "id": "two-two",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 3,
+      "weight": 2,
+      "hint": "Спочатку десятки, потім одиниці частинами: 37 + 48 = 37 + 40 + 8 = 77 + 8 = 85.",
+      "params": {
+        "op": [
+          "+",
+          "-"
+        ],
+        "a": [
+          11,
+          89
+        ],
+        "b": [
+          11,
+          89
+        ],
+        "result": [
+          0,
+          100
+        ],
+        "carry": "required"
+      }
+    },
+    {
+      "id": "round",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 3,
+      "hint": "Від круглого числа віднімай частинами: 60 − 27 = 60 − 20 − 7 = 33.",
+      "params": {
+        "op": "-",
+        "a": [
+          20,
+          100,
+          10
+        ],
+        "b": [
+          11,
+          89
+        ],
+        "result": [
+          1,
+          100
+        ],
+        "carry": "required"
+      }
+    }
   ]
 }

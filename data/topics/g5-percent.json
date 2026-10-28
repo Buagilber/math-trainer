@@ -2,21 +2,207 @@
   "id": "g5-percent",
   "title": "Відсотки та середнє арифметичне",
   "icon": "💯",
+  "hint": "1% — це сота частина числа. Щоб знайти p% від числа, поділи число на 100 і помнож на p.",
   "sessionSize": 8,
   "exercises": [
-    { "id": "simple-percent", "kind": "generator", "generator": "template", "difficulty": 1, "weight": 2,
-      "params": { "text": "Знайди {p}% від числа {n}", "vars": { "p": { "oneOf": [10, 20, 25, 50] }, "n": [20, 400, 10] }, "where": ["(n * p) % 100 == 0"], "answer": "n * p / 100" } },
-    { "id": "mean-2", "kind": "generator", "generator": "template", "difficulty": 1,
-      "params": { "text": "Знайди середнє арифметичне чисел {a} і {b}", "vars": { "a": [2, 60], "b": [2, 60] }, "where": ["(a + b) % 2 == 0", "a != b"], "answer": "(a + b) / 2" } },
-    { "id": "any-percent", "kind": "generator", "generator": "template", "difficulty": 2,
-      "params": { "text": "Знайди {p}% від числа {n}", "vars": { "p": [1, 99], "n": [100, 900, 100] }, "answer": "n * p / 100" } },
-    { "id": "mean-3", "kind": "generator", "generator": "template", "difficulty": 2,
-      "params": { "text": "Знайди середнє арифметичне чисел {a}, {b} і {c}", "vars": { "a": [5, 90], "b": [5, 90], "c": [5, 90] }, "where": ["(a + b + c) % 3 == 0"], "answer": "(a + b + c) / 3" } },
-    { "id": "number-by-percent", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "Знайди число, {p}% якого дорівнюють {m}", "vars": { "p": { "oneOf": [5, 10, 20, 25, 40, 50, 75] }, "m": [5, 90] }, "where": ["(m * 100) % p == 0"], "answer": "m * 100 / p" } },
-    { "id": "discount", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "Книжка коштувала {c} грн. Її ціну знизили на {p}%. Скільки тепер коштує книжка?", "vars": { "c": [100, 600, 20], "p": { "oneOf": [10, 15, 20, 25, 30, 50] } }, "where": ["(c * p) % 100 == 0"], "answer": "c - c * p / 100", "unit": "грн" } },
-    { "id": "mean-word", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "За чотири дні Остап прочитав {a}, {b}, {c} і {d} сторінок. Скільки сторінок у середньому він читав за день?", "vars": { "a": [10, 40], "b": [10, 40], "c": [10, 40], "d": [10, 40] }, "where": ["(a + b + c + d) % 4 == 0"], "answer": "(a + b + c + d) / 4", "unit": "стор." } }
+    {
+      "id": "simple-percent",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "weight": 2,
+      "params": {
+        "text": "Знайди {p}% від числа {n}",
+        "vars": {
+          "p": {
+            "oneOf": [
+              10,
+              20,
+              25,
+              50
+            ]
+          },
+          "n": [
+            20,
+            400,
+            10
+          ]
+        },
+        "where": [
+          "(n * p) % 100 == 0"
+        ],
+        "answer": "n * p / 100"
+      }
+    },
+    {
+      "id": "mean-2",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "hint": "Середнє арифметичне: додай усі числа й поділи суму на їх кількість.",
+      "params": {
+        "text": "Знайди середнє арифметичне чисел {a} і {b}",
+        "vars": {
+          "a": [
+            2,
+            60
+          ],
+          "b": [
+            2,
+            60
+          ]
+        },
+        "where": [
+          "(a + b) % 2 == 0",
+          "a != b"
+        ],
+        "answer": "(a + b) / 2"
+      }
+    },
+    {
+      "id": "any-percent",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "Знайди {p}% від числа {n}",
+        "vars": {
+          "p": [
+            1,
+            99
+          ],
+          "n": [
+            100,
+            900,
+            100
+          ]
+        },
+        "answer": "n * p / 100"
+      }
+    },
+    {
+      "id": "mean-3",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "Середнє арифметичне: додай усі числа й поділи суму на їх кількість.",
+      "params": {
+        "text": "Знайди середнє арифметичне чисел {a}, {b} і {c}",
+        "vars": {
+          "a": [
+            5,
+            90
+          ],
+          "b": [
+            5,
+            90
+          ],
+          "c": [
+            5,
+            90
+          ]
+        },
+        "where": [
+          "(a + b + c) % 3 == 0"
+        ],
+        "answer": "(a + b + c) / 3"
+      }
+    },
+    {
+      "id": "number-by-percent",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Щоб знайти число за його відсотком, значення поділи на p і помнож на 100.",
+      "params": {
+        "text": "Знайди число, {p}% якого дорівнюють {m}",
+        "vars": {
+          "p": {
+            "oneOf": [
+              5,
+              10,
+              20,
+              25,
+              40,
+              50,
+              75
+            ]
+          },
+          "m": [
+            5,
+            90
+          ]
+        },
+        "where": [
+          "(m * 100) % p == 0"
+        ],
+        "answer": "m * 100 / p"
+      }
+    },
+    {
+      "id": "discount",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Знайди, на скільки гривень знизилась ціна, і відніми це від старої ціни.",
+      "params": {
+        "text": "Книжка коштувала {c} грн. Її ціну знизили на {p}%. Скільки тепер коштує книжка?",
+        "vars": {
+          "c": [
+            100,
+            600,
+            20
+          ],
+          "p": {
+            "oneOf": [
+              10,
+              15,
+              20,
+              25,
+              30,
+              50
+            ]
+          }
+        },
+        "where": [
+          "(c * p) % 100 == 0"
+        ],
+        "answer": "c - c * p / 100",
+        "unit": "грн"
+      }
+    },
+    {
+      "id": "mean-word",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Середнє арифметичне: додай усі числа й поділи суму на їх кількість.",
+      "params": {
+        "text": "За чотири дні Остап прочитав {a}, {b}, {c} і {d} сторінок. Скільки сторінок у середньому він читав за день?",
+        "vars": {
+          "a": [
+            10,
+            40
+          ],
+          "b": [
+            10,
+            40
+          ],
+          "c": [
+            10,
+            40
+          ],
+          "d": [
+            10,
+            40
+          ]
+        },
+        "where": [
+          "(a + b + c + d) % 4 == 0"
+        ],
+        "answer": "(a + b + c + d) / 4",
+        "unit": "стор."
+      }
+    }
   ]
 }

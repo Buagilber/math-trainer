@@ -2,19 +2,107 @@
   "id": "g5-decimals-basics",
   "title": "Десяткові дроби: порівняння й округлення",
   "icon": "🔸",
+  "hint": "Порівнюй десяткові дроби спочатку за цілою частиною, потім за десятими, сотими… Нулі в кінці можна дописати: 3,5 = 3,50.",
   "sessionSize": 10,
   "exercises": [
-    { "id": "compare-1", "kind": "generator", "generator": "decimal", "difficulty": 1,
-      "params": { "op": "compare", "a": [10, 99], "aScale": 1, "bScale": 1, "near": 15 } },
-    { "id": "round-whole", "kind": "generator", "generator": "decimal", "difficulty": 1,
-      "params": { "op": "round", "a": [101, 999], "aScale": 1, "to": 0, "label": "цілих" } },
-    { "id": "compare-1-2", "kind": "generator", "generator": "decimal", "difficulty": 2,
-      "params": { "op": "compare", "a": [10, 99], "aScale": 1, "bScale": 2, "near": 20 } },
-    { "id": "round-tenths", "kind": "generator", "generator": "decimal", "difficulty": 2,
-      "params": { "op": "round", "a": [101, 9999], "aScale": 2, "to": 1, "label": "десятих" } },
-    { "id": "compare-2-3", "kind": "generator", "generator": "decimal", "difficulty": 3,
-      "params": { "op": "compare", "a": [100, 999], "aScale": 2, "bScale": 3, "near": 30 } },
-    { "id": "round-hundredths", "kind": "generator", "generator": "decimal", "difficulty": 3,
-      "params": { "op": "round", "a": [1001, 99999], "aScale": 3, "to": 2, "label": "сотих" } }
+    {
+      "id": "compare-1",
+      "kind": "generator",
+      "generator": "decimal",
+      "difficulty": 1,
+      "params": {
+        "op": "compare",
+        "a": [
+          10,
+          99
+        ],
+        "aScale": 1,
+        "bScale": 1,
+        "near": 15
+      }
+    },
+    {
+      "id": "round-whole",
+      "kind": "generator",
+      "generator": "decimal",
+      "difficulty": 1,
+      "hint": "Подивись на першу цифру після розряду, до якого округлюєш: 0–4 — відкидаєш її, 5–9 — додаєш 1 до останньої цифри, що лишається.",
+      "params": {
+        "op": "round",
+        "a": [
+          101,
+          999
+        ],
+        "aScale": 1,
+        "to": 0,
+        "label": "цілих"
+      }
+    },
+    {
+      "id": "compare-1-2",
+      "kind": "generator",
+      "generator": "decimal",
+      "difficulty": 2,
+      "params": {
+        "op": "compare",
+        "a": [
+          10,
+          99
+        ],
+        "aScale": 1,
+        "bScale": 2,
+        "near": 20
+      }
+    },
+    {
+      "id": "round-tenths",
+      "kind": "generator",
+      "generator": "decimal",
+      "difficulty": 2,
+      "hint": "Подивись на першу цифру після розряду, до якого округлюєш: 0–4 — відкидаєш її, 5–9 — додаєш 1 до останньої цифри, що лишається.",
+      "params": {
+        "op": "round",
+        "a": [
+          101,
+          9999
+        ],
+        "aScale": 2,
+        "to": 1,
+        "label": "десятих"
+      }
+    },
+    {
+      "id": "compare-2-3",
+      "kind": "generator",
+      "generator": "decimal",
+      "difficulty": 3,
+      "params": {
+        "op": "compare",
+        "a": [
+          100,
+          999
+        ],
+        "aScale": 2,
+        "bScale": 3,
+        "near": 30
+      }
+    },
+    {
+      "id": "round-hundredths",
+      "kind": "generator",
+      "generator": "decimal",
+      "difficulty": 3,
+      "hint": "Подивись на першу цифру після розряду, до якого округлюєш: 0–4 — відкидаєш її, 5–9 — додаєш 1 до останньої цифри, що лишається.",
+      "params": {
+        "op": "round",
+        "a": [
+          1001,
+          99999
+        ],
+        "aScale": 3,
+        "to": 2,
+        "label": "сотих"
+      }
+    }
   ]
 }

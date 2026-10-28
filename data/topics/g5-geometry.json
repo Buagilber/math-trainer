@@ -2,23 +2,179 @@
   "id": "g5-geometry",
   "title": "Периметр, площа, об'єм",
   "icon": "📐",
+  "hint": "Периметр — сума довжин сторін. Площа прямокутника = довжина × ширина. Об'єм прямокутного паралелепіпеда = довжина × ширина × висота.",
   "sessionSize": 6,
   "exercises": [
-    { "id": "rect-perimeter", "kind": "generator", "generator": "template", "difficulty": 1,
-      "params": { "text": "Сторони прямокутника {a} см і {b} см. Знайди його периметр.", "vars": { "a": [5, 40], "b": [2, 30] }, "where": ["a > b"], "answer": "(a + b) * 2", "unit": "см" } },
-    { "id": "rect-area", "kind": "generator", "generator": "template", "difficulty": 1,
-      "params": { "text": "Сторони прямокутника {a} см і {b} см. Знайди його площу.", "vars": { "a": [3, 25], "b": [2, 15] }, "answer": "a * b", "unit": "см²" } },
-    { "id": "square-area", "kind": "generator", "generator": "template", "difficulty": 1,
-      "params": { "text": "Сторона квадрата {a} м. Знайди його площу.", "vars": { "a": [2, 20] }, "answer": "a * a", "unit": "м²" } },
-    { "id": "rect-side", "kind": "generator", "generator": "template", "difficulty": 2,
-      "params": { "text": "Площа прямокутника {a * b} дм², а його довжина {a} дм. Знайди ширину.", "vars": { "a": [4, 20], "b": [2, 15] }, "answer": "b", "unit": "дм" } },
-    { "id": "square-side", "kind": "generator", "generator": "template", "difficulty": 2,
-      "params": { "text": "Периметр квадрата {4 * a} см. Знайди довжину його сторони.", "vars": { "a": [3, 30] }, "answer": "a", "unit": "см" } },
-    { "id": "cuboid-volume", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "Виміри прямокутного паралелепіпеда {a} см, {b} см і {c} см. Знайди його об'єм.", "vars": { "a": [2, 15], "b": [2, 10], "c": [2, 10] }, "answer": "a * b * c", "unit": "см³" } },
-    { "id": "cube-volume", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "Ребро куба {a} дм. Знайди його об'єм.", "vars": { "a": [2, 10] }, "answer": "a * a * a", "unit": "дм³" } },
-    { "id": "rect-area-from-perimeter", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "Периметр прямокутника {(a + b) * 2} м, а довжина {a} м. Знайди його площу.", "vars": { "a": [5, 20], "b": [2, 15] }, "where": ["a > b"], "answer": "a * b", "unit": "м²" } }
+    {
+      "id": "rect-perimeter",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "params": {
+        "text": "Сторони прямокутника {a} см і {b} см. Знайди його периметр.",
+        "vars": {
+          "a": [
+            5,
+            40
+          ],
+          "b": [
+            2,
+            30
+          ]
+        },
+        "where": [
+          "a > b"
+        ],
+        "answer": "(a + b) * 2",
+        "unit": "см"
+      }
+    },
+    {
+      "id": "rect-area",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "params": {
+        "text": "Сторони прямокутника {a} см і {b} см. Знайди його площу.",
+        "vars": {
+          "a": [
+            3,
+            25
+          ],
+          "b": [
+            2,
+            15
+          ]
+        },
+        "answer": "a * b",
+        "unit": "см²"
+      }
+    },
+    {
+      "id": "square-area",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "hint": "Площа квадрата = сторона × сторона.",
+      "params": {
+        "text": "Сторона квадрата {a} м. Знайди його площу.",
+        "vars": {
+          "a": [
+            2,
+            20
+          ]
+        },
+        "answer": "a * a",
+        "unit": "м²"
+      }
+    },
+    {
+      "id": "rect-side",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "Ширина прямокутника = площа : довжина.",
+      "params": {
+        "text": "Площа прямокутника {a * b} дм², а його довжина {a} дм. Знайди ширину.",
+        "vars": {
+          "a": [
+            4,
+            20
+          ],
+          "b": [
+            2,
+            15
+          ]
+        },
+        "answer": "b",
+        "unit": "дм"
+      }
+    },
+    {
+      "id": "square-side",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "У квадрата 4 рівні сторони: сторона = периметр : 4.",
+      "params": {
+        "text": "Периметр квадрата {4 * a} см. Знайди довжину його сторони.",
+        "vars": {
+          "a": [
+            3,
+            30
+          ]
+        },
+        "answer": "a",
+        "unit": "см"
+      }
+    },
+    {
+      "id": "cuboid-volume",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "params": {
+        "text": "Виміри прямокутного паралелепіпеда {a} см, {b} см і {c} см. Знайди його об'єм.",
+        "vars": {
+          "a": [
+            2,
+            15
+          ],
+          "b": [
+            2,
+            10
+          ],
+          "c": [
+            2,
+            10
+          ]
+        },
+        "answer": "a * b * c",
+        "unit": "см³"
+      }
+    },
+    {
+      "id": "cube-volume",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Об'єм куба = ребро × ребро × ребро.",
+      "params": {
+        "text": "Ребро куба {a} дм. Знайди його об'єм.",
+        "vars": {
+          "a": [
+            2,
+            10
+          ]
+        },
+        "answer": "a * a * a",
+        "unit": "дм³"
+      }
+    },
+    {
+      "id": "rect-area-from-perimeter",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Довжина + ширина = периметр : 2. Знайди ширину, а потім площу.",
+      "params": {
+        "text": "Периметр прямокутника {(a + b) * 2} м, а довжина {a} м. Знайди його площу.",
+        "vars": {
+          "a": [
+            5,
+            20
+          ],
+          "b": [
+            2,
+            15
+          ]
+        },
+        "where": [
+          "a > b"
+        ],
+        "answer": "a * b",
+        "unit": "м²"
+      }
+    }
   ]
 }

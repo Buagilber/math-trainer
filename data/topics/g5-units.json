@@ -2,25 +2,176 @@
   "id": "g5-units",
   "title": "Величини",
   "icon": "📏",
+  "hint": "1 км = 1000 м, 1 т = 1000 кг, 1 кг = 1000 г, 1 год = 60 хв, 1 хв = 60 с, 1 доба = 24 год, 1 м² = 100 дм².",
   "sessionSize": 8,
   "exercises": [
-    { "id": "km-m", "kind": "generator", "generator": "template", "difficulty": 1,
-      "params": { "text": "{a} км = □ м", "vars": { "a": [2, 50] }, "answer": "a * 1000" } },
-    { "id": "t-kg", "kind": "generator", "generator": "template", "difficulty": 1,
-      "params": { "text": "{a} т = □ кг", "vars": { "a": [2, 30] }, "answer": "a * 1000" } },
-    { "id": "h-min", "kind": "generator", "generator": "template", "difficulty": 1,
-      "params": { "text": "{a} год = □ хв", "vars": { "a": [2, 24] }, "answer": "a * 60" } },
-    { "id": "km-m-mixed", "kind": "generator", "generator": "template", "difficulty": 2,
-      "params": { "text": "{a} км {b} м = □ м", "vars": { "a": [1, 20], "b": [5, 995, 5] }, "answer": "a * 1000 + b" } },
-    { "id": "kg-g", "kind": "generator", "generator": "template", "difficulty": 2,
-      "params": { "text": "{a} кг {b} г = □ г", "vars": { "a": [1, 15], "b": [10, 990, 10] }, "answer": "a * 1000 + b" } },
-    { "id": "min-s", "kind": "generator", "generator": "template", "difficulty": 2,
-      "params": { "text": "{a} хв {b} с = □ с", "vars": { "a": [1, 15], "b": [5, 55, 5] }, "answer": "a * 60 + b" } },
-    { "id": "m2-dm2", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "{a} м² = □ дм²", "vars": { "a": [2, 50] }, "answer": "a * 100" } },
-    { "id": "day-h", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "{a} {a|доба|доби|діб} {b} год = □ год", "vars": { "a": [1, 7], "b": [1, 23] }, "answer": "a * 24 + b" } },
-    { "id": "m-km", "kind": "generator", "generator": "template", "difficulty": 3,
-      "params": { "text": "{a * 1000 + b} м = {a} км □ м", "vars": { "a": [1, 30], "b": [10, 990, 10] }, "answer": "b" } }
+    {
+      "id": "km-m",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "params": {
+        "text": "{a} км = □ м",
+        "vars": {
+          "a": [
+            2,
+            50
+          ]
+        },
+        "answer": "a * 1000"
+      }
+    },
+    {
+      "id": "t-kg",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "params": {
+        "text": "{a} т = □ кг",
+        "vars": {
+          "a": [
+            2,
+            30
+          ]
+        },
+        "answer": "a * 1000"
+      }
+    },
+    {
+      "id": "h-min",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "params": {
+        "text": "{a} год = □ хв",
+        "vars": {
+          "a": [
+            2,
+            24
+          ]
+        },
+        "answer": "a * 60"
+      }
+    },
+    {
+      "id": "km-m-mixed",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "{a} км {b} м = □ м",
+        "vars": {
+          "a": [
+            1,
+            20
+          ],
+          "b": [
+            5,
+            995,
+            5
+          ]
+        },
+        "answer": "a * 1000 + b"
+      }
+    },
+    {
+      "id": "kg-g",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "{a} кг {b} г = □ г",
+        "vars": {
+          "a": [
+            1,
+            15
+          ],
+          "b": [
+            10,
+            990,
+            10
+          ]
+        },
+        "answer": "a * 1000 + b"
+      }
+    },
+    {
+      "id": "min-s",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "{a} хв {b} с = □ с",
+        "vars": {
+          "a": [
+            1,
+            15
+          ],
+          "b": [
+            5,
+            55,
+            5
+          ]
+        },
+        "answer": "a * 60 + b"
+      }
+    },
+    {
+      "id": "m2-dm2",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "params": {
+        "text": "{a} м² = □ дм²",
+        "vars": {
+          "a": [
+            2,
+            50
+          ]
+        },
+        "answer": "a * 100"
+      }
+    },
+    {
+      "id": "day-h",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "params": {
+        "text": "{a} {a|доба|доби|діб} {b} год = □ год",
+        "vars": {
+          "a": [
+            1,
+            7
+          ],
+          "b": [
+            1,
+            23
+          ]
+        },
+        "answer": "a * 24 + b"
+      }
+    },
+    {
+      "id": "m-km",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "params": {
+        "text": "{a * 1000 + b} м = {a} км □ м",
+        "vars": {
+          "a": [
+            1,
+            30
+          ],
+          "b": [
+            10,
+            990,
+            10
+          ]
+        },
+        "answer": "b"
+      }
+    }
   ]
 }

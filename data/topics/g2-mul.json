@@ -2,15 +2,82 @@
   "id": "g2-mul",
   "title": "Множення (таблиця на 2–5)",
   "icon": "✖️",
+  "hint": "Множення — це додавання однакових чисел: 3 × 4 = 3 + 3 + 3 + 3 = 12. Від перестановки множників добуток не змінюється.",
   "sessionSize": 10,
   "exercises": [
-    { "id": "by-2-3", "kind": "generator", "generator": "arithmetic", "difficulty": 1,
-      "params": { "op": "*", "a": [2, 3], "b": [1, 10], "commutative": true } },
-    { "id": "by-4-5", "kind": "generator", "generator": "arithmetic", "difficulty": 2,
-      "params": { "op": "*", "a": [4, 5], "b": [1, 10], "commutative": true } },
-    { "id": "mixed", "kind": "generator", "generator": "arithmetic", "difficulty": 3, "weight": 2,
-      "params": { "op": "*", "a": [2, 5], "b": [2, 10], "commutative": true } },
-    { "id": "missing", "kind": "generator", "generator": "arithmetic", "difficulty": 3,
-      "params": { "op": "*", "a": [2, 5], "b": [2, 10], "missing": "operand" } }
+    {
+      "id": "by-2-3",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 1,
+      "params": {
+        "op": "*",
+        "a": [
+          2,
+          3
+        ],
+        "b": [
+          1,
+          10
+        ],
+        "commutative": true
+      }
+    },
+    {
+      "id": "by-4-5",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 2,
+      "params": {
+        "op": "*",
+        "a": [
+          4,
+          5
+        ],
+        "b": [
+          1,
+          10
+        ],
+        "commutative": true
+      }
+    },
+    {
+      "id": "mixed",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 3,
+      "weight": 2,
+      "params": {
+        "op": "*",
+        "a": [
+          2,
+          5
+        ],
+        "b": [
+          2,
+          10
+        ],
+        "commutative": true
+      }
+    },
+    {
+      "id": "missing",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 3,
+      "hint": "Невідомий множник = добуток : відомий множник.",
+      "params": {
+        "op": "*",
+        "a": [
+          2,
+          5
+        ],
+        "b": [
+          2,
+          10
+        ],
+        "missing": "operand"
+      }
+    }
   ]
 }

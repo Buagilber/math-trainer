@@ -2,21 +2,149 @@
   "id": "g2-compare",
   "title": "Порівняння чисел і виразів",
   "icon": "⚖️",
+  "hint": "Знайди значення кожної частини, а потім порівняй числа. Знак «<» дивиться гострим кутом на менше число.",
   "sessionSize": 10,
   "exercises": [
-    { "id": "numbers", "kind": "generator", "generator": "compare", "difficulty": 1,
-      "params": { "left": { "number": [1, 100] }, "right": { "near": 12 } } },
-    { "id": "expr-number", "kind": "generator", "generator": "compare", "difficulty": 2,
-      "params": { "left": { "expr": "a + b", "vars": { "a": [10, 70], "b": [2, 29] }, "result": [0, 100] }, "right": { "near": 5 } } },
-    { "id": "expr-minus-number", "kind": "generator", "generator": "compare", "difficulty": 2,
-      "params": { "left": { "expr": "a - b", "vars": { "a": [20, 99], "b": [2, 29] }, "result": [0, 100] }, "right": { "near": 5 } } },
-    { "id": "expr-expr", "kind": "generator", "generator": "compare", "difficulty": 3,
+    {
+      "id": "numbers",
+      "kind": "generator",
+      "generator": "compare",
+      "difficulty": 1,
+      "hint": "Спочатку порівняй десятки. Якщо вони однакові — порівняй одиниці. Знак «<» дивиться гострим кутом на менше число.",
       "params": {
-        "left": { "expr": "a + b", "vars": { "a": [10, 60], "b": [2, 30] }, "result": [0, 100] },
-        "right": { "expr": "c - d", "vars": { "c": [30, 99], "d": [2, 40] }, "result": [0, 100] },
+        "left": {
+          "number": [
+            1,
+            100
+          ]
+        },
+        "right": {
+          "near": 12
+        }
+      }
+    },
+    {
+      "id": "expr-number",
+      "kind": "generator",
+      "generator": "compare",
+      "difficulty": 2,
+      "params": {
+        "left": {
+          "expr": "a + b",
+          "vars": {
+            "a": [
+              10,
+              70
+            ],
+            "b": [
+              2,
+              29
+            ]
+          },
+          "result": [
+            0,
+            100
+          ]
+        },
+        "right": {
+          "near": 5
+        }
+      }
+    },
+    {
+      "id": "expr-minus-number",
+      "kind": "generator",
+      "generator": "compare",
+      "difficulty": 2,
+      "params": {
+        "left": {
+          "expr": "a - b",
+          "vars": {
+            "a": [
+              20,
+              99
+            ],
+            "b": [
+              2,
+              29
+            ]
+          },
+          "result": [
+            0,
+            100
+          ]
+        },
+        "right": {
+          "near": 5
+        }
+      }
+    },
+    {
+      "id": "expr-expr",
+      "kind": "generator",
+      "generator": "compare",
+      "difficulty": 3,
+      "params": {
+        "left": {
+          "expr": "a + b",
+          "vars": {
+            "a": [
+              10,
+              60
+            ],
+            "b": [
+              2,
+              30
+            ]
+          },
+          "result": [
+            0,
+            100
+          ]
+        },
+        "right": {
+          "expr": "c - d",
+          "vars": {
+            "c": [
+              30,
+              99
+            ],
+            "d": [
+              2,
+              40
+            ]
+          },
+          "result": [
+            0,
+            100
+          ]
+        },
         "equalShare": 1
-      } },
-    { "id": "mul-number", "kind": "generator", "generator": "compare", "difficulty": 3,
-      "params": { "left": { "expr": "a * b", "vars": { "a": [2, 5], "b": [2, 10] } }, "right": { "near": 4 } } }
+      }
+    },
+    {
+      "id": "mul-number",
+      "kind": "generator",
+      "generator": "compare",
+      "difficulty": 3,
+      "params": {
+        "left": {
+          "expr": "a * b",
+          "vars": {
+            "a": [
+              2,
+              5
+            ],
+            "b": [
+              2,
+              10
+            ]
+          }
+        },
+        "right": {
+          "near": 4
+        }
+      }
+    }
   ]
 }
