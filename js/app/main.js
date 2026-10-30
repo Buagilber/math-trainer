@@ -28,6 +28,8 @@ const state = {
   // Підказка до поточного прикладу: visible — кнопка 💡 показана, open — картка
   // відкрита, used — дитина відкривала підказку, fresh — щойно з'явилась (анімація).
   hint: { visible: false, open: false, used: false, fresh: false, animate: false },
+  // Крок «Обрати дію» в рівнянні: stage 'idle' | 'choose' | 'compute', choice — номер варіанта.
+  steps: { stage: 'idle', choice: null },
   lastInputAt: 0,
   // Напрям введення в стовпчику: 'rtl' (справа наліво, як у зошиті) або 'ltr'.
   // Вибір запам'ятовується на пристрої. dirFlip — щойно перемкнули (анімація стрілки).
@@ -38,8 +40,10 @@ const state = {
   refreshPending: false, // оновлення відкладене до кінця тренування
 };
 
+// Скидання стану, прив'язаного до одного прикладу: підказка й крок «Обрати дію».
 const resetHint = () => {
   state.hint = { visible: false, open: false, used: false, fresh: false, animate: false };
+  state.steps = { stage: 'idle', choice: null };
   state.lastInputAt = Date.now();
 };
 
@@ -322,10 +326,13 @@ function renderSession() {
   const number = fb ? s.index : s.index + 1;
   const topic = findTopic(s.topicId);
 
-  const rtl = isRtl(item);
+  const st = state.steps;
+  const chosen = chosenStep(item);
+  const column = columnFor(item);
+  const rtl = !!column && state.inputDir === 'rtl';
   const answerBox = answerHtml(item, state.input, fb ? (fb.correct ? 'ok' : 'bad') : null,
-    { group: !item.column, caret: item.column ? (rtl ? 'left' : 'right') : null });
-  const toggle = item.column ? directionToggleHtml(state.inputDir, { disabled: !!fb, flip: state.dirFlip }) : '';
+    { group: !column, caret: column ? (rtl ? 'left' : 'right') : null });
+  const toggle = column ? directionToggleHtml(state.inputDir, { disabled: !!fb, flip: state.dirFlip }) : '';
   state.dirFlip = false;
   const hasInlineBlank = item.text.includes('□');
   // Рівняння з x показуємо так само великим шрифтом і з кольоровими знаками, як приклади.
@@ -334,13 +341,17 @@ function renderSession() {
     : isFormula ? mh(item.text, { ops: true }).replace('□', answerBox)
     : mh(item.text);
   // Під завданням без □: «Відповідь: □ см» або, для рівнянь, «x = □».
-  const answerRow = hasInlineBlank || item.column ? ''
+  // Коли дитина обирає чи вже обрала дію, x вводиться в блоці кроку.
+  const answerRow = hasInlineBlank || item.column || st.stage !== 'idle' ? ''
     : `<div class="answer-row">${esc(item.answerPrefix ?? 'Відповідь:')} ${answerBox} ${esc(item.unit ?? '')}</div>`;
+  const stepsArea = item.steps ? stepsAreaHtml(item, chosen, answerBox, toggle, !!fb) : '';
 
+  const canonical = item.steps?.canonical;
   const feedback = fb
     ? fb.correct
       ? '<div class="feedback ok">Молодець! 🎉</div>'
-      : `<div class="feedback bad">Правильна відповідь: <b>${mh(formatAnswer(item.answerType, item.answer))}</b></div>
+      : `<div class="feedback bad">Правильна відповідь: <b>${mh(formatAnswer(item.answerType, item.answer))}</b>${canonical
+          ? `, бо ${esc(item.answerPrefix ?? 'x =')} ${mh(`${canonical.left} ${canonical.sign} ${canonical.right}`, { ops: true })}` : ''}</div>
          <button class="btn btn-primary next" id="next">Далі</button>`
     : '';
 
@@ -360,9 +371,10 @@ function renderSession() {
       <p class="session-topic muted">${esc(topic?.title ?? '')} · ${esc(levelName(s.level))}</p>
       <div class="task ${item.column ? 'task-column' : isFormula ? 'task-inline' : 'task-text'} ${!item.column && isFormula && item.text.length > 16 ? 'task-long' : ''}">${prompt}</div>
       ${answerRow}
+      ${stepsArea}
       ${feedback}
     </main>
-    ${keypadHtml(item, state.input, !!fb)}`;
+    ${keypadHtml(item, state.input, !!fb || st.stage === 'choose')}`;
 
   root.querySelector('#quit').addEventListener('click', async () => {
     // Якщо ще нічого не розв'язано, втрачати нічого — виходимо без питань.
@@ -398,6 +410,17 @@ function renderSession() {
   h.animate = false;
   root.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => pressKey(b.dataset.key)));
   root.querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => answer(b.dataset.choice)));
+  // Крок «Обрати дію»: idle → choose → compute; «Змінити дію» повертає до вибору.
+  const setStage = (stage, choice = null) => {
+    state.steps = { stage, choice };
+    state.input = emptyInput(item);
+    state.lastInputAt = Date.now();
+    renderSession();
+  };
+  root.querySelector('#steps-open')?.addEventListener('click', () => setStage('choose'));
+  root.querySelector('#steps-cancel')?.addEventListener('click', () => setStage('idle'));
+  root.querySelector('#steps-change')?.addEventListener('click', () => setStage('choose'));
+  root.querySelectorAll('[data-step]').forEach((b) => b.addEventListener('click', () => setStage('compute', Number(b.dataset.step))));
   if (!fb) {
     root.querySelectorAll('[data-field]').forEach((el) => el.addEventListener('click', () => {
       state.input = selectField(state.input, el.dataset.field);
@@ -405,6 +428,40 @@ function renderSession() {
       renderSession();
     }));
   }
+}
+
+// ---------- крок «Обрати дію» (docs/EQUATION-STEPS.md) ----------
+
+const chosenStep = (item) => (item.steps && state.steps.stage === 'compute' ? item.steps.options[state.steps.choice] : null);
+
+// Стовпчик для поточного введення: сам приклад стовпчиком або обрана дія
+// (+, −, ×; ділення «кутом» поки немає — воно йде в рядок).
+function columnFor(item) {
+  if (item.column) return item.column;
+  const chosen = chosenStep(item);
+  return chosen && chosen.op !== '/' ? { rows: [String(chosen.left), String(chosen.right)], sign: chosen.sign, align: 'right' } : null;
+}
+
+function stepsAreaHtml(item, chosen, answerBox, toggle, answered) {
+  const { stage } = state.steps;
+  const label = item.answerPrefix ?? 'x =';
+  if (stage === 'idle') {
+    return answered ? '' : '<div class="steps-area"><button class="link-btn steps-btn" id="steps-open">Обрати дію</button></div>';
+  }
+  if (stage === 'choose') {
+    const options = item.steps.options.map((o, i) =>
+      `<button class="btn step-option" data-step="${i}">${mh(`${o.left} ${o.sign} ${o.right}`, { ops: true })}</button>`).join('');
+    return `<div class="steps-area">
+        <p class="steps-question">Як знайти x?</p>
+        <div class="steps-options">${options}</div>
+        <button class="link-btn" id="steps-cancel">Ввести відповідь одразу</button>
+      </div>`;
+  }
+  const column = columnFor(item);
+  const work = column
+    ? `<div class="task task-column">${columnHtml({ ...column, sign: timesSign(column.sign) }, answerBox, toggle, label)}</div>`
+    : `<div class="task task-inline">${esc(label)} ${mh(`${chosen.left} ${chosen.sign} ${chosen.right}`, { ops: true })} = ${answerBox}</div>`;
+  return `<div class="steps-area">${work}${answered ? '' : '<button class="link-btn" id="steps-change">Змінити дію</button>'}</div>`;
 }
 
 // Картка підказки — окремим шаром поверх екрана. Вона стоїть одразу під
@@ -439,7 +496,7 @@ function renderHintLayer(item, animate) {
   const main = root.querySelector('.session');
   const header = root.querySelector('.bar').getBoundingClientRect();
   const blockTop = main.firstElementChild.getBoundingClientRect().top;
-  const anchor = (root.querySelector('.answer-row') ?? root.querySelector('.task')).getBoundingClientRect();
+  const anchor = (root.querySelector('.steps-area') ?? root.querySelector('.answer-row') ?? root.querySelector('.task')).getBoundingClientRect();
   const pad = root.querySelector('.numpad, .choices')?.getBoundingClientRect();
   const width = Math.min(520, innerWidth - 32);
   const left = Math.min(Math.max(anchor.left + anchor.width / 2 - width / 2, 16), innerWidth - width - 16);
@@ -487,10 +544,10 @@ const currentItem = () => state.session.items[state.session.index];
 const notation = () => (state.session && gradeOfTopic(state.session.topicId)?.notation) || {};
 const timesSign = (sign) => (sign === '×' ? notation().times ?? '×' : sign);
 const mh = (text, opts = {}) => mathHtml(text, { ...opts, times: notation().times ?? '×' });
-const isRtl = (item) => !!item.column && state.inputDir === 'rtl';
+const isRtl = (item) => !!columnFor(item) && state.inputDir === 'rtl';
 
 function pressKey(key) {
-  if (state.feedback) return;
+  if (state.feedback || state.steps.stage === 'choose') return;
   const item = currentItem();
   if (key === 'ok') {
     if (isComplete(item, state.input)) answer(state.input);
@@ -504,7 +561,9 @@ function pressKey(key) {
 function answer(given) {
   if (state.feedback) return;
   const item = currentItem();
-  const { session, result } = submitAnswer(state.session, given, Date.now() - state.questionStartedAt, { hintUsed: state.hint.used });
+  const chosen = chosenStep(item);
+  const { session, result } = submitAnswer(state.session, given, Date.now() - state.questionStartedAt,
+    { hintUsed: state.hint.used, stepCorrect: chosen ? chosen.correct : null });
   state.session = session;
   state.input = given;
   state.hint.open = false;
@@ -562,6 +621,10 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   const item = currentItem();
+  if (state.steps.stage === 'choose') {
+    if (e.key === 'Escape') { state.steps = { stage: 'idle', choice: null }; renderSession(); }
+    return;
+  }
   if (item?.answerType === 'choice') {
     if (['<', '>', '='].includes(e.key)) answer(e.key);
     return;
@@ -591,6 +654,9 @@ function renderSummary() {
     : cmp.accuracy?.trend === 'down'
       ? `<p class="trend slow">▼ Точність нижча, ніж минулого разу, на ${-cmp.accuracy.diffPct}%</p>`
       : '';
+  const stepsLine = sum.stepMethodErrors || sum.stepCalcErrors
+    ? `<p class="trend muted">Помилки у виборі дії: ${sum.stepMethodErrors} · в обчисленнях: ${sum.stepCalcErrors}</p>`
+    : '';
   const hintLine = sum.hintsUsed
     ? `<p class="trend muted">Підказкою скористались: ${sum.hintsUsed} ${pluralUk(sum.hintsUsed, 'раз', 'рази', 'разів')}</p>`
     : '';
@@ -624,6 +690,7 @@ function renderSummary() {
       ${accuracyLine}
       ${timeLine}
       ${speedLine}
+      ${stepsLine}
       ${hintLine}
       ${mistakes}
       <div class="summary-actions">

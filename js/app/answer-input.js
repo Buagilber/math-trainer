@@ -137,7 +137,9 @@ export function directionToggleHtml(dir, { disabled = false, flip = false } = {}
 // Цифри однакової ширини (tabular-nums) і без розрядних пробілів, тож розряди стоять
 // точно один під одним. align "comma": кома під комою — короткі дробові частини
 // доповнюємо невидимими «цифровими» пробілами, а число без коми — ще й «пробілом коми».
-export function columnHtml(column, answerBox, toggle = '') {
+// label — підпис ліворуч від поля відповіді (напр. «x =» у рівняннях);
+// toggle — перемикач напряму введення, стоїть під полем.
+export function columnHtml(column, answerBox, toggle = '', label = '') {
   let rows = column.rows;
   if (column.align === 'comma') {
     const fracLen = rows.map((r) => (r.split(',')[1] ?? '').length);
@@ -152,7 +154,8 @@ export function columnHtml(column, answerBox, toggle = '') {
       <span class="col-num col-top">${esc(rows[0])}</span>
       <span class="col-num col-bottom">${esc(rows[1])}</span>
       <span class="col-line"></span>
-      <span class="col-toggle">${toggle}</span><span class="col-answer">${answerBox}</span>
+      <span class="col-label">${esc(label)}</span><span class="col-answer">${answerBox}</span>
+      <span class="col-toggle">${toggle}</span>
     </div>`;
 }
 

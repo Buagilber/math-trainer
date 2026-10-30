@@ -54,6 +54,37 @@ function hasCarry(op, a, b) {
   return false;
 }
 
+// ---------- крок «Обрати дію» для рівнянь (docs/EQUATION-STEPS.md) ----------
+//
+// Для рівняння з невідомим компонентом будуємо 4 варіанти оберненої дії:
+// 2 дії пари (+/− або ×/:) × 2 порядки двох відомих чисел. Правильний — один.
+
+export const STEPS_MIN_DIGITS = 5; // два відомі числа разом мають щонайменше стільки цифр
+const INVERSE_PAIR = { '+': ['+', '-'], '-': ['+', '-'], '*': ['*', '/'], '/': ['*', '/'] };
+
+// Правильна дія: [дія, ліве число, праве число].
+function canonicalStep(op, hide, a, b, c) {
+  switch (op) {
+    case '+': return ['-', c, hide === 'a' ? b : a];         // сума − доданок
+    case '-': return hide === 'a' ? ['+', c, b] : ['-', a, c]; // різниця + від'ємник | зменшуване − різниця
+    case '*': return ['/', c, hide === 'a' ? b : a];         // добуток : множник
+    default: return hide === 'a' ? ['*', c, b] : ['/', a, c]; // частка × дільник | ділене : частка
+  }
+}
+
+export function equationSteps(op, hide, a, b, c, rng) {
+  const other = hide === 'a' ? b : a;
+  if (String(c).length + String(other).length < STEPS_MIN_DIGITS) return undefined;
+  const [cOp, cLeft, cRight] = canonicalStep(op, hide, a, b, c);
+  const options = [];
+  for (const o of INVERSE_PAIR[op]) {
+    for (const [left, right] of [[c, other], [other, c]]) {
+      options.push({ op: o, sign: SIGNS[o], left, right, correct: o === cOp && left === cLeft && right === cRight });
+    }
+  }
+  return { options: rng.shuffle(options), canonical: { op: cOp, sign: SIGNS[cOp], left: cLeft, right: cRight } };
+}
+
 function arithmetic(params, rng) {
   const ops = [].concat(params.op ?? '+');
   const carry = params.carry ?? 'any';
@@ -94,6 +125,7 @@ function arithmetic(params, rng) {
       answerType: 'number',
       answer,
       answerPrefix: letter ? `${letter} =` : undefined,
+      steps: letter && params.steps ? equationSteps(op, hide, a, b, c, rng) : undefined,
       column: hide === 'result' ? columnOf(params, op, [String(a), String(b)]) : undefined,
     };
   });

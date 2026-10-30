@@ -3,7 +3,7 @@
 
 import { createRng } from '../js/core/rng.js';
 import { evaluate, formatExpression } from '../js/core/expr.js';
-import { generateInstance, fillText, pluralUk } from '../js/core/generators.js';
+import { generateInstance, fillText, pluralUk, STEPS_MIN_DIGITS } from '../js/core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswer, formatAnswer, MAX_QUESTION_MS } from '../js/core/session.js';
 import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js/core/hints.js';
@@ -354,6 +354,37 @@ test('рівняння з x і позначення класу', () => {
   assert(res.text.endsWith('□') && !res.answerPrefix, 'невідомий результат — як і раніше, поле □');
   eq(mathHtml('3 × 4 = 12', { times: '·' }), '3\u00a0· 4\u00a0= 12');
   assert(mathHtml('3 × 4', { ops: true, times: '·' }).includes('op-times">·'));
+});
+
+test('крок «Обрати дію» в рівняннях', () => {
+  const rng = createRng(61);
+  const val = (o) => ({ '+': o.left + o.right, '-': o.left - o.right, '*': o.left * o.right, '/': o.left / o.right })[o.op];
+  for (const op of ['+', '-', '*', '/']) {
+    const ex = { id: 'e', kind: 'generator', generator: 'arithmetic', params: {
+      op, a: op === '/' ? undefined : [100, 999], b: op === '*' || op === '/' ? [11, 99] : [100, 999],
+      result: op === '/' ? [100, 999] : [0, 99999], missing: 'operand', unknown: 'x', steps: true } };
+    for (let i = 0; i < 40; i++) {
+      const it = generateInstance(ex, rng);
+      const known = it.text.match(/\d+/g).join('');
+      if (known.length < STEPS_MIN_DIGITS) { eq(it.steps, undefined, `замалі числа: ${it.text}`); continue; }
+      assert(it.steps, `кроки є: ${it.text}`);
+      eq(it.steps.options.length, 4, it.text);
+      const correct = it.steps.options.filter((o) => o.correct);
+      eq(correct.length, 1, `один правильний: ${it.text}`);
+      eq(val(correct[0]), it.answer, `правильна дія дає x: ${it.text}`);
+      eq(new Set(it.steps.options.map((o) => `${o.left}${o.op}${o.right}`)).size, 4, 'варіанти різні');
+    }
+  }
+  // Малі числа (разом < 5 цифр) — кроку немає.
+  const small = generateInstance({ id: 's', kind: 'generator', generator: 'arithmetic', params: { op: '+', a: [2, 9], b: [2, 9], missing: 'operand', unknown: 'x', steps: true } }, rng);
+  eq(small.steps, undefined);
+  // Діагностика: помилка у виборі дії vs в обчисленні.
+  let s = buildSession(TOPIC, 1, createRng(1), 3);
+  const right = () => s.items[s.index].answer;
+  ({ session: s } = submitAnswer(s, right() + 1, 0, { stepCorrect: false })); // не та дія
+  ({ session: s } = submitAnswer(s, right() + 1, 0, { stepCorrect: true }));  // дія та, обчислення ні
+  ({ session: s } = submitAnswer(s, right(), 0, { stepCorrect: true }));      // усе правильно
+  eq([summarize(s).stepMethodErrors, summarize(s).stepCalcErrors], [1, 1]);
 });
 
 test('валідація відсіює зламані завдання', () => {
