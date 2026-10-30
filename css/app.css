@@ -264,6 +264,22 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .task { font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
 .task-inline { font-size: clamp(2rem, 9vw, 3.4rem); }
 .task-text { font-size: clamp(1.2rem, 4.5vw, 1.6rem); font-weight: 500; max-width: 720px; }
+/* Приклад стовпчиком: колонка знаків і колонка чисел, вирівняних праворуч. */
+.task-column { font-size: clamp(1.9rem, 8.5vw, 2.6rem); }
+.column-task {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  column-gap: 0.3em;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+.col-sign { justify-self: end; }
+/* Відступ праворуч = внутрішній відступ + рамка поля відповіді, щоб цифри стояли під цифрами. */
+.col-num { justify-self: end; padding-right: calc(0.25em + 3px); letter-spacing: 0.04em; white-space: pre; }
+.col-line { grid-column: 2; border-top: 3px solid currentColor; margin: 2px 0 6px; align-self: stretch; }
+.col-answer { grid-column: 2; justify-self: stretch; display: flex; justify-content: flex-end; }
+.col-answer .blank { min-width: 100%; text-align: right; letter-spacing: 0.04em; }
 .task-inline.task-long { font-size: clamp(1.5rem, 6.5vw, 2.6rem); overflow-wrap: normal; }
 
 .answer-row { font-size: 1.4rem; font-weight: 600; }

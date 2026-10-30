@@ -10,6 +10,14 @@ import { evaluate, formatExpression } from './expr.js';
 import { pow10, formatDecimal, normalizeDecimal, compareDecimals } from './numbers.js';
 
 const BLANK = '□';
+
+// Запис стовпчиком (params.layout = "column") — для +, − і × з невідомим
+// результатом. Інтерфейс малює числа одне над одним: align "right" — розряди
+// під розрядами, "comma" — десяткові дроби кома під комою.
+const COLUMN_OPS = ['+', '-', '*'];
+const SIGNS = { '+': '+', '-': '−', '*': '×', '/': ':' };
+const columnOf = (params, op, rows, align = 'right') =>
+  params.layout === 'column' && COLUMN_OPS.includes(op) ? { rows, sign: SIGNS[op], align } : undefined;
 const MAX_TRIES = 500;
 
 export class GenerationError extends Error {}
@@ -77,11 +85,12 @@ function arithmetic(params, rng) {
     const show = { a, b, result: c };
     const answer = show[hide];
     show[hide] = BLANK;
-    const sign = { '+': '+', '-': '−', '*': '×', '/': ':' }[op];
+    const sign = SIGNS[op];
     return {
       text: `${show.a} ${sign} ${show.b} = ${show.result}`,
       answerType: 'number',
       answer,
+      column: hide === 'result' ? columnOf(params, op, [String(a), String(b)]) : undefined,
     };
   });
 }
@@ -269,11 +278,13 @@ function decimal(params, rng) {
       if (op !== '*' && !inValue(r, params.range)) return null;
     }
     if (r.units < 0) return null;
-    const sign = { '+': '+', '-': '−', '*': '×', '/': ':' }[op];
+    const sign = SIGNS[op];
     return {
       text: `${formatDecimal(a)} ${sign} ${formatDecimal(b)} = ${BLANK}`,
       answerType: 'decimal',
       answer: formatDecimal(normalizeDecimal(r)),
+      // Додавання й віднімання — кома під комою; множення — по правому краю, як у зошиті.
+      column: columnOf(params, op, [formatDecimal(a), formatDecimal(b)], op === '*' ? 'right' : 'comma'),
     };
   });
 }

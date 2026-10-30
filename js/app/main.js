@@ -10,7 +10,7 @@ import { pluralUk } from '../core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, levelsOf, formatAnswer } from '../core/session.js';
 import { sessionRecord, topicProgress, levelProgress, compareWithPrevious } from '../core/progress.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint } from '../core/hints.js';
-import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, keypadHtml, physicalKey } from './answer-input.js';
+import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
 import { progressStore, storage } from './storage.js';
 
@@ -309,9 +309,11 @@ function renderSession() {
   const number = fb ? s.index : s.index + 1;
   const topic = findTopic(s.topicId);
 
-  const answerBox = answerHtml(item, state.input, fb ? (fb.correct ? 'ok' : 'bad') : null);
+  const answerBox = answerHtml(item, state.input, fb ? (fb.correct ? 'ok' : 'bad') : null, { group: !item.column });
   const hasInlineBlank = item.text.includes('□');
-  const prompt = hasInlineBlank ? mathHtml(item.text).replace('□', answerBox) : mathHtml(item.text);
+  const prompt = item.column ? columnHtml(item.column, answerBox)
+    : hasInlineBlank ? mathHtml(item.text).replace('□', answerBox)
+    : mathHtml(item.text);
   const answerRow = hasInlineBlank ? '' : `<div class="answer-row">Відповідь: ${answerBox} ${esc(item.unit ?? '')}</div>`;
 
   const feedback = fb
@@ -335,7 +337,7 @@ function renderSession() {
     </header>
     <main class="session">
       <p class="session-topic muted">${esc(topic?.title ?? '')} · ${esc(levelName(s.level))}</p>
-      <div class="task ${hasInlineBlank ? 'task-inline' : 'task-text'} ${hasInlineBlank && item.text.length > 16 ? 'task-long' : ''}">${prompt}</div>
+      <div class="task ${item.column ? 'task-column' : hasInlineBlank ? 'task-inline' : 'task-text'} ${!item.column && hasInlineBlank && item.text.length > 16 ? 'task-long' : ''}">${prompt}</div>
       ${answerRow}
       ${feedback}
     </main>

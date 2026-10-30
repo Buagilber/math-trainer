@@ -305,6 +305,26 @@ test('підказки: правила й схема', () => {
   eq(hintProblems(42).length, 1);
 });
 
+test('запис стовпчиком', () => {
+  const rng = createRng(41);
+  const col = { id: 'c', kind: 'generator', generator: 'arithmetic', params: { op: ['+', '-', '*'], a: [1000, 9999], b: [10, 999], result: [0, 99999], layout: 'column' } };
+  for (let i = 0; i < 50; i++) {
+    const it = generateInstance(col, rng);
+    const [a, sign, b] = it.text.split(' ');
+    eq(it.column, { rows: [a, b], sign, align: 'right' }, it.text);
+  }
+  const noLayout = generateInstance({ ...col, params: { ...col.params, layout: undefined } }, rng);
+  eq(noLayout.column, undefined, 'без layout — у рядок');
+  const missing = generateInstance({ ...col, params: { ...col.params, missing: 'a' } }, rng);
+  eq(missing.column, undefined, 'з невідомим компонентом — у рядок');
+  const div = generateInstance({ id: 'd', kind: 'generator', generator: 'arithmetic', params: { op: '/', b: [2, 9], result: [10, 99], layout: 'column' } }, rng);
+  eq(div.column, undefined, 'ділення — у рядок');
+  const dec = generateInstance({ id: 'x', kind: 'generator', generator: 'decimal', params: { op: '+', a: [11, 99], aScale: 1, b: [101, 999], bScale: 2, layout: 'column' } }, rng);
+  eq([dec.column.align, dec.column.rows.length], ['comma', 2]);
+  const decMul = generateInstance({ id: 'y', kind: 'generator', generator: 'decimal', params: { op: '*', a: [11, 99], aScale: 1, b: [2, 9], bScale: 0, layout: 'column' } }, rng);
+  eq(decMul.column.align, 'right');
+});
+
 test('валідація відсіює зламані завдання', () => {
   const { topic, errors } = validateTopic({
     id: 'bad', title: 'B', exercises: [

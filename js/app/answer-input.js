@@ -14,7 +14,7 @@ export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
 
 // Розряди у великих числах: 345678 → «345 678» (вузький нерозривний пробіл).
 // Чотиризначні числа не ділимо — так прийнято в підручниках.
-export const groupDigits = (s) => String(s).replace(/\d{5,}/g, (n) => n.replace(/\B(?=(\d{3})+(?!\d))/g, ' '));
+export const groupDigits = (s) => String(s).replace(/\d{5,}/g, (n) => n.replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'));
 
 const fracHtml = (num, den) => `<span class="frac"><span class="frac-num">${num}</span><span class="frac-den">${den}</span></span>`;
 
@@ -22,7 +22,7 @@ const fracHtml = (num, den) => `<span class="frac"><span class="frac-num">${num}
 // числа («7 см» не розривається), n/d — «двоповерховий» дріб.
 export function mathHtml(text) {
   return groupDigits(esc(text))
-    .replace(/(\d) (?=\S)/g, '$1 ')
+    .replace(/(\d) (?=\S)/g, '$1\u00a0')
     .replace(/(\d+)\/(\d+)/g, (_, n, d) => fracHtml(n, d));
 }
 
@@ -77,20 +77,42 @@ export function applyKey(item, input, key) {
 export const selectField = (input, field) => ({ ...input, field });
 
 // Поле відповіді. state: null (вводиться) | 'ok' | 'bad'.
-export function answerHtml(item, input, state) {
+// group: false — без розрядних пробілів (у стовпчику цифри мають стояти під розрядами).
+export function answerHtml(item, input, state, { group = true } = {}) {
   const mark = state ? ` ${state}` : '';
   if (item.answerType === 'fraction') {
     const box = (field) => {
       const active = !state && input.field === field ? ' active' : '';
       const empty = !input[field] ? ' empty' : '';
-      return `<span class="frac-box${active}${empty}" data-field="${field}">${esc(input[field] || ' ')}</span>`;
+      return `<span class="frac-box${active}${empty}" data-field="${field}">${esc(input[field] || '\u00a0')}</span>`;
     };
     return `<span class="frac-input${mark}">${needsWhole(item) ? box('whole') : ''}`
       + `<span class="frac">${box('num')}${box('den')}</span></span>`;
   }
   const empty = !state && !input ? ' empty' : '';
   const shown = state === 'bad' ? input || '?' : input;
-  return `<span class="blank${mark}${empty}">${esc(groupDigits(shown || ' '))}</span>`;
+  return `<span class="blank${mark}${empty}">${esc((group ? groupDigits : String)(shown || '\u00a0'))}</span>`;
+}
+
+// Приклад стовпчиком: числа одне над одним, знак зліва, риска, під нею поле відповіді.
+// Цифри однакової ширини (tabular-nums) і без розрядних пробілів, тож розряди стоять
+// точно один під одним. align "comma": кома під комою — короткі дробові частини
+// доповнюємо невидимими «цифровими» пробілами, а число без коми — ще й «пробілом коми».
+export function columnHtml(column, answerBox) {
+  let rows = column.rows;
+  if (column.align === 'comma') {
+    const fracLen = rows.map((r) => (r.split(',')[1] ?? '').length);
+    const max = Math.max(...fracLen);
+    if (max) {
+      rows = rows.map((r, i) => r + (r.includes(',') ? '' : '\u2008') + '\u2007'.repeat(max - fracLen[i]));
+    }
+  }
+  return `<div class="column-task">
+      <span class="col-sign"></span><span class="col-num">${esc(rows[0])}</span>
+      <span class="col-sign">${esc(column.sign)}</span><span class="col-num">${esc(rows[1])}</span>
+      <span class="col-line"></span>
+      <span class="col-answer">${answerBox}</span>
+    </div>`;
 }
 
 // Клавіатура під тип відповіді.
