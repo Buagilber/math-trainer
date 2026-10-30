@@ -1,13 +1,13 @@
 {
   "id": "g2-units",
-  "title": "Величини: довжина, час, гроші",
+  "title": "Величини: довжина, маса, місткість, час",
   "icon": "📏",
   "hint": {
     "rules": [
-      "1 м = 10 дм = 100 см",
-      "1 дм = 10 см",
-      "1 год = 60 хв",
-      "1 грн = 100 коп."
+      "1 м = 10 дм = 100 см, 1 дм = 10 см.",
+      "1 доба = 24 год, 1 год = 60 хв.",
+      "1 тиждень = 7 діб, 1 рік = 12 місяців.",
+      "Додаючи й віднімаючи величини, дії виконуй з числами, а одиницю залишай ту саму."
     ]
   },
   "sessionSize": 8,
@@ -75,11 +75,43 @@
       "answer": 60
     },
     {
-      "id": "grn-kop",
+      "id": "day-h",
       "kind": "fixed",
       "difficulty": 1,
-      "text": "1 грн = □ коп.",
-      "answer": 100
+      "text": "1 доба = □ год",
+      "answer": 24,
+      "hint": {
+        "rules": [
+          "1 доба = 24 год, 1 год = 60 хв.",
+          "1 тиждень = 7 діб, 1 рік = 12 місяців."
+        ]
+      }
+    },
+    {
+      "id": "week-days",
+      "kind": "fixed",
+      "difficulty": 1,
+      "text": "1 тиждень = □ діб",
+      "answer": 7,
+      "hint": {
+        "rules": [
+          "1 доба = 24 год, 1 год = 60 хв.",
+          "1 тиждень = 7 діб, 1 рік = 12 місяців."
+        ]
+      }
+    },
+    {
+      "id": "year-months",
+      "kind": "fixed",
+      "difficulty": 1,
+      "text": "1 рік = □ міс.",
+      "answer": 12,
+      "hint": {
+        "rules": [
+          "1 доба = 24 год, 1 год = 60 хв.",
+          "1 тиждень = 7 діб, 1 рік = 12 місяців."
+        ]
+      }
     },
     {
       "id": "dm-cm-mixed",
@@ -145,6 +177,162 @@
       }
     },
     {
+      "id": "days-hours",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": {
+        "rules": [
+          "1 доба = 24 год, 1 год = 60 хв.",
+          "1 тиждень = 7 діб, 1 рік = 12 місяців."
+        ]
+      },
+      "params": {
+        "text": "{a} {a|доба|доби|діб} = □ год",
+        "vars": {
+          "a": [
+            2,
+            4
+          ]
+        },
+        "answer": "a * 24"
+      }
+    },
+    {
+      "id": "weeks-days",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": {
+        "rules": [
+          "1 доба = 24 год, 1 год = 60 хв.",
+          "1 тиждень = 7 діб, 1 рік = 12 місяців."
+        ]
+      },
+      "params": {
+        "text": "{a} {a|тиждень|тижні|тижнів} = □ діб",
+        "vars": {
+          "a": {
+            "oneOf": [
+              2,
+              4
+            ]
+          }
+        },
+        "answer": "a * 7"
+      }
+    },
+    {
+      "id": "years-months",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": {
+        "rules": [
+          "1 доба = 24 год, 1 год = 60 хв.",
+          "1 тиждень = 7 діб, 1 рік = 12 місяців."
+        ]
+      },
+      "params": {
+        "text": "{a} {a|рік|роки|років} = □ міс.",
+        "vars": {
+          "a": [
+            2,
+            8
+          ]
+        },
+        "answer": "a * 12"
+      }
+    },
+    {
+      "id": "kg-sum",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "weight": 1,
+      "hint": "Додаючи величини, додай числа, а одиницю залиш ту саму: 35 кг + 8 кг = 43 кг.",
+      "params": {
+        "text": "{a} кг + {b} кг = □ кг",
+        "vars": {
+          "a": [
+            12,
+            60
+          ],
+          "b": [
+            8,
+            39
+          ]
+        },
+        "answer": "a + b",
+        "result": [
+          0,
+          100
+        ]
+      }
+    },
+    {
+      "id": "l-diff",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Віднімаючи величини, відніми числа, а одиницю залиш ту саму: 42 л − 7 л = 35 л.",
+      "params": {
+        "text": "{a} л − {b} л = □ л",
+        "vars": {
+          "a": [
+            20,
+            95
+          ],
+          "b": [
+            5,
+            19
+          ]
+        },
+        "where": [
+          "a > b"
+        ],
+        "answer": "a - b"
+      }
+    },
+    {
+      "id": "m-minus-dm",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Спочатку переведи метр у дециметри: 1 м = 10 дм.",
+      "params": {
+        "text": "1 м − {a} дм = □ дм",
+        "vars": {
+          "a": [
+            1,
+            9
+          ]
+        },
+        "answer": "10 - a"
+      }
+    },
+    {
+      "id": "cm-plus-dm",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Спочатку переведи дециметри в сантиметри: 1 дм = 10 см.",
+      "params": {
+        "text": "{a} см + {b} дм = □ см",
+        "vars": {
+          "a": [
+            1,
+            9
+          ],
+          "b": [
+            1,
+            9
+          ]
+        },
+        "answer": "a + b * 10"
+      }
+    },
+    {
       "id": "h-min-mixed",
       "kind": "generator",
       "generator": "template",
@@ -160,54 +348,6 @@
           ]
         },
         "answer": "60 + b"
-      }
-    },
-    {
-      "id": "min-sum",
-      "kind": "generator",
-      "generator": "template",
-      "difficulty": 3,
-      "hint": "Склади хвилини. 60 хв — це 1 година, а решта — хвилини.",
-      "params": {
-        "text": "{a} хв + {b} хв = 1 год □ хв",
-        "vars": {
-          "a": [
-            25,
-            55,
-            5
-          ],
-          "b": [
-            10,
-            55,
-            5
-          ]
-        },
-        "where": [
-          "a + b > 60"
-        ],
-        "answer": "a + b - 60"
-      }
-    },
-    {
-      "id": "grn-kop-mixed",
-      "kind": "generator",
-      "generator": "template",
-      "difficulty": 3,
-      "hint": "1 грн = 100 коп. Гривні помнож на 100 і додай копійки.",
-      "params": {
-        "text": "{a} грн {b} коп. = □ коп.",
-        "vars": {
-          "a": [
-            1,
-            5
-          ],
-          "b": [
-            5,
-            95,
-            5
-          ]
-        },
-        "answer": "a * 100 + b"
       }
     }
   ]
