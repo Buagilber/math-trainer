@@ -1,0 +1,202 @@
+{
+  "id": "g2-numbers",
+  "title": "Числа до 100: склад і порівняння",
+  "icon": "🔢",
+  "sessionSize": 10,
+  "hint": {
+    "rules": [
+      "У двоцифровому числі перша цифра — десятки, друга — одиниці: 47 = 4 дес. 7 од. = 40 + 7.",
+      "Порівнюй спочатку десятки, а якщо вони однакові — одиниці."
+    ]
+  },
+  "exercises": [
+    {
+      "id": "compose",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "weight": 2,
+      "hint": "У двоцифровому числі перша цифра — десятки, друга — одиниці: 47 = 4 дес. 7 од. = 40 + 7.",
+      "params": {
+        "text": "{d} дес. {u} од. = □",
+        "vars": {
+          "d": [
+            1,
+            9
+          ],
+          "u": [
+            0,
+            9
+          ]
+        },
+        "answer": "d * 10 + u"
+      }
+    },
+    {
+      "id": "tens-count",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "hint": "У двоцифровому числі перша цифра — десятки, друга — одиниці: 47 = 4 дес. 7 од. = 40 + 7.",
+      "params": {
+        "text": "Скільки десятків у числі {d * 10 + u}?",
+        "vars": {
+          "d": [
+            1,
+            9
+          ],
+          "u": [
+            0,
+            9
+          ]
+        },
+        "answer": "d"
+      }
+    },
+    {
+      "id": "numbers",
+      "kind": "generator",
+      "generator": "compare",
+      "difficulty": 1,
+      "hint": "Порівнюй спочатку десятки, а якщо вони однакові — одиниці.",
+      "params": {
+        "left": {
+          "number": [
+            1,
+            100
+          ]
+        },
+        "right": {
+          "near": 12
+        }
+      }
+    },
+    {
+      "id": "split-ones",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "У двоцифровому числі перша цифра — десятки, друга — одиниці: 47 = 4 дес. 7 од. = 40 + 7.",
+      "params": {
+        "text": "{d * 10 + u} = {d * 10} + □",
+        "vars": {
+          "d": [
+            1,
+            9
+          ],
+          "u": [
+            1,
+            9
+          ]
+        },
+        "answer": "u"
+      }
+    },
+    {
+      "id": "split-tens",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "У двоцифровому числі перша цифра — десятки, друга — одиниці: 47 = 4 дес. 7 од. = 40 + 7.",
+      "params": {
+        "text": "{d * 10 + u} = □ + {u}",
+        "vars": {
+          "d": [
+            1,
+            9
+          ],
+          "u": [
+            1,
+            9
+          ]
+        },
+        "answer": "d * 10"
+      }
+    },
+    {
+      "id": "next",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "Наступне число на 1 більше.",
+      "params": {
+        "text": "Яке число йде одразу після {n}?",
+        "vars": {
+          "n": [
+            10,
+            98
+          ]
+        },
+        "answer": "n + 1"
+      }
+    },
+    {
+      "id": "prev",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "Попереднє число на 1 менше.",
+      "params": {
+        "text": "Яке число йде одразу перед {n}?",
+        "vars": {
+          "n": [
+            11,
+            99
+          ]
+        },
+        "answer": "n - 1"
+      }
+    },
+    {
+      "id": "max-with-tens",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Десятки вже відомі; одиниць має бути якнайбільше — 9.",
+      "params": {
+        "text": "Найбільше двоцифрове число, у якому {d} {d|десяток|десятки|десятків}",
+        "vars": {
+          "d": [
+            1,
+            9
+          ]
+        },
+        "answer": "d * 10 + 9"
+      }
+    },
+    {
+      "id": "min-with-ones",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Одиниці вже відомі; десятків має бути якнайменше — 1.",
+      "params": {
+        "text": "Найменше двоцифрове число, у якому {u} {u|одиниця|одиниці|одиниць}",
+        "vars": {
+          "u": [
+            0,
+            9
+          ]
+        },
+        "answer": "10 + u"
+      }
+    },
+    {
+      "id": "ones-total",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "В одному десятку — 10 одиниць.",
+      "params": {
+        "text": "Скільки всього одиниць у {d} {d|десятку|десятках|десятках}?",
+        "vars": {
+          "d": [
+            2,
+            9
+          ]
+        },
+        "answer": "d * 10"
+      }
+    }
+  ]
+}

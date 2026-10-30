@@ -20,6 +20,7 @@
         "times": "·"
       },
       "topics": [
+        "topics/g2-numbers.json",
         "topics/g2-addsub-no-carry.json",
         "topics/g2-addsub-20.json",
         "topics/g2-order.json",

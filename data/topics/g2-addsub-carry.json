@@ -118,6 +118,81 @@
         "carry": "required",
         "missing": "operand"
       }
+    },
+    {
+      "id": "parts-add-100",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "Додавай частинами: спочатку до круглого десятка, потім решту: 38 + 5 = 38 + 2 + 3 = 43.",
+      "params": {
+        "text": "{a} + {b} = {a} + {10 - a % 10} + □",
+        "vars": {
+          "a": [
+            21,
+            88
+          ],
+          "b": [
+            3,
+            9
+          ]
+        },
+        "where": [
+          "a % 10 + b > 10",
+          "a % 10 != 0"
+        ],
+        "answer": "b - (10 - a % 10)"
+      }
+    },
+    {
+      "id": "parts-sub-100",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "Віднімай частинами: спочатку до круглого десятка, потім решту: 42 − 7 = 42 − 2 − 5 = 35.",
+      "params": {
+        "text": "{a} − {b} = {a} − {a % 10} − □",
+        "vars": {
+          "a": [
+            21,
+            98
+          ],
+          "b": [
+            3,
+            9
+          ]
+        },
+        "where": [
+          "b > a % 10",
+          "a % 10 != 0"
+        ],
+        "answer": "b - a % 10"
+      }
+    },
+    {
+      "id": "round-add-100",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Заміни доданок близьким круглим числом і відніми зайве: 34 + 19 = 34 + 20 − 1.",
+      "params": {
+        "text": "{a} + {b} = {a} + {b + 10 - b % 10} − □",
+        "vars": {
+          "a": [
+            11,
+            70
+          ],
+          "b": [
+            17,
+            29
+          ]
+        },
+        "where": [
+          "b % 10 >= 7",
+          "a + b <= 100"
+        ],
+        "answer": "10 - b % 10"
+      }
     }
   ]
 }
