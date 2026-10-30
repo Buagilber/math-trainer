@@ -280,6 +280,29 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .col-line { grid-column: 2; border-top: 3px solid currentColor; margin: 2px 0 6px; align-self: stretch; }
 .col-answer { grid-column: 2; justify-self: stretch; display: flex; justify-content: flex-end; }
 .col-answer .blank { min-width: 100%; text-align: right; letter-spacing: 0.04em; }
+
+/* Перемикач напряму введення: ← справа наліво (типово), → зліва направо. */
+.dir-toggle {
+  width: 1.3em;
+  height: 1.3em;
+  border: none;
+  border-radius: 10px;
+  background: rgba(79, 109, 245, 0.1);
+  color: var(--primary);
+  font-size: 0.75em;
+  line-height: 1;
+  transition: transform 0.3s ease-out;
+}
+.dir-toggle.ltr { transform: rotate(180deg); }
+.dir-toggle.flip.ltr { animation: dir-to-ltr 0.3s ease-out; }
+.dir-toggle.flip.rtl { animation: dir-to-rtl 0.3s ease-out; }
+.dir-toggle:disabled { opacity: 0.4; }
+@keyframes dir-to-ltr { from { transform: rotate(0deg); } to { transform: rotate(180deg); } }
+@keyframes dir-to-rtl { from { transform: rotate(180deg); } to { transform: rotate(0deg); } }
+
+/* Миготливий курсор там, де з'явиться наступна цифра. */
+.caret { display: inline-block; width: 3px; height: 1em; margin: 0 1px; vertical-align: -0.12em; background: var(--primary); border-radius: 2px; animation: caret-blink 1s steps(1) infinite; }
+@keyframes caret-blink { 50% { opacity: 0; } }
 .task-inline.task-long { font-size: clamp(1.5rem, 6.5vw, 2.6rem); overflow-wrap: normal; }
 
 .answer-row { font-size: 1.4rem; font-weight: 600; }

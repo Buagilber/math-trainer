@@ -7,6 +7,7 @@ import { generateInstance, fillText, pluralUk } from '../js/core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswer, formatAnswer, MAX_QUESTION_MS } from '../js/core/session.js';
 import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js/core/hints.js';
+import { applyKey, isComplete } from '../js/app/answer-input.js';
 import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord } from '../js/core/progress.js';
 import { validateTopic } from '../js/core/validate.js';
 
@@ -323,6 +324,19 @@ test('запис стовпчиком', () => {
   eq([dec.column.align, dec.column.rows.length], ['comma', 2]);
   const decMul = generateInstance({ id: 'y', kind: 'generator', generator: 'decimal', params: { op: '*', a: [11, 99], aScale: 1, b: [2, 9], bScale: 0, layout: 'column' } }, rng);
   eq(decMul.column.align, 'right');
+});
+
+test('введення справа наліво (стовпчик)', () => {
+  const num = { answerType: 'number' };
+  const type = (item, keys, rtl) => keys.reduce((v, k) => applyKey(item, v, k, { rtl }), '');
+  eq(type(num, ['0', '7', '8', '7', '8'], true), '87870', 'нуль першим дозволений');
+  eq(type(num, ['5', '4', 'del'], true), '5', '⌫ стирає крайню ліву');
+  eq(type(num, ['0', '7'], false), '7', 'зліва направо — без нуля попереду');
+  const dec = { answerType: 'decimal' };
+  eq(type(dec, ['2', '4', ',', '5'], true), '5,42');
+  eq(type(dec, [','], true), '', 'кома в порожньому полі — нічого');
+  assert(!isComplete(dec, ',42') && isComplete(dec, '5,42') && !isComplete(dec, '5,'));
+  assert(checkAnswer({ answerType: 'number', answer: 87870 }, '087870'), 'нуль зліва не заважає');
 });
 
 test('валідація відсіює зламані завдання', () => {

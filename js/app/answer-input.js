@@ -42,7 +42,8 @@ export function isEmpty(item, input) {
 export function isComplete(item, input) {
   switch (item.answerType) {
     case 'fraction': return !!input.num && !!input.den && (!needsWhole(item) || !!input.whole);
-    case 'decimal': return !!input && !input.endsWith(',');
+    // Кома не може стояти з краю: «5,» (зліва направо) чи «,5» (справа наліво) — ще не число.
+    case 'decimal': return !!input && !input.endsWith(',') && !input.startsWith(',');
     default: return !!input;
   }
 }
@@ -52,8 +53,24 @@ const appendDigit = (value, digit, max = MAX_ANSWER_DIGITS) => {
   return value.replace(',', '').length < max ? value + digit : value;
 };
 
+// Справа наліво (стовпчик): нова цифра стає ліворуч. Нуль першим дозволений —
+// одиниці відповіді можуть дорівнювати 0.
+const prependDigit = (value, digit, max = MAX_ANSWER_DIGITS) =>
+  (value.replace(',', '').length < max ? digit + value : value);
+
 // Натискання клавіші → новий стан поля. key: '0'…'9', ',', 'next', 'del'.
-export function applyKey(item, input, key) {
+// rtl: true — введення справа наліво (лише для чисел у стовпчику).
+export function applyKey(item, input, key, { rtl = false } = {}) {
+  if (rtl && item.answerType !== 'fraction') {
+    if (key === 'del') return input.slice(1);
+    if (key === ',') {
+      // Кома після дробової частини: «42» → «,42». Порожнє поле — нічого.
+      if (item.answerType !== 'decimal' || !input || input.includes(',')) return input;
+      return `,${input}`;
+    }
+    if (/^\d$/.test(key)) return prependDigit(input, key);
+    return input;
+  }
   if (item.answerType === 'fraction') {
     const fields = FRACTION_FIELDS(item);
     const next = { ...input };
@@ -78,7 +95,8 @@ export const selectField = (input, field) => ({ ...input, field });
 
 // Поле відповіді. state: null (вводиться) | 'ok' | 'bad'.
 // group: false — без розрядних пробілів (у стовпчику цифри мають стояти під розрядами).
-export function answerHtml(item, input, state, { group = true } = {}) {
+// caret: 'left' | 'right' — миготливий курсор там, де з'явиться наступна цифра.
+export function answerHtml(item, input, state, { group = true, caret = null } = {}) {
   const mark = state ? ` ${state}` : '';
   if (item.answerType === 'fraction') {
     const box = (field) => {
@@ -91,14 +109,26 @@ export function answerHtml(item, input, state, { group = true } = {}) {
   }
   const empty = !state && !input ? ' empty' : '';
   const shown = state === 'bad' ? input || '?' : input;
-  return `<span class="blank${mark}${empty}">${esc((group ? groupDigits : String)(shown || '\u00a0'))}</span>`;
+  const text = esc((group ? groupDigits : String)(shown || (caret && !state ? '' : '\u00a0')));
+  if (caret && !state) {
+    const caretEl = '<span class="caret" aria-hidden="true"></span>';
+    return `<span class="blank${empty}">${caret === 'left' ? caretEl + text : text + caretEl}</span>`;
+  }
+  return `<span class="blank${mark}${empty}">${text}</span>`;
+}
+
+// \u041f\u0435\u0440\u0435\u043c\u0438\u043a\u0430\u0447 \u043d\u0430\u043f\u0440\u044f\u043c\u0443 \u0432\u0432\u0435\u0434\u0435\u043d\u043d\u044f \u0432 \u0441\u0442\u043e\u0432\u043f\u0447\u0438\u043a\u0443: \u2190 \u0441\u043f\u0440\u0430\u0432\u0430 \u043d\u0430\u043b\u0456\u0432\u043e, \u2192 \u0437\u043b\u0456\u0432\u0430 \u043d\u0430\u043f\u0440\u0430\u0432\u043e.
+// flip \u2014 \u0449\u043e\u0439\u043d\u043e \u043f\u0435\u0440\u0435\u043c\u043a\u043d\u0443\u043b\u0438: \u0441\u0442\u0440\u0456\u043b\u043a\u0430 \u0440\u043e\u0437\u0432\u0435\u0440\u0442\u0430\u0454\u0442\u044c\u0441\u044f \u0437 \u0430\u043d\u0456\u043c\u0430\u0446\u0456\u0454\u044e.
+export function directionToggleHtml(dir, { disabled = false, flip = false } = {}) {
+  const label = dir === 'rtl' ? '\u0426\u0438\u0444\u0440\u0438 \u0432\u0432\u043e\u0434\u044f\u0442\u044c\u0441\u044f \u0441\u043f\u0440\u0430\u0432\u0430 \u043d\u0430\u043b\u0456\u0432\u043e. \u041d\u0430\u0442\u0438\u0441\u043d\u0438, \u0449\u043e\u0431 \u0437\u043c\u0456\u043d\u0438\u0442\u0438' : '\u0426\u0438\u0444\u0440\u0438 \u0432\u0432\u043e\u0434\u044f\u0442\u044c\u0441\u044f \u0437\u043b\u0456\u0432\u0430 \u043d\u0430\u043f\u0440\u0430\u0432\u043e. \u041d\u0430\u0442\u0438\u0441\u043d\u0438, \u0449\u043e\u0431 \u0437\u043c\u0456\u043d\u0438\u0442\u0438';
+  return `<button class="dir-toggle ${dir}${flip ? ' flip' : ''}" id="dir-toggle" aria-label="${label}" title="${label}" ${disabled ? 'disabled' : ''}>\u2190</button>`;
 }
 
 // Приклад стовпчиком: числа одне над одним, знак зліва, риска, під нею поле відповіді.
 // Цифри однакової ширини (tabular-nums) і без розрядних пробілів, тож розряди стоять
 // точно один під одним. align "comma": кома під комою — короткі дробові частини
 // доповнюємо невидимими «цифровими» пробілами, а число без коми — ще й «пробілом коми».
-export function columnHtml(column, answerBox) {
+export function columnHtml(column, answerBox, toggle = '') {
   let rows = column.rows;
   if (column.align === 'comma') {
     const fracLen = rows.map((r) => (r.split(',')[1] ?? '').length);
@@ -111,7 +141,7 @@ export function columnHtml(column, answerBox) {
       <span class="col-sign"></span><span class="col-num">${esc(rows[0])}</span>
       <span class="col-sign">${esc(column.sign)}</span><span class="col-num">${esc(rows[1])}</span>
       <span class="col-line"></span>
-      <span class="col-answer">${answerBox}</span>
+      <span class="col-sign">${toggle}</span><span class="col-answer">${answerBox}</span>
     </div>`;
 }
 

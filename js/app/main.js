@@ -10,12 +10,13 @@ import { pluralUk } from '../core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, levelsOf, formatAnswer } from '../core/session.js';
 import { sessionRecord, topicProgress, levelProgress, compareWithPrevious } from '../core/progress.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint } from '../core/hints.js';
-import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, keypadHtml, physicalKey } from './answer-input.js';
+import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
 import { progressStore, storage } from './storage.js';
 
 const root = document.getElementById('app');
 const WELCOMED_KEY = 'mt.welcomed';
+const INPUT_DIR_KEY = 'mt.columnInputDir';
 
 const state = {
   content: null,
@@ -28,6 +29,10 @@ const state = {
   // відкрита, used — дитина відкривала підказку, fresh — щойно з'явилась (анімація).
   hint: { visible: false, open: false, used: false, fresh: false, animate: false },
   lastInputAt: 0,
+  // Напрям введення в стовпчику: 'rtl' (справа наліво, як у зошиті) або 'ltr'.
+  // Вибір запам'ятовується на пристрої. dirFlip — щойно перемкнули (анімація стрілки).
+  inputDir: storage.get(INPUT_DIR_KEY) === 'ltr' ? 'ltr' : 'rtl',
+  dirFlip: false,
   hintBaseAvgMs: null, // середній час на приклад в останній сесії цього рівня
 };
 
@@ -309,9 +314,13 @@ function renderSession() {
   const number = fb ? s.index : s.index + 1;
   const topic = findTopic(s.topicId);
 
-  const answerBox = answerHtml(item, state.input, fb ? (fb.correct ? 'ok' : 'bad') : null, { group: !item.column });
+  const rtl = isRtl(item);
+  const answerBox = answerHtml(item, state.input, fb ? (fb.correct ? 'ok' : 'bad') : null,
+    { group: !item.column, caret: item.column ? (rtl ? 'left' : 'right') : null });
+  const toggle = item.column ? directionToggleHtml(state.inputDir, { disabled: !!fb, flip: state.dirFlip }) : '';
+  state.dirFlip = false;
   const hasInlineBlank = item.text.includes('□');
-  const prompt = item.column ? columnHtml(item.column, answerBox)
+  const prompt = item.column ? columnHtml(item.column, answerBox, toggle)
     : hasInlineBlank ? mathHtml(item.text).replace('□', answerBox)
     : mathHtml(item.text);
   const answerRow = hasInlineBlank ? '' : `<div class="answer-row">Відповідь: ${answerBox} ${esc(item.unit ?? '')}</div>`;
@@ -364,6 +373,15 @@ function renderSession() {
     renderSession();
   };
   root.querySelector('#hint').addEventListener('click', () => state.hint.visible && toggleHint());
+  root.querySelector('#dir-toggle')?.addEventListener('click', () => {
+    // Перемикання очищає поле: перевертати вже введені цифри — лише плутанина.
+    state.inputDir = state.inputDir === 'rtl' ? 'ltr' : 'rtl';
+    storage.set(INPUT_DIR_KEY, state.inputDir);
+    state.input = emptyInput(item);
+    state.lastInputAt = Date.now();
+    state.dirFlip = true;
+    renderSession();
+  });
   if (h.open && !fb) renderHintLayer(item, h.animate);
   h.animate = false;
   root.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => pressKey(b.dataset.key)));
@@ -452,6 +470,7 @@ function closeHint() {
 window.addEventListener('resize', () => { if (onSessionScreen() && state.hint.open) renderSession(); });
 
 const currentItem = () => state.session.items[state.session.index];
+const isRtl = (item) => !!item.column && state.inputDir === 'rtl';
 
 function pressKey(key) {
   if (state.feedback) return;
@@ -460,7 +479,7 @@ function pressKey(key) {
     if (isComplete(item, state.input)) answer(state.input);
     return;
   }
-  state.input = applyKey(item, state.input, key);
+  state.input = applyKey(item, state.input, key, { rtl: isRtl(item) });
   state.lastInputAt = Date.now();
   renderSession();
 }
