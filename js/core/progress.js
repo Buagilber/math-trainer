@@ -50,6 +50,7 @@ export function levelProgress(records, topicId, level) {
     lastAvgMs: last?.avgMs ?? null,
     prevAvgMs: prev?.avgMs ?? null,
     previous: prev ?? null,
+    lastAt: last?.finishedAt ?? null,
   };
 }
 
@@ -58,7 +59,17 @@ export function topicProgress(records, topicId) {
   const own = records.filter((r) => r.topicId === topicId);
   const bestStars = {};
   for (const r of own) bestStars[r.level] = Math.max(bestStars[r.level] ?? 0, r.stars);
-  return { sessions: own.length, bestStars };
+  return { sessions: own.length, bestStars, lastAt: own.length ? Math.max(...own.map((r) => r.finishedAt)) : null };
+}
+
+// Скільки календарних днів між двома моментами (за місцевим часом):
+// сесія о 23:50 о 00:10 наступного дня — це вже 1 день («вчора»).
+export function calendarDaysBetween(fromMs, toMs) {
+  const day = (ms) => {
+    const d = new Date(ms);
+    return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000;
+  };
+  return Math.round(day(toMs) - day(fromMs));
 }
 
 // Порівняння часу з попередньою сесією: 'faster' | 'slower' | 'same' | null.

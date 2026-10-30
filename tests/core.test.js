@@ -8,6 +8,7 @@ import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswe
 import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js/core/hints.js';
 import { applyKey, isComplete, mathHtml } from '../js/app/answer-input.js';
+import { formatAgo } from '../js/app/format.js';
 import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord } from '../js/core/progress.js';
 import { validateTopic } from '../js/core/validate.js';
 
@@ -168,7 +169,7 @@ test('статистика рівня: накопичувально + час о�
   ];
   const p = levelProgress(records, 't', 1);
   eq([p.sessions, p.accuracy, p.lastAvgMs, p.prevAvgMs], [3, 0.7, 5000, 7000]);
-  eq(levelProgress(records, 't', 3), { sessions: 0, accuracy: null, bestStars: 0, lastAvgMs: null, prevAvgMs: null, previous: null });
+  eq(levelProgress(records, 't', 3), { sessions: 0, accuracy: null, bestStars: 0, lastAvgMs: null, prevAvgMs: null, previous: null, lastAt: null });
   eq(levelProgress(records, 't', 1).previous.finishedAt, 2);
   eq(compareTime(5000, 7000).trend, 'faster');
   eq(compareTime(7000, 5000).trend, 'slower');
@@ -394,6 +395,25 @@ test('крок «Обрати дію» в рівняннях', () => {
   ({ session: s } = submitAnswer(s, right(), 0));                              // правильно одразу
   eq(summarize(s).stepStats, { used: true, method: 1, calc: 1, both: 1, noStep: 1 });
   eq(summarize(s).total - summarize(s).correct, 4, 'сума категорій = кількість помилок');
+});
+
+test('дата останньої сесії', () => {
+  const at = (y, m, d, h = 12, min = 0) => new Date(y, m - 1, d, h, min).getTime();
+  const now = at(2026, 10, 31, 0, 10);
+  eq(formatAgo(at(2026, 10, 31, 0, 5), now), 'сьогодні');
+  eq(formatAgo(at(2026, 10, 30, 23, 50), now), 'вчора', 'календарні дні, а не 24 години');
+  eq(formatAgo(at(2026, 10, 28), now), '3 дні тому');
+  eq(formatAgo(at(2026, 10, 26), now), '5 днів тому');
+  const daysAgo = (n) => now - n * 86400000;
+  eq(formatAgo(daysAgo(13), now), '13 днів тому');
+  eq(formatAgo(daysAgo(14), now), '2 тижні тому');
+  eq(formatAgo(daysAgo(35), now), '5 тижнів тому');
+  eq(formatAgo(daysAgo(59), now), '8 тижнів тому');
+  eq(formatAgo(daysAgo(60), now), '2 місяці тому');
+  eq(formatAgo(daysAgo(150), now), '5 місяців тому');
+  eq(formatAgo(daysAgo(364), now), '11 місяців тому');
+  eq(formatAgo(daysAgo(365), now), 'понад рік тому');
+  eq(formatAgo(at(2026, 10, 30, 1, 0), at(2026, 10, 31, 23, 0)), 'вчора');
 });
 
 test('валідація відсіює зламані завдання', () => {

@@ -12,6 +12,7 @@ import { sessionRecord, topicProgress, levelProgress, compareWithPrevious } from
 import { hintDelayMs, shouldOfferHint, normalizeHint } from '../core/hints.js';
 import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
+import { formatAgo } from './format.js';
 import { progressStore, storage } from './storage.js';
 
 const root = document.getElementById('app');
@@ -253,7 +254,9 @@ function renderGrade(gradeId) {
     return `<button class="topic-card" data-topic="${esc(t.id)}">
         <span class="topic-icon">${esc(t.icon ?? '📘')}</span>
         <span class="topic-title">${esc(t.title)}</span>
-        <span class="topic-meta">${p.sessions ? starsHtml(best) : '<span class="muted">Ще не розпочато</span>'}</span>
+        <span class="topic-meta">${p.sessions
+          ? `${starsHtml(best)}<span class="ago">${formatAgo(p.lastAt)}</span>`
+          : '<span class="muted">Ще не розпочато</span>'}</span>
       </button>`;
   }).join('');
 
@@ -279,7 +282,7 @@ function renderTopic(topicId) {
     const p = levelProgress(records, topic.id, level);
     const stats = p.sessions
       ? `<span class="level-stats">Сесій: ${p.sessions} · точність ${Math.round(p.accuracy * 100)}%</span>
-         ${p.lastAvgMs != null ? `<span class="level-stats">Остання сесія: ${formatDuration(p.lastAvgMs)} на приклад</span>` : ''}`
+         <span class="level-stats">Остання сесія: ${formatAgo(p.lastAt)}${p.lastAvgMs != null ? ` · ${formatDuration(p.lastAvgMs)} на приклад` : ''}</span>`
       : '<span class="level-stats">Ще не пройдено</span>';
     return `
       <button class="level-card" data-level="${level}">

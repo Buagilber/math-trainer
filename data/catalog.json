@@ -16,6 +16,9 @@
       "id": "g2",
       "grade": 2,
       "title": "2 клас",
+      "notation": {
+        "times": "·"
+      },
       "topics": [
         "topics/g2-addsub-no-carry.json",
         "topics/g2-addsub-carry.json",
