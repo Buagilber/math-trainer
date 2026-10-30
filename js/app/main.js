@@ -321,7 +321,7 @@ function renderSession() {
   state.dirFlip = false;
   const hasInlineBlank = item.text.includes('□');
   const prompt = item.column ? columnHtml(item.column, answerBox, toggle)
-    : hasInlineBlank ? mathHtml(item.text).replace('□', answerBox)
+    : hasInlineBlank ? mathHtml(item.text, { ops: true }).replace('□', answerBox)
     : mathHtml(item.text);
   const answerRow = hasInlineBlank ? '' : `<div class="answer-row">Відповідь: ${answerBox} ${esc(item.unit ?? '')}</div>`;
 
@@ -594,7 +594,7 @@ function renderSummary() {
     ? `<h2>Помилки</h2><ul class="mistakes">${sum.mistakes.map((m) => {
         const answerText = m.answerText ?? String(m.answer);
         const text = m.text.includes('□') ? m.text.replace('□', answerText) : `${m.text} — ${answerText}`;
-        return `<li><span>${mathHtml(text)}</span> <span class="given">твоя відповідь: ${mathHtml(m.given)}</span></li>`;
+        return `<li><span>${mathHtml(text, { ops: true })}</span> <span class="given">твоя відповідь: ${mathHtml(m.given)}</span></li>`;
       }).join('')}</ul>`
     : '';
 

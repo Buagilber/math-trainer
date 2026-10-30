@@ -20,11 +20,18 @@ const fracHtml = (num, den) => `<span class="frac"><span class="frac-num">${num}
 
 // Текст завдання → HTML: екранування, розряди, нерозривний пробіл після
 // числа («7 см» не розривається), n/d — «двоповерховий» дріб.
-export function mathHtml(text) {
-  return groupDigits(esc(text))
+// ops: true — знаки дій (між пробілами) різними кольорами, щоб зміну дії
+// між прикладами було видно одразу.
+export function mathHtml(text, { ops = false } = {}) {
+  let html = groupDigits(esc(text))
     .replace(/(\d) (?=\S)/g, '$1\u00a0')
     .replace(/(\d+)\/(\d+)/g, (_, n, d) => fracHtml(n, d));
+  if (ops) html = html.replace(/(^|[\s\u00a0])([+−×:])(?=[\s\u00a0])/g, (_, before, op) => `${before}${opHtml(op)}`);
+  return html;
 }
+
+const OP_CLASS = { '+': 'op-plus', '−': 'op-minus', '×': 'op-times', ':': 'op-divide' };
+export const opHtml = (op) => `<span class="op ${OP_CLASS[op] ?? ''}">${esc(op)}</span>`;
 
 const needsWhole = (item) => item.answerType === 'fraction' && !!item.answer.whole;
 const FRACTION_FIELDS = (item) => (needsWhole(item) ? ['whole', 'num', 'den'] : ['num', 'den']);
@@ -137,11 +144,13 @@ export function columnHtml(column, answerBox, toggle = '') {
       rows = rows.map((r, i) => r + (r.includes(',') ? '' : '\u2008') + '\u2007'.repeat(max - fracLen[i]));
     }
   }
+  // Знак дії — між двома числами по вертикалі, як у підручниках.
   return `<div class="column-task">
-      <span class="col-sign"></span><span class="col-num">${esc(rows[0])}</span>
-      <span class="col-sign">${esc(column.sign)}</span><span class="col-num">${esc(rows[1])}</span>
+      <span class="col-sign">${opHtml(column.sign)}</span>
+      <span class="col-num col-top">${esc(rows[0])}</span>
+      <span class="col-num col-bottom">${esc(rows[1])}</span>
       <span class="col-line"></span>
-      <span class="col-sign">${toggle}</span><span class="col-answer">${answerBox}</span>
+      <span class="col-toggle">${toggle}</span><span class="col-answer">${answerBox}</span>
     </div>`;
 }
 
