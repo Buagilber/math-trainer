@@ -34,6 +34,8 @@ const state = {
   inputDir: storage.get(INPUT_DIR_KEY) === 'ltr' ? 'ltr' : 'rtl',
   dirFlip: false,
   hintBaseAvgMs: null, // середній час на приклад в останній сесії цього рівня
+  contentLoadedAt: 0, // коли востаннє завантажено data/
+  refreshPending: false, // оновлення відкладене до кінця тренування
 };
 
 const resetHint = () => {
@@ -129,6 +131,7 @@ async function render() {
     root.innerHTML = '<div class="center muted">Завантаження…</div>';
     try {
       state.content = await loadContent();
+      state.contentLoadedAt = Date.now();
     } catch (e) {
       root.innerHTML = `<div class="center"><p>Не вдалося завантажити завдання.</p><p class="muted">${esc(e.message)}</p>
         <button class="btn" onclick="location.reload()">Спробувати ще раз</button></div>`;
@@ -136,6 +139,11 @@ async function render() {
     }
   }
   window.scrollTo(0, 0);
+  // Оновлення, відкладене до кінця тренування (див. «Оновлення контенту»).
+  if (state.refreshPending && currentRoute().sub !== 'play') {
+    state.refreshPending = false;
+    refreshContent();
+  }
 
   // Привітання показується при першому запуску, доки не натиснуто кнопку.
   if (storage.get(WELCOMED_KEY) !== '1') return renderWelcome({ firstRun: true });
@@ -631,7 +639,41 @@ function renderSummary() {
   root.querySelector('#to-grade').addEventListener('click', () => { state.session = null; go(`/grade/${gradeId}`, { replace: true }); });
 }
 
+// ---------- оновлення контенту ----------
+//
+// Застосунок на телефоні часто не перезапускається, а лише повертається з фону.
+// Якщо він пробув у фоні довше за CONTENT_REFRESH_MS, тихо перечитуємо data/
+// і, якщо щось змінилося, перемальовуємо екран класів чи розділів.
+// Посеред тренування нічого не чіпаємо — оновимо після його завершення.
+
+const CONTENT_REFRESH_MS = 60 * 1000;
+
+async function refreshContent() {
+  try {
+    const fresh = await loadContent();
+    state.contentLoadedAt = Date.now();
+    if (JSON.stringify(fresh) === JSON.stringify(state.content)) return;
+    state.content = fresh;
+    const { sub } = currentRoute();
+    if (sub !== 'play' && sub !== 'result') render();
+  } catch {
+    // Немає мережі — лишаємо те, що є; спробуємо наступного разу.
+  }
+}
+
+function onResume() {
+  if (!state.content || Date.now() - (state.contentLoadedAt ?? 0) < CONTENT_REFRESH_MS) return;
+  if (currentRoute().sub === 'play') state.refreshPending = true;
+  else refreshContent();
+}
+
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') onResume(); });
+window.addEventListener('pageshow', (e) => { if (e.persisted) onResume(); });
+
 // ---------- старт ----------
+
+// Service worker: свіжі й узгоджені файли після оновлень сайту, робота офлайн (див. sw.js).
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
 history.replaceState({ depth: 0 }, '', location.hash || '#/');
 render();
