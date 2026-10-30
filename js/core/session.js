@@ -114,6 +114,8 @@ export function submitAnswer(session, given, ms = 0, { hintUsed = false, step = 
     step: step ? { left: step.left, sign: step.sign, right: step.right, correct: step.correct } : null,
     stepUsed: !!step,
     stepCorrect: step ? step.correct : null,
+    // Чи правильно пораховано обрану дію (навіть якщо сама дія неправильна).
+    stepCalcCorrect: step ? Number(given) === step.value : null,
   };
   return {
     session: { ...session, index: session.index + 1, results: [...session.results, result] },
@@ -143,6 +145,24 @@ export function averageMs(results) {
   return Math.round(sum / results.length);
 }
 
+// Діагностика нерозв'язаних рівнянь із кроком «Обрати дію». Кожен нерозв'язаний
+// приклад потрапляє рівно в одну категорію, тож сума категорій = кількість помилок:
+//   method — неправильна дія, але пораховано її правильно;
+//   calc   — дія правильна, помилка в обчисленні;
+//   both   — і дія неправильна, і пораховано з помилкою;
+//   noStep — відповідь одразу, без вибору дії (причину не знаємо).
+// used — чи обирали дію хоча б раз (інакше рядок у підсумку не потрібен).
+export function stepStats(results) {
+  const wrong = results.filter((r) => !r.correct);
+  return {
+    used: results.some((r) => r.stepUsed),
+    method: wrong.filter((r) => r.stepUsed && !r.stepCorrect && r.stepCalcCorrect).length,
+    calc: wrong.filter((r) => r.stepUsed && r.stepCorrect).length,
+    both: wrong.filter((r) => r.stepUsed && !r.stepCorrect && !r.stepCalcCorrect).length,
+    noStep: wrong.filter((r) => !r.stepUsed).length,
+  };
+}
+
 export function summarize(session) {
   const total = session.results.length;
   const correct = session.results.filter((r) => r.correct).length;
@@ -152,9 +172,7 @@ export function summarize(session) {
     stars: starsFor(correct, total),
     avgMs: averageMs(session.results),
     hintsUsed: session.results.filter((r) => r.hintUsed).length,
-    // Діагностика для рівнянь із кроком «Обрати дію»: де саме помилка.
-    stepMethodErrors: session.results.filter((r) => r.stepUsed && !r.stepCorrect).length,
-    stepCalcErrors: session.results.filter((r) => r.stepUsed && r.stepCorrect && !r.correct).length,
+    stepStats: stepStats(session.results),
     mistakes: session.results.filter((r) => !r.correct),
   };
 }

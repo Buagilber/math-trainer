@@ -435,16 +435,23 @@ function renderSession() {
 //   Рівняння (x =):   рівняння · твоя відповідь ✗ · обрана дія (червона/зелена) ·
 //                     правильно: x = 441, бо x = 578 − 137
 //   Текстова задача:  умова · твоя відповідь ✗ · правильно: …
+// Круглі значки: білий хрестик у червоному колі й біла галочка в зеленому —
+// не плутаються з «x» у рівнянні.
+const MARK = {
+  ok: '<span class="mark ok" aria-label="правильно">✓</span>',
+  bad: '<span class="mark bad" aria-label="неправильно">✕</span>',
+};
+
 function mistakeHtml(m) {
   const answerText = m.answerText ?? String(m.answer);
   const expr = (e) => `${e.left} ${e.sign} ${e.right}`;
-  const given = `<span class="given">твоя відповідь: ${m.answerPrefix ? `${esc(m.answerPrefix)} ` : ''}${mh(m.given)} ✗</span>`;
+  const given = `<span class="given">твоя відповідь: ${m.answerPrefix ? `${esc(m.answerPrefix)} ` : ''}${mh(m.given)} ${MARK.bad}</span>`;
   if (m.text.includes('□')) {
     return `<li><span>${mh(m.text.replace('□', answerText), { ops: true })}</span>${given}</li>`;
   }
   const prefix = m.answerPrefix ? `${esc(m.answerPrefix)} ` : '';
   const step = m.step
-    ? `<span class="m-step ${m.step.correct ? 'ok' : 'bad'}">обрана дія: ${prefix}${mh(expr(m.step))}</span>`
+    ? `<span class="m-step ${m.step.correct ? 'ok' : 'bad'}">обрана дія: ${prefix}${mh(expr(m.step))} ${m.step.correct ? MARK.ok : MARK.bad}</span>`
     : '';
   const why = m.canonical ? `, бо ${prefix}${mh(expr(m.canonical), { ops: true })}` : '';
   return `<li><span>${mh(m.text, { ops: !!m.answerPrefix })}</span>${given}${step}`
@@ -675,8 +682,14 @@ function renderSummary() {
     : cmp.accuracy?.trend === 'down'
       ? `<p class="trend slow">▼ Точність нижча, ніж минулого разу, на ${-cmp.accuracy.diffPct}%</p>`
       : '';
-  const stepsLine = sum.stepMethodErrors || sum.stepCalcErrors
-    ? `<p class="trend muted">Помилки у виборі дії: ${sum.stepMethodErrors} · в обчисленнях: ${sum.stepCalcErrors}</p>`
+  // Нерозв'язані рівняння за причинами; сума категорій = кількість помилок.
+  const st = sum.stepStats;
+  const stepParts = [
+    [st.method, 'неправильна дія'], [st.calc, 'помилка в обчисленні'],
+    [st.both, 'і дія, і обчислення'], [st.noStep, 'без вибору дії'],
+  ].filter(([n]) => n).map(([n, label]) => `<span>${label}: ${n}</span>`);
+  const stepsLine = st.used && stepParts.length
+    ? `<div class="trend muted step-stats">Не розв'язано: ${sum.total - sum.correct}<div class="step-parts">${stepParts.join('')}</div></div>`
     : '';
   const hintLine = sum.hintsUsed
     ? `<p class="trend muted">Підказкою скористались: ${sum.hintsUsed} ${pluralUk(sum.hintsUsed, 'раз', 'рази', 'разів')}</p>`

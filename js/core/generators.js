@@ -84,7 +84,8 @@ export function equationSteps(op, hide, a, b, c, rng) {
   const options = [];
   for (const o of INVERSE_PAIR[op]) {
     for (const [left, right] of [[c, other], [other, c]]) {
-      options.push({ op: o, sign: SIGNS[o], left, right, correct: applyOp(o, left, right) === x });
+      const value = applyOp(o, left, right);
+      options.push({ op: o, sign: SIGNS[o], left, right, value, correct: value === x });
     }
   }
   return { options: rng.shuffle(options), canonical: { op: cOp, sign: SIGNS[cOp], left: cLeft, right: cRight } };

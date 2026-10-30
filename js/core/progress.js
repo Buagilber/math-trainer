@@ -23,8 +23,7 @@ export function sessionRecord(session, { profileId = 'default', startedAt, finis
     stars: s.stars,
     avgMs: s.avgMs,
     hintsUsed: s.hintsUsed,
-    stepMethodErrors: s.stepMethodErrors,
-    stepCalcErrors: s.stepCalcErrors,
+    stepStats: s.stepStats,
     mistakes: s.mistakes.map(({ exerciseId, text, answer, answerText, given, answerPrefix, canonical, step }) =>
       ({ exerciseId, text, answer, answerText, given, answerPrefix, canonical, step })),
   };

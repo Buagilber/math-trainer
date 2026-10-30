@@ -383,11 +383,17 @@ test('крок «Обрати дію» в рівняннях', () => {
   // Діагностика: помилка у виборі дії vs в обчисленні.
   let s = buildSession(TOPIC, 1, createRng(1), 3);
   const right = () => s.items[s.index].answer;
-  const step = (correct) => ({ left: 1, sign: '+', right: 2, correct });
-  ({ session: s } = submitAnswer(s, right() + 1, 0, { step: step(false) })); // не та дія
-  ({ session: s } = submitAnswer(s, right() + 1, 0, { step: step(true) }));  // дія та, обчислення ні
-  ({ session: s } = submitAnswer(s, right(), 0, { step: step(true) }));      // усе правильно
-  eq([summarize(s).stepMethodErrors, summarize(s).stepCalcErrors], [1, 1]);
+  // value — що дає обрана дія; дитина вводить своє обчислення.
+  const step = (correct, value) => ({ left: 1, sign: '+', right: 2, correct, value });
+  s = buildSession(TOPIC, 1, createRng(1), 6);
+  ({ session: s } = submitAnswer(s, 999, 0, { step: step(false, 999) }));     // не та дія, пораховано вірно
+  ({ session: s } = submitAnswer(s, 998, 0, { step: step(false, 999) }));     // не та дія і помилка в обчисленні
+  ({ session: s } = submitAnswer(s, right() + 1, 0, { step: step(true, right()) })); // дія та, обчислення ні
+  ({ session: s } = submitAnswer(s, right() + 1, 0));                          // без вибору дії
+  ({ session: s } = submitAnswer(s, right(), 0, { step: step(true, right()) }));     // усе правильно
+  ({ session: s } = submitAnswer(s, right(), 0));                              // правильно одразу
+  eq(summarize(s).stepStats, { used: true, method: 1, calc: 1, both: 1, noStep: 1 });
+  eq(summarize(s).total - summarize(s).correct, 4, 'сума категорій = кількість помилок');
 });
 
 test('валідація відсіює зламані завдання', () => {
