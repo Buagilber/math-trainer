@@ -430,6 +430,27 @@ function renderSession() {
   }
 }
 
+// Помилка в підсумку.
+//   Приклад з □:      «2 + 3 = 5» (з правильною відповіддю) · твоя відповідь ✗
+//   Рівняння (x =):   рівняння · твоя відповідь ✗ · обрана дія (червона/зелена) ·
+//                     правильно: x = 441, бо x = 578 − 137
+//   Текстова задача:  умова · твоя відповідь ✗ · правильно: …
+function mistakeHtml(m) {
+  const answerText = m.answerText ?? String(m.answer);
+  const expr = (e) => `${e.left} ${e.sign} ${e.right}`;
+  const given = `<span class="given">твоя відповідь: ${m.answerPrefix ? `${esc(m.answerPrefix)} ` : ''}${mh(m.given)} ✗</span>`;
+  if (m.text.includes('□')) {
+    return `<li><span>${mh(m.text.replace('□', answerText), { ops: true })}</span>${given}</li>`;
+  }
+  const prefix = m.answerPrefix ? `${esc(m.answerPrefix)} ` : '';
+  const step = m.step
+    ? `<span class="m-step ${m.step.correct ? 'ok' : 'bad'}">обрана дія: ${prefix}${mh(expr(m.step))}</span>`
+    : '';
+  const why = m.canonical ? `, бо ${prefix}${mh(expr(m.canonical), { ops: true })}` : '';
+  return `<li><span>${mh(m.text, { ops: !!m.answerPrefix })}</span>${given}${step}`
+    + `<span class="m-right">правильно: ${prefix}${mh(answerText)}${why}</span></li>`;
+}
+
 // ---------- крок «Обрати дію» (docs/EQUATION-STEPS.md) ----------
 
 const chosenStep = (item) => (item.steps && state.steps.stage === 'compute' ? item.steps.options[state.steps.choice] : null);
@@ -563,7 +584,7 @@ function answer(given) {
   const item = currentItem();
   const chosen = chosenStep(item);
   const { session, result } = submitAnswer(state.session, given, Date.now() - state.questionStartedAt,
-    { hintUsed: state.hint.used, stepCorrect: chosen ? chosen.correct : null });
+    { hintUsed: state.hint.used, step: chosen });
   state.session = session;
   state.input = given;
   state.hint.open = false;
@@ -674,11 +695,7 @@ function renderSummary() {
           : `<p class="trend slow">▼ Повільніше, ніж минулого разу, на ${formatDuration(cmp.speed.diffMs)}</p>`;
 
   const mistakes = sum.mistakes.length
-    ? `<h2>Помилки</h2><ul class="mistakes">${sum.mistakes.map((m) => {
-        const answerText = m.answerText ?? String(m.answer);
-        const text = m.text.includes('□') ? m.text.replace('□', answerText) : `${m.text} — ${answerText}`;
-        return `<li><span>${mh(text, { ops: true })}</span> <span class="given">твоя відповідь: ${mh(m.given)}</span></li>`;
-      }).join('')}</ul>`
+    ? `<h2>Помилки</h2><ul class="mistakes">${sum.mistakes.map(mistakeHtml).join('')}</ul>`
     : '';
 
   root.innerHTML = `

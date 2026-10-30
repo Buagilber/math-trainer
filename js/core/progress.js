@@ -4,7 +4,7 @@
 //
 // Запис сесії:
 //   { id, profileId, topicId, level, startedAt, finishedAt, total, correct, stars,
-//     avgMs, hintsUsed, mistakes: [{ exerciseId, text, answer, answerText, given }] }
+//     avgMs, hintsUsed, mistakes: [{ exerciseId, text, answer, answerText, given, answerPrefix?, canonical?, step? }] }
 // avgMs — середній час на один приклад у цій сесії (у старих записах відсутній).
 
 import { summarize } from './session.js';
@@ -25,7 +25,8 @@ export function sessionRecord(session, { profileId = 'default', startedAt, finis
     hintsUsed: s.hintsUsed,
     stepMethodErrors: s.stepMethodErrors,
     stepCalcErrors: s.stepCalcErrors,
-    mistakes: s.mistakes.map(({ exerciseId, text, answer, answerText, given }) => ({ exerciseId, text, answer, answerText, given })),
+    mistakes: s.mistakes.map(({ exerciseId, text, answer, answerText, given, answerPrefix, canonical, step }) =>
+      ({ exerciseId, text, answer, answerText, given, answerPrefix, canonical, step })),
   };
 }
 

@@ -369,9 +369,11 @@ test('крок «Обрати дію» в рівняннях', () => {
       if (known.length < STEPS_MIN_DIGITS) { eq(it.steps, undefined, `замалі числа: ${it.text}`); continue; }
       assert(it.steps, `кроки є: ${it.text}`);
       eq(it.steps.options.length, 4, it.text);
+      // Правильні — усі варіанти, що дають x: для + і × обидва порядки, для − і : один.
       const correct = it.steps.options.filter((o) => o.correct);
-      eq(correct.length, 1, `один правильний: ${it.text}`);
-      eq(val(correct[0]), it.answer, `правильна дія дає x: ${it.text}`);
+      eq(correct.length, ['+', '*'].includes(it.steps.canonical.op) ? 2 : 1, `кількість правильних: ${it.text}`);
+      assert(correct.every((o) => val(o) === it.answer), `правильна дія дає x: ${it.text}`);
+      assert(it.steps.options.filter((o) => !o.correct).every((o) => val(o) !== it.answer), `неправильна не дає x: ${it.text}`);
       eq(new Set(it.steps.options.map((o) => `${o.left}${o.op}${o.right}`)).size, 4, 'варіанти різні');
     }
   }
@@ -381,9 +383,10 @@ test('крок «Обрати дію» в рівняннях', () => {
   // Діагностика: помилка у виборі дії vs в обчисленні.
   let s = buildSession(TOPIC, 1, createRng(1), 3);
   const right = () => s.items[s.index].answer;
-  ({ session: s } = submitAnswer(s, right() + 1, 0, { stepCorrect: false })); // не та дія
-  ({ session: s } = submitAnswer(s, right() + 1, 0, { stepCorrect: true }));  // дія та, обчислення ні
-  ({ session: s } = submitAnswer(s, right(), 0, { stepCorrect: true }));      // усе правильно
+  const step = (correct) => ({ left: 1, sign: '+', right: 2, correct });
+  ({ session: s } = submitAnswer(s, right() + 1, 0, { step: step(false) })); // не та дія
+  ({ session: s } = submitAnswer(s, right() + 1, 0, { step: step(true) }));  // дія та, обчислення ні
+  ({ session: s } = submitAnswer(s, right(), 0, { step: step(true) }));      // усе правильно
   eq([summarize(s).stepMethodErrors, summarize(s).stepCalcErrors], [1, 1]);
 });
 

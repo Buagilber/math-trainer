@@ -452,6 +452,10 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .mistakes { list-style: none; padding: 0; margin: 0; text-align: left; display: flex; flex-direction: column; gap: 8px; }
 .mistakes li { padding: 12px 16px; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 4px; }
 .mistakes .given { color: var(--bad); font-size: 0.9rem; }
+.mistakes .m-step { font-size: 0.9rem; }
+.mistakes .m-step.bad { color: var(--bad); }
+.mistakes .m-step.ok { color: var(--ok); }
+.mistakes .m-right { font-size: 0.9rem; color: var(--muted); }
 .summary-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
 
 /* ---------- підказка ---------- */

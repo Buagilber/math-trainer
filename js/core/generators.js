@@ -57,7 +57,9 @@ function hasCarry(op, a, b) {
 // ---------- крок «Обрати дію» для рівнянь (docs/EQUATION-STEPS.md) ----------
 //
 // Для рівняння з невідомим компонентом будуємо 4 варіанти оберненої дії:
-// 2 дії пари (+/− або ×/:) × 2 порядки двох відомих чисел. Правильний — один.
+// 2 дії пари (+/− або ×/:) × 2 порядки двох відомих чисел.
+// Правильна дія — та, що дає x. Для + і × правильні обидва порядки чисел
+// (переставна властивість), для − і : — лише один.
 
 export const STEPS_MIN_DIGITS = 5; // два відомі числа разом мають щонайменше стільки цифр
 const INVERSE_PAIR = { '+': ['+', '-'], '-': ['+', '-'], '*': ['*', '/'], '/': ['*', '/'] };
@@ -72,14 +74,17 @@ function canonicalStep(op, hide, a, b, c) {
   }
 }
 
+const applyOp = (o, l, r) => ({ '+': l + r, '-': l - r, '*': l * r, '/': l / r })[o];
+
 export function equationSteps(op, hide, a, b, c, rng) {
   const other = hide === 'a' ? b : a;
   if (String(c).length + String(other).length < STEPS_MIN_DIGITS) return undefined;
+  const x = hide === 'a' ? a : b;
   const [cOp, cLeft, cRight] = canonicalStep(op, hide, a, b, c);
   const options = [];
   for (const o of INVERSE_PAIR[op]) {
     for (const [left, right] of [[c, other], [other, c]]) {
-      options.push({ op: o, sign: SIGNS[o], left, right, correct: o === cOp && left === cLeft && right === cRight });
+      options.push({ op: o, sign: SIGNS[o], left, right, correct: applyOp(o, left, right) === x });
     }
   }
   return { options: rng.shuffle(options), canonical: { op: cOp, sign: SIGNS[cOp], left: cLeft, right: cRight } };

@@ -94,8 +94,8 @@ export function formatAnswer(answerType, value) {
 }
 
 // Повертає новий стан сесії та результат відповіді.
-// stepCorrect: null — крок «Обрати дію» не використовували; true/false — чи обрано правильну дію.
-export function submitAnswer(session, given, ms = 0, { hintUsed = false, stepCorrect = null } = {}) {
+// step — обраний варіант кроку «Обрати дію» ({ left, sign, right, correct }) або null.
+export function submitAnswer(session, given, ms = 0, { hintUsed = false, step = null } = {}) {
   const item = session.items[session.index];
   const correct = checkAnswer(item, given);
   const result = {
@@ -107,8 +107,13 @@ export function submitAnswer(session, given, ms = 0, { hintUsed = false, stepCor
     correct,
     ms,
     hintUsed,
-    stepUsed: stepCorrect !== null,
-    stepCorrect,
+    // Для рівнянь: підпис («x =»), правильна й обрана дія — щоб у підсумку
+    // показати, де саме помилка.
+    answerPrefix: item.answerPrefix,
+    canonical: item.steps?.canonical,
+    step: step ? { left: step.left, sign: step.sign, right: step.right, correct: step.correct } : null,
+    stepUsed: !!step,
+    stepCorrect: step ? step.correct : null,
   };
   return {
     session: { ...session, index: session.index + 1, results: [...session.results, result] },
