@@ -38,7 +38,8 @@
           9999
         ],
         "missing": "operand",
-        "unknown": "x"
+        "unknown": "x",
+        "steps": true
       },
       "hint": {
         "rules": [
@@ -68,7 +69,8 @@
           99
         ],
         "missing": "operand",
-        "unknown": "x"
+        "unknown": "x",
+        "steps": true
       },
       "hint": {
         "rules": [
@@ -104,7 +106,8 @@
           99
         ],
         "missing": "operand",
-        "unknown": "x"
+        "unknown": "x",
+        "steps": true
       }
     },
     {
@@ -130,7 +133,8 @@
           999999
         ],
         "missing": "operand",
-        "unknown": "x"
+        "unknown": "x",
+        "steps": true
       },
       "hint": {
         "rules": [
