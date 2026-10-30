@@ -104,37 +104,6 @@
       }
     },
     {
-      "id": "perimeter-triangle",
-      "kind": "generator",
-      "generator": "template",
-      "difficulty": 2,
-      "hint": "Периметр — це сума довжин усіх сторін фігури.",
-      "params": {
-        "text": "Сторони трикутника дорівнюють {a} см, {b} см і {c} см. Знайди периметр трикутника.",
-        "vars": {
-          "a": [
-            2,
-            9
-          ],
-          "b": [
-            2,
-            9
-          ],
-          "c": [
-            2,
-            9
-          ]
-        },
-        "where": [
-          "a + b > c",
-          "a + c > b",
-          "b + c > a"
-        ],
-        "answer": "a + b + c",
-        "unit": "см"
-      }
-    },
-    {
       "id": "boxes",
       "kind": "generator",
       "generator": "template",
@@ -234,31 +203,6 @@
           100
         ],
         "unit": "гр."
-      }
-    },
-    {
-      "id": "perimeter-rect",
-      "kind": "generator",
-      "generator": "template",
-      "difficulty": 3,
-      "hint": "Периметр прямокутника: (довжина + ширина) × 2.",
-      "params": {
-        "text": "Довжина прямокутника {a} см, а ширина — {b} см. Знайди периметр прямокутника.",
-        "vars": {
-          "a": [
-            3,
-            12
-          ],
-          "b": [
-            2,
-            8
-          ]
-        },
-        "where": [
-          "a > b"
-        ],
-        "answer": "(a + b) * 2",
-        "unit": "см"
       }
     }
   ]

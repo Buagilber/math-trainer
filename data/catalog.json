@@ -21,13 +21,15 @@
       },
       "topics": [
         "topics/g2-addsub-no-carry.json",
-        "topics/g2-addsub-carry.json",
+        "topics/g2-addsub-20.json",
+        "topics/g2-order.json",
         "topics/g2-compare.json",
         "topics/g2-equations.json",
-        "topics/g2-order.json",
+        "topics/g2-addsub-carry.json",
+        "topics/g2-units.json",
+        "topics/g2-perimeter.json",
         "topics/g2-mul.json",
         "topics/g2-div.json",
-        "topics/g2-units.json",
         "topics/g2-word.json"
       ]
     },
