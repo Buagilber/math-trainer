@@ -1,6 +1,6 @@
 {
   "id": "g2-mul",
-  "title": "Множення (таблиця на 2–5)",
+  "title": "Множення: таблиця на 2–9",
   "icon": "✖️",
   "hint": {
     "rules": [
@@ -14,15 +14,16 @@
   "sessionSize": 10,
   "exercises": [
     {
-      "id": "by-2-3",
+      "id": "table-2-5",
       "kind": "generator",
       "generator": "arithmetic",
       "difficulty": 1,
+      "weight": 3,
       "params": {
         "op": "*",
         "a": [
           2,
-          3
+          5
         ],
         "b": [
           1,
@@ -32,21 +33,101 @@
       }
     },
     {
-      "id": "by-4-5",
+      "id": "by-0-1",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 1,
+      "hint": {
+        "rules": [
+          "Будь-яке число, помножене на 1, дорівнює самому числу: 7 · 1 = 7.",
+          "Будь-яке число, помножене на 0, дорівнює 0: 7 · 0 = 0."
+        ]
+      },
+      "params": {
+        "op": "*",
+        "a": {
+          "oneOf": [
+            0,
+            1
+          ]
+        },
+        "b": [
+          2,
+          9
+        ],
+        "commutative": true
+      }
+    },
+    {
+      "id": "sum-to-product",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 1,
+      "hint": "Скільки однакових доданків — на стільки й множимо: 5 + 5 + 5 + 5 = 5 · 4.",
+      "params": {
+        "text": "{a} + {a} + {a} = {a} × □",
+        "vars": {
+          "a": [
+            2,
+            9
+          ]
+        },
+        "answer": "3"
+      }
+    },
+    {
+      "id": "table-6-9",
       "kind": "generator",
       "generator": "arithmetic",
       "difficulty": 2,
+      "weight": 3,
       "params": {
         "op": "*",
         "a": [
-          4,
-          5
+          6,
+          9
         ],
         "b": [
           1,
           10
         ],
         "commutative": true
+      }
+    },
+    {
+      "id": "by-10",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 2,
+      "hint": "Щоб помножити число на 10, допиши до нього нуль: 7 · 10 = 70.",
+      "params": {
+        "op": "*",
+        "a": [
+          10,
+          10
+        ],
+        "b": [
+          2,
+          9
+        ],
+        "commutative": true
+      }
+    },
+    {
+      "id": "sum-to-product-4",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "hint": "Скільки однакових доданків — на стільки й множимо: 5 + 5 + 5 + 5 = 5 · 4.",
+      "params": {
+        "text": "{a} + {a} + {a} + {a} = □ × 4",
+        "vars": {
+          "a": [
+            2,
+            9
+          ]
+        },
+        "answer": "a"
       }
     },
     {
@@ -59,7 +140,7 @@
         "op": "*",
         "a": [
           2,
-          5
+          9
         ],
         "b": [
           2,
@@ -85,7 +166,7 @@
         "op": "*",
         "a": [
           2,
-          5
+          9
         ],
         "b": [
           2,

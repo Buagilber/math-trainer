@@ -1,6 +1,6 @@
 {
   "id": "g2-div",
-  "title": "Ділення (на 2–5)",
+  "title": "Ділення: таблиця на 2–9",
   "icon": "➗",
   "hint": {
     "rules": [
@@ -14,15 +14,16 @@
   "sessionSize": 10,
   "exercises": [
     {
-      "id": "by-2-3",
+      "id": "table-2-5",
       "kind": "generator",
       "generator": "arithmetic",
       "difficulty": 1,
+      "weight": 3,
       "params": {
         "op": "/",
         "b": [
           2,
-          3
+          5
         ],
         "result": [
           1,
@@ -31,19 +32,106 @@
       }
     },
     {
-      "id": "by-4-5",
+      "id": "by-1",
       "kind": "generator",
       "generator": "arithmetic",
-      "difficulty": 2,
+      "difficulty": 1,
+      "hint": {
+        "rules": [
+          "Число, поділене на 1, дорівнює самому числу: 8 : 1 = 8."
+        ]
+      },
+      "params": {
+        "op": "/",
+        "b": {
+          "oneOf": [
+            1
+          ]
+        },
+        "result": [
+          2,
+          9
+        ]
+      }
+    },
+    {
+      "id": "self",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 1,
+      "hint": {
+        "rules": [
+          "Число, поділене на саме себе, дорівнює 1: 8 : 8 = 1."
+        ]
+      },
       "params": {
         "op": "/",
         "b": [
-          4,
-          5
+          2,
+          9
+        ],
+        "result": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "zero",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 1,
+      "hint": {
+        "rules": [
+          "0, поділений на будь-яке число, дорівнює 0: 0 : 8 = 0.",
+          "На 0 ділити не можна."
+        ]
+      },
+      "params": {
+        "op": "/",
+        "b": [
+          2,
+          9
+        ],
+        "result": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "table-6-9",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 2,
+      "weight": 3,
+      "params": {
+        "op": "/",
+        "b": [
+          6,
+          9
         ],
         "result": [
           1,
           10
+        ]
+      }
+    },
+    {
+      "id": "by-10",
+      "kind": "generator",
+      "generator": "arithmetic",
+      "difficulty": 2,
+      "hint": "Щоб поділити круглі десятки на 10, відкинь нуль: 70 : 10 = 7.",
+      "params": {
+        "op": "/",
+        "b": [
+          10,
+          10
+        ],
+        "result": [
+          1,
+          9
         ]
       }
     },
@@ -57,7 +145,7 @@
         "op": "/",
         "b": [
           2,
-          5
+          9
         ],
         "result": [
           2,
@@ -83,7 +171,7 @@
         "op": "/",
         "b": [
           2,
-          5
+          9
         ],
         "result": [
           2,
