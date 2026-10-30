@@ -33,7 +33,8 @@
         "range": [
           0,
           100
-        ]
+        ],
+        "layout": "column"
       }
     },
     {
@@ -59,7 +60,8 @@
         "range": [
           0,
           1000
-        ]
+        ],
+        "layout": "column"
       }
     },
     {
@@ -107,7 +109,8 @@
           2,
           9
         ],
-        "bScale": 0
+        "bScale": 0,
+        "layout": "column"
       }
     },
     {
@@ -132,7 +135,8 @@
           11,
           49
         ],
-        "bScale": 1
+        "bScale": 1,
+        "layout": "column"
       }
     },
     {

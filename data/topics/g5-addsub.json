@@ -32,7 +32,8 @@
         "result": [
           0,
           99999
-        ]
+        ],
+        "layout": "column"
       }
     },
     {
@@ -83,7 +84,8 @@
         "result": [
           0,
           999999
-        ]
+        ],
+        "layout": "column"
       }
     },
     {
@@ -107,7 +109,8 @@
         "result": [
           0,
           999999
-        ]
+        ],
+        "layout": "column"
       }
     },
     {
@@ -130,7 +133,8 @@
         "result": [
           1,
           100000
-        ]
+        ],
+        "layout": "column"
       }
     }
   ]
