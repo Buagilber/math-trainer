@@ -320,15 +320,19 @@ function renderSession() {
   const toggle = item.column ? directionToggleHtml(state.inputDir, { disabled: !!fb, flip: state.dirFlip }) : '';
   state.dirFlip = false;
   const hasInlineBlank = item.text.includes('□');
-  const prompt = item.column ? columnHtml(item.column, answerBox, toggle)
-    : hasInlineBlank ? mathHtml(item.text, { ops: true }).replace('□', answerBox)
-    : mathHtml(item.text);
-  const answerRow = hasInlineBlank ? '' : `<div class="answer-row">Відповідь: ${answerBox} ${esc(item.unit ?? '')}</div>`;
+  // Рівняння з x показуємо так само великим шрифтом і з кольоровими знаками, як приклади.
+  const isFormula = hasInlineBlank || !!item.answerPrefix;
+  const prompt = item.column ? columnHtml({ ...item.column, sign: timesSign(item.column.sign) }, answerBox, toggle)
+    : isFormula ? mh(item.text, { ops: true }).replace('□', answerBox)
+    : mh(item.text);
+  // Під завданням без □: «Відповідь: □ см» або, для рівнянь, «x = □».
+  const answerRow = hasInlineBlank || item.column ? ''
+    : `<div class="answer-row">${esc(item.answerPrefix ?? 'Відповідь:')} ${answerBox} ${esc(item.unit ?? '')}</div>`;
 
   const feedback = fb
     ? fb.correct
       ? '<div class="feedback ok">Молодець! 🎉</div>'
-      : `<div class="feedback bad">Правильна відповідь: <b>${mathHtml(formatAnswer(item.answerType, item.answer))}</b></div>
+      : `<div class="feedback bad">Правильна відповідь: <b>${mh(formatAnswer(item.answerType, item.answer))}</b></div>
          <button class="btn btn-primary next" id="next">Далі</button>`
     : '';
 
@@ -346,7 +350,7 @@ function renderSession() {
     </header>
     <main class="session">
       <p class="session-topic muted">${esc(topic?.title ?? '')} · ${esc(levelName(s.level))}</p>
-      <div class="task ${item.column ? 'task-column' : hasInlineBlank ? 'task-inline' : 'task-text'} ${!item.column && hasInlineBlank && item.text.length > 16 ? 'task-long' : ''}">${prompt}</div>
+      <div class="task ${item.column ? 'task-column' : isFormula ? 'task-inline' : 'task-text'} ${!item.column && isFormula && item.text.length > 16 ? 'task-long' : ''}">${prompt}</div>
       ${answerRow}
       ${feedback}
     </main>
@@ -416,8 +420,8 @@ function renderHintLayer(item, animate) {
   layer.innerHTML = `
     <div class="hint-card" role="dialog" aria-label="Підказка">
       <div class="hint-body">
-        <ul class="hint-rules">${hint.rules.map((r) => `<li>${mathHtml(r)}</li>`).join('')}</ul>
-        ${hint.scheme.length ? `<div class="hint-scheme">${hint.scheme.map((l) => `<div>${mathHtml(l)}</div>`).join('')}</div>` : ''}
+        <ul class="hint-rules">${hint.rules.map((r) => `<li>${mh(r)}</li>`).join('')}</ul>
+        ${hint.scheme.length ? `<div class="hint-scheme">${hint.scheme.map((l) => `<div>${mh(l)}</div>`).join('')}</div>` : ''}
       </div>
       <div class="hint-footer"><button class="link-btn" id="hint-close">Зрозуміло</button></div>
     </div>`;
@@ -470,6 +474,11 @@ function closeHint() {
 window.addEventListener('resize', () => { if (onSessionScreen() && state.hint.open) renderSession(); });
 
 const currentItem = () => state.session.items[state.session.index];
+
+// Позначення класу активної сесії (catalog.json → grades[].notation), напр. { times: '·' }.
+const notation = () => (state.session && gradeOfTopic(state.session.topicId)?.notation) || {};
+const timesSign = (sign) => (sign === '×' ? notation().times ?? '×' : sign);
+const mh = (text, opts = {}) => mathHtml(text, { ...opts, times: notation().times ?? '×' });
 const isRtl = (item) => !!item.column && state.inputDir === 'rtl';
 
 function pressKey(key) {
@@ -594,7 +603,7 @@ function renderSummary() {
     ? `<h2>Помилки</h2><ul class="mistakes">${sum.mistakes.map((m) => {
         const answerText = m.answerText ?? String(m.answer);
         const text = m.text.includes('□') ? m.text.replace('□', answerText) : `${m.text} — ${answerText}`;
-        return `<li><span>${mathHtml(text, { ops: true })}</span> <span class="given">твоя відповідь: ${mathHtml(m.given)}</span></li>`;
+        return `<li><span>${mh(text, { ops: true })}</span> <span class="given">твоя відповідь: ${mh(m.given)}</span></li>`;
       }).join('')}</ul>`
     : '';
 

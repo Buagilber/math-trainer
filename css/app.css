@@ -321,6 +321,8 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .task-inline.task-long { font-size: clamp(1.5rem, 6.5vw, 2.6rem); overflow-wrap: normal; }
 
 .answer-row { font-size: 1.4rem; font-weight: 600; }
+/* Рядок «x = □» під рівнянням — того ж розміру, що й рівняння. */
+.task-inline + .answer-row { font-size: clamp(2rem, 9vw, 3.4rem); font-weight: 700; }
 
 .blank {
   display: inline-block;

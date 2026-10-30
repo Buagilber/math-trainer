@@ -22,15 +22,17 @@ const fracHtml = (num, den) => `<span class="frac"><span class="frac-num">${num}
 // числа («7 см» не розривається), n/d — «двоповерховий» дріб.
 // ops: true — знаки дій (між пробілами) різними кольорами, щоб зміну дії
 // між прикладами було видно одразу.
-export function mathHtml(text, { ops = false } = {}) {
-  let html = groupDigits(esc(text))
+// times — яким знаком показувати множення: генератори пишуть «×», а клас може
+// задати свій (у 5 класі за підручником «·»; див. notation у catalog.json).
+export function mathHtml(text, { ops = false, times = '×' } = {}) {
+  let html = groupDigits(esc(times === '×' ? text : String(text).replaceAll('×', times)))
     .replace(/(\d) (?=\S)/g, '$1\u00a0')
     .replace(/(\d+)\/(\d+)/g, (_, n, d) => fracHtml(n, d));
-  if (ops) html = html.replace(/(^|[\s\u00a0])([+−×:])(?=[\s\u00a0])/g, (_, before, op) => `${before}${opHtml(op)}`);
+  if (ops) html = html.replace(/(^|[\s\u00a0])([+−×·:])(?=[\s\u00a0])/g, (_, before, op) => `${before}${opHtml(op)}`);
   return html;
 }
 
-const OP_CLASS = { '+': 'op-plus', '−': 'op-minus', '×': 'op-times', ':': 'op-divide' };
+const OP_CLASS = { '+': 'op-plus', '−': 'op-minus', '×': 'op-times', '·': 'op-times', ':': 'op-divide' };
 export const opHtml = (op) => `<span class="op ${OP_CLASS[op] ?? ''}">${esc(op)}</span>`;
 
 const needsWhole = (item) => item.answerType === 'fraction' && !!item.answer.whole;

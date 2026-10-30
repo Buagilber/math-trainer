@@ -7,7 +7,7 @@ import { generateInstance, fillText, pluralUk } from '../js/core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswer, formatAnswer, MAX_QUESTION_MS } from '../js/core/session.js';
 import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js/core/hints.js';
-import { applyKey, isComplete } from '../js/app/answer-input.js';
+import { applyKey, isComplete, mathHtml } from '../js/app/answer-input.js';
 import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord } from '../js/core/progress.js';
 import { validateTopic } from '../js/core/validate.js';
 
@@ -339,6 +339,23 @@ test('введення справа наліво (стовпчик)', () => {
   assert(checkAnswer({ answerType: 'number', answer: 87870 }, '087870'), 'нуль зліва не заважає');
 });
 
+test('рівняння з x і позначення класу', () => {
+  const rng = createRng(51);
+  const ex = { id: 'e', kind: 'generator', generator: 'arithmetic', params: { op: ['+', '-'], a: [100, 999], b: [10, 500], result: [0, 9999], missing: 'operand', unknown: 'x' } };
+  for (let i = 0; i < 50; i++) {
+    const it = generateInstance(ex, rng);
+    assert(it.text.includes('x') && !it.text.includes('□'), it.text);
+    eq(it.answerPrefix, 'x =');
+    const vars = { x: it.answer };
+    const [l, r] = it.text.replace(/−/g, '-').split('=');
+    eq(evaluate(l, vars).value, evaluate(r, vars).value, it.text);
+  }
+  const res = generateInstance({ ...ex, params: { ...ex.params, missing: 'result' } }, rng);
+  assert(res.text.endsWith('□') && !res.answerPrefix, 'невідомий результат — як і раніше, поле □');
+  eq(mathHtml('3 × 4 = 12', { times: '·' }), '3\u00a0· 4\u00a0= 12');
+  assert(mathHtml('3 × 4', { ops: true, times: '·' }).includes('op-times">·'));
+});
+
 test('валідація відсіює зламані завдання', () => {
   const { topic, errors } = validateTopic({
     id: 'bad', title: 'B', exercises: [
@@ -362,6 +379,11 @@ test('весь контент з data/ валідний', async () => {
       const { topic, errors } = validateTopic(raw, { samples: 200 });
       assert(!errors.length, `${path}: ${errors.join('; ')}`);
       for (const level of [1, 2, 3]) buildSession(topic, level, createRng(level));
+    }
+    // Приховані розділи (чернетки для інших класів) теж мають бути коректними.
+    for (const path of g.hiddenTopics ?? []) {
+      const { errors } = validateTopic(await (await fetch(`../data/${path}`)).json(), { samples: 50 });
+      assert(!errors.length, `${path}: ${errors.join('; ')}`);
     }
   }
 });

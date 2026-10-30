@@ -84,12 +84,16 @@ function arithmetic(params, rng) {
       : missing;
     const show = { a, b, result: c };
     const answer = show[hide];
-    show[hide] = BLANK;
+    // unknown: "x" — рівняння як у підручнику («x − 34 = 82»), відповідь окремим
+    // рядком «x = □». Без unknown невідоме — це поле □ просто в прикладі.
+    const letter = params.unknown && hide !== 'result' ? params.unknown : null;
+    show[hide] = letter ?? BLANK;
     const sign = SIGNS[op];
     return {
       text: `${show.a} ${sign} ${show.b} = ${show.result}`,
       answerType: 'number',
       answer,
+      answerPrefix: letter ? `${letter} =` : undefined,
       column: hide === 'result' ? columnOf(params, op, [String(a), String(b)]) : undefined,
     };
   });
@@ -183,7 +187,7 @@ function template(params, rng) {
 
     if (!valid || !Number.isInteger(value) || !inRange(value, params.result ?? [0, Infinity])) return null;
     if (params.steps && !steps.every((s) => inRange(s, params.steps))) return null;
-    return { text, answerType: 'number', answer: value, unit: params.unit };
+    return { text, answerType: 'number', answer: value, unit: params.unit, answerPrefix: params.answerPrefix };
   });
 }
 

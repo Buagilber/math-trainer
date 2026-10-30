@@ -45,7 +45,8 @@ export function hintProblems(hint) {
   return problems;
 }
 
-const isTextTask = (item) => !item.text.includes('□');
+// Текстова задача — без □ у тексті; рівняння з x (answerPrefix) до них не належать.
+const isTextTask = (item) => !item.text.includes('□') && !item.answerPrefix;
 
 export function hintDelayMs(item, level, lastAvgMs) {
   if (item.hintAfterSec) return item.hintAfterSec * 1000;
