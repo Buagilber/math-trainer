@@ -19,7 +19,7 @@
       "generator": "template",
       "difficulty": 1,
       "params": {
-        "text": "{a} : {b} = □ (ост. {a % b})",
+        "text": "{a} = {b} × □ + {a % b}",
         "vars": {
           "a": [
             11,
@@ -43,7 +43,7 @@
       "generator": "template",
       "difficulty": 1,
       "params": {
-        "text": "{a} : {b} = {(a - a % b) / b} (ост. □)",
+        "text": "{a} = {b} × {(a - a % b) / b} + □",
         "vars": {
           "a": [
             11,
@@ -67,7 +67,7 @@
       "generator": "template",
       "difficulty": 2,
       "params": {
-        "text": "{a} : {b} = □ (ост. {a % b})",
+        "text": "{a} = {b} × □ + {a % b}",
         "vars": {
           "a": [
             100,
@@ -114,7 +114,7 @@
       "generator": "template",
       "difficulty": 3,
       "params": {
-        "text": "□ : {b} = {q} (ост. {r})",
+        "text": "□ = {b} × {q} + {r}",
         "vars": {
           "b": [
             3,

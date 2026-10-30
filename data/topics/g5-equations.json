@@ -37,7 +37,8 @@
           0,
           9999
         ],
-        "missing": "operand"
+        "missing": "operand",
+        "unknown": "x"
       },
       "hint": {
         "rules": [
@@ -66,7 +67,8 @@
           11,
           99
         ],
-        "missing": "operand"
+        "missing": "operand",
+        "unknown": "x"
       },
       "hint": {
         "rules": [
@@ -101,7 +103,8 @@
           11,
           99
         ],
-        "missing": "operand"
+        "missing": "operand",
+        "unknown": "x"
       }
     },
     {
@@ -126,7 +129,8 @@
           0,
           999999
         ],
-        "missing": "operand"
+        "missing": "operand",
+        "unknown": "x"
       },
       "hint": {
         "rules": [
@@ -147,7 +151,7 @@
       "difficulty": 3,
       "hint": "Спочатку відніми відоме число від правої частини, а потім поділи результат на множник.",
       "params": {
-        "text": "{k} × □ + {b} = {k * x + b}",
+        "text": "{k}x + {b} = {k * x + b}",
         "vars": {
           "k": [
             2,
@@ -162,7 +166,8 @@
             99
           ]
         },
-        "answer": "x"
+        "answer": "x",
+        "answerPrefix": "x ="
       }
     }
   ]
