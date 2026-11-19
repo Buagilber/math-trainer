@@ -16,8 +16,10 @@ const BLANK = '□';
 // під розрядами, "comma" — десяткові дроби кома під комою.
 const COLUMN_OPS = ['+', '-', '*'];
 const SIGNS = { '+': '+', '-': '−', '*': '×', '/': ':' };
+// columnAlign "zeros" — множення чисел, що закінчуються нулями (як у підручнику):
+// остання ненульова цифра під останньою ненульовою, нулі винесені праворуч.
 const columnOf = (params, op, rows, align = 'right') =>
-  params.layout === 'column' && COLUMN_OPS.includes(op) ? { rows, sign: SIGNS[op], align } : undefined;
+  params.layout === 'column' && COLUMN_OPS.includes(op) ? { rows, sign: SIGNS[op], align: params.columnAlign ?? align } : undefined;
 const MAX_TRIES = 500;
 
 export class GenerationError extends Error {}

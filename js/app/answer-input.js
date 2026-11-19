@@ -157,6 +157,13 @@ export function columnHtml(column, answerBox, toggle = '', label = '') {
       rows = rows.map((r, i) => r + (r.includes(',') ? '' : '\u2008') + '\u2007'.repeat(max - fracLen[i]));
     }
   }
+  if (column.align === 'zeros') {
+    // Нулі в кінці чисел виносимо праворуч: число з меншою кількістю нулів
+    // доповнюємо невидимими «цифровими» пробілами.
+    const zeros = rows.map((r) => r.length - r.replace(/0+$/, '').length);
+    const max = Math.max(...zeros);
+    rows = rows.map((r, i) => r + '\u2007'.repeat(max - zeros[i]));
+  }
   // Знак дії — між двома числами по вертикалі, як у підручниках.
   return `<div class="column-task">
       <span class="col-sign">${opHtml(column.sign)}</span>

@@ -7,7 +7,7 @@ import { generateInstance, fillText, pluralUk, STEPS_MIN_DIGITS } from '../js/co
 import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswer, formatAnswer, MAX_QUESTION_MS } from '../js/core/session.js';
 import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js/core/hints.js';
-import { applyKey, isComplete, mathHtml } from '../js/app/answer-input.js';
+import { applyKey, isComplete, mathHtml, columnHtml } from '../js/app/answer-input.js';
 import { formatAgo } from '../js/app/format.js';
 import { contextText, issueUrl } from '../js/app/feedback.js';
 import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord, starsFromAccuracy, topicRating, staleness, worstStaleness } from '../js/core/progress.js';
@@ -449,6 +449,13 @@ test('простій закріпленого розділу: 4 дні — жо�
   eq([0, 3, 4, 9, 10, 40].map((d) => staleness(ago(d), now)), [null, null, 'warn', 'warn', 'alert', 'alert']);
   eq(staleness(null, now), null, 'нерозпочатий розділ не підсвічується');
   eq([worstStaleness([null, 'warn']), worstStaleness(['warn', 'alert']), worstStaleness([])], ['warn', 'alert', null]);
+});
+
+test('стовпчик: нулі в кінці чисел винесені праворуч', () => {
+  const rows = (html) => [...html.matchAll(/col-num [^"]+">([^<]*)</g)].map((m) => m[1]);
+  eq(rows(columnHtml({ rows: ['560', '8'], sign: '×', align: 'zeros' }, '')), ['560', '8\u2007'], 'вісімка під шісткою');
+  eq(rows(columnHtml({ rows: ['120', '400'], sign: '×', align: 'zeros' }, '')), ['120\u2007', '400'], 'двійка над четвіркою');
+  eq(rows(columnHtml({ rows: ['560', '8'], sign: '×', align: 'right' }, '')), ['560', '8'], 'звичайний стовпчик без змін');
 });
 
 test('звернення: контекст і посилання на GitHub', () => {
