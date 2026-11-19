@@ -18,6 +18,13 @@ export const groupDigits = (s) => String(s).replace(/\d{5,}/g, (n) => n.replace(
 
 const fracHtml = (num, den) => `<span class="frac"><span class="frac-num">${num}</span><span class="frac-den">${den}</span></span>`;
 
+// Розклад числа на дві частини, як у підручнику: «5[2|3]» → 5, а під ним
+// «гілочки» до 2 (ліворуч) і 3 (праворуч). Частини — у порядку виконання дій.
+// «{2}» — та сама частина далі в записі, тим самим кольором.
+const SPLIT_V = '<svg class="split-v" viewBox="0 0 20 8" aria-hidden="true"><path d="M10 0 L3 8 M10 0 L17 8"/></svg>';
+const splitHtml = (n, a, b) =>
+  `<span class="split" aria-label="${n}, це ${a} і ${b}"><span class="split-n">${n}</span>${SPLIT_V}<span class="split-parts"><span>${a}</span><span>${b}</span></span></span>`;
+
 // Текст завдання → HTML: екранування, розряди, нерозривний пробіл після
 // числа («7 см» не розривається), n/d — «двоповерховий» дріб.
 // ops: true — знаки дій (між пробілами) різними кольорами, щоб зміну дії
@@ -27,7 +34,9 @@ const fracHtml = (num, den) => `<span class="frac"><span class="frac-num">${num}
 export function mathHtml(text, { ops = false, times = '×' } = {}) {
   let html = groupDigits(esc(times === '×' ? text : String(text).replaceAll('×', times)))
     .replace(/(\d) (?=\S)/g, '$1\u00a0')
-    .replace(/(\d+)\/(\d+)/g, (_, n, d) => fracHtml(n, d));
+    .replace(/(\d+)\/(\d+)/g, (_, n, d) => fracHtml(n, d))
+    .replace(/(\d+)\[(\d+)\|(\d+)\]/g, (_, n, a, b) => splitHtml(n, a, b))
+    .replace(/\{(\d+)\}/g, '<span class="split-part">$1</span>');
   if (ops) html = html.replace(/(^|[\s\u00a0])([+−×·:])(?=[\s\u00a0])/g, (_, before, op) => `${before}${opHtml(op)}`);
   return html;
 }

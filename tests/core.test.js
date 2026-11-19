@@ -380,6 +380,8 @@ test('рівняння з x і позначення класу', () => {
   assert(res.text.endsWith('□') && !res.answerPrefix, 'невідомий результат — як і раніше, поле □');
   eq(mathHtml('3 × 4 = 12', { times: '·' }), '3\u00a0· 4\u00a0= 12');
   assert(mathHtml('3 × 4', { ops: true, times: '·' }).includes('op-times">·'));
+  const split = mathHtml('14 − 6[4|2] = 14 − {4} − {2} = 8');
+  assert(split.includes('class="split"') && split.includes('<span>4</span><span>2</span>') && !split.includes('[') && !split.includes('{') && split.includes('split-part">4<'), 'розклад числа');
 });
 
 test('крок «Обрати дію» в рівняннях', () => {

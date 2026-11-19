@@ -564,6 +564,13 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
   flex-direction: column;
   gap: 2px;
 }
+/* Розклад числа «5[2|3]»: число, під ним гілочки й дві частини іншим кольором. */
+.split { display: inline-flex; flex-direction: column; align-items: center; vertical-align: top; line-height: 1.2; margin: 0 -0.3em; }
+.split-v { width: 1.6em; height: 0.55em; stroke: #e0803a; stroke-width: 1.6; stroke-linecap: round; fill: none; }
+.split-parts { display: flex; gap: 0.7em; color: #e0803a; font-weight: 700; font-size: 0.9em; line-height: 1; }
+.split-part { color: #e0803a; font-weight: 700; }
+.hint-scheme > div { line-height: 1.6; }
+.hint-scheme > div:has(.split) + div { margin-top: 6px; }
 .hint-footer { flex: none; padding: 2px 16px 8px; border-top: 1px solid rgba(31, 36, 64, 0.06); }
 .hint-footer .link-btn { color: var(--primary); padding: 0; min-height: 40px; font-weight: 600; }
 
