@@ -10,7 +10,7 @@ import { pluralUk } from '../core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, levelsOf, formatAnswer } from '../core/session.js';
 import { sessionRecord, topicProgress, levelProgress, compareWithPrevious, staleness, worstStaleness } from '../core/progress.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint } from '../core/hints.js';
-import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
+import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, divisionHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
 import { formatAgo } from './format.js';
 import { openReportDialog, contextText } from './feedback.js';
@@ -464,16 +464,17 @@ function renderSession() {
   const st = state.steps;
   const chosen = chosenStep(item);
   const column = columnFor(item);
-  const rtl = !!column && state.inputDir === 'rtl';
+  const rtl = !!column && !isDivision(column) && state.inputDir === 'rtl';
   const answerBox = answerHtml(item, state.input, fb ? (fb.correct ? 'ok' : 'bad') : null,
     { group: !column, caret: column ? (rtl ? 'left' : 'right') : null });
-  const toggle = column ? directionToggleHtml(state.inputDir, { disabled: !!fb, flip: state.dirFlip }) + dirTipHtml(item) : '';
+  const toggle = column && !isDivision(column) ? directionToggleHtml(state.inputDir, { disabled: !!fb, flip: state.dirFlip }) + dirTipHtml(item) : '';
   state.dirFlip = false;
   const hasInlineBlank = item.text.includes('□');
   // Рівняння з x показуємо так само великим шрифтом і з кольоровими знаками, як приклади.
   const isFormula = hasInlineBlank || !!item.answerPrefix;
   const prompt = item.column ? columnHtml({ ...item.column, sign: timesSign(item.column.sign) }, answerBox, toggle)
-    : isFormula ? mh(item.text, { ops: true }).replace('□', answerBox)
+    // Коли дитина обирає чи вже обрала дію, поле відповіді — у блоці кроку, а в прикладі лишається □.
+    : isFormula ? mh(item.text, { ops: true }).replace('□', st.stage === 'idle' ? answerBox : '<span class="blank-static">□</span>')
     : mh(item.text);
   // Під завданням без □: «Відповідь: □ см» або, для рівнянь, «x = □».
   // Коли дитина обирає чи вже обрала дію, x вводиться в блоці кроку.
@@ -486,7 +487,7 @@ function renderSession() {
     ? fb.correct
       ? '<div class="feedback ok">Молодець! 🎉</div>'
       : `<div class="feedback bad">Правильна відповідь: <b>${mh(formatAnswer(item.answerType, item.answer))}</b>${canonical
-          ? `, бо ${esc(item.answerPrefix ?? 'x =')} ${mh(`${canonical.left} ${canonical.sign} ${canonical.right}`, { ops: true })}` : ''}</div>
+          ? `, бо ${esc(item.steps.label ?? item.answerPrefix ?? 'x =')} ${mh(`${canonical.left} ${canonical.sign} ${canonical.right}`, { ops: true })}` : ''}</div>
          <button class="btn btn-primary next" id="next">Далі</button>`
     : '';
 
@@ -606,13 +607,19 @@ function mistakeHtml(m) {
 
 const chosenStep = (item) => (item.steps && state.steps.stage === 'compute' ? item.steps.options[state.steps.choice] : null);
 
-// Стовпчик для поточного введення: сам приклад стовпчиком або обрана дія
-// (+, −, ×; ділення «кутом» поки немає — воно йде в рядок).
+// Стовпчик для поточного введення: сам приклад стовпчиком або обрана дія:
+// +, −, × — стовпчиком, ділення — кутом ({ kind: 'divide' }).
 function columnFor(item) {
   if (item.column) return item.column;
   const chosen = chosenStep(item);
-  return chosen && chosen.op !== '/' ? { rows: [String(chosen.left), String(chosen.right)], sign: chosen.sign, align: 'right' } : null;
+  if (!chosen) return null;
+  if (chosen.op === '/') return { kind: 'divide', dividend: chosen.left, divisor: chosen.right };
+  return { rows: [String(chosen.left), String(chosen.right)], sign: chosen.sign, align: 'right' };
 }
+
+// Частку при діленні кутом пишуть зліва направо (від старшого розряду),
+// тож перемикача напряму там немає.
+const isDivision = (column) => column?.kind === 'divide';
 
 // Бульбашка під стрілкою напряму введення (на першому стовпчику сесії, перші 3 сесії).
 function dirTipHtml(item) {
@@ -631,7 +638,7 @@ function dirTipHtml(item) {
 
 function stepsAreaHtml(item, chosen, answerBox, toggle, answered) {
   const { stage } = state.steps;
-  const label = item.answerPrefix ?? 'x =';
+  const label = item.steps.label ?? item.answerPrefix ?? 'x =';
   if (stage === 'idle') {
     return answered ? '' : '<div class="steps-area"><button class="link-btn steps-btn" id="steps-open">Обрати дію</button></div>';
   }
@@ -639,13 +646,15 @@ function stepsAreaHtml(item, chosen, answerBox, toggle, answered) {
     const options = item.steps.options.map((o, i) =>
       `<button class="btn step-option" data-step="${i}">${mh(`${o.left} ${o.sign} ${o.right}`, { ops: true })}</button>`).join('');
     return `<div class="steps-area">
-        <p class="steps-question">Як знайти x?</p>
+        <p class="steps-question">${esc(item.steps.question ?? 'Як знайти x?')}</p>
         <div class="steps-options">${options}</div>
         <button class="link-btn" id="steps-cancel">Ввести відповідь одразу</button>
       </div>`;
   }
   const column = columnFor(item);
-  const work = column
+  const work = isDivision(column)
+    ? `<div class="task task-column">${divisionHtml(column, answerBox, label)}</div>`
+    : column
     ? `<div class="task task-column">${columnHtml({ ...column, sign: timesSign(column.sign) }, answerBox, toggle, label)}</div>`
     : `<div class="task task-inline">${esc(label)} ${mh(`${chosen.left} ${chosen.sign} ${chosen.right}`, { ops: true })} = ${answerBox}</div>`;
   return `<div class="steps-area">${work}${answered ? '' : '<button class="link-btn" id="steps-change">Змінити дію</button>'}</div>`;
@@ -731,7 +740,7 @@ const currentItem = () => state.session.items[state.session.index];
 const notation = () => (state.session && gradeOfTopic(state.session.topicId)?.notation) || {};
 const timesSign = (sign) => (sign === '×' ? notation().times ?? '×' : sign);
 const mh = (text, opts = {}) => mathHtml(text, { ...opts, times: notation().times ?? '×' });
-const isRtl = (item) => !!columnFor(item) && state.inputDir === 'rtl';
+const isRtl = (item) => { const c = columnFor(item); return !!c && !isDivision(c) && state.inputDir === 'rtl'; };
 
 function pressKey(key) {
   if (state.feedback || state.steps.stage === 'choose') return;

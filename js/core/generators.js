@@ -139,6 +139,26 @@ function arithmetic(params, rng) {
   });
 }
 
+// Крок «Обрати дію» для ділення з остачею (divideSteps: ["a", "b"] у template):
+// неповну частку знаходять діленням a : b кутом. Варіанти, як у рівняннях, —
+// 2 дії (: і ×) × 2 порядки чисел; правильний — той, що дає неповну частку.
+// Значення ділення — неповна частка (ціла частина).
+export function divisionSteps(a, b, quotient, rng) {
+  const options = [];
+  for (const o of ['/', '*']) {
+    for (const [left, right] of [[a, b], [b, a]]) {
+      const value = o === '/' ? Math.floor(left / right) : left * right;
+      options.push({ op: o, sign: SIGNS[o], left, right, value, correct: o === '/' && left === a && value === quotient });
+    }
+  }
+  return {
+    options: rng.shuffle(options),
+    canonical: { op: '/', sign: SIGNS['/'], left: a, right: b },
+    question: 'Як знайти неповну частку?',
+    label: '',
+  };
+}
+
 // ---------- compare: ліва частина ? права частина ----------
 
 // Сторона порівняння: { number: [min,max] } | { expr, vars, result? } | { near: n }
@@ -227,7 +247,12 @@ function template(params, rng) {
 
     if (!valid || !Number.isInteger(value) || !inRange(value, params.result ?? [0, Infinity])) return null;
     if (params.steps && !steps.every((s) => inRange(s, params.steps))) return null;
-    return { text, answerType: 'number', answer: value, unit: params.unit, answerPrefix: params.answerPrefix };
+    const item = { text, answerType: 'number', answer: value, unit: params.unit, answerPrefix: params.answerPrefix };
+    if (params.divideSteps) {
+      const [left, right] = params.divideSteps.map((name) => numeric[name]);
+      item.steps = divisionSteps(left, right, value, rng);
+    }
+    return item;
   });
 }
 

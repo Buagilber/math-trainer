@@ -81,7 +81,11 @@
         "where": [
           "a % b != 0"
         ],
-        "answer": "(a - a % b) / b"
+        "answer": "(a - a % b) / b",
+        "divideSteps": [
+          "a",
+          "b"
+        ]
       }
     },
     {

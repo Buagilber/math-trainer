@@ -175,6 +175,16 @@ export function columnHtml(column, answerBox, toggle = '', label = '') {
     </div>`;
 }
 
+// Ділення кутом, як у підручнику: ділене, праворуч за вертикальною рискою —
+// дільник, під ним горизонтальна риска й поле для частки.
+export function divisionHtml({ dividend, divisor }, answerBox, label = '') {
+  return `<div class="division-task">
+      <span class="div-dividend">${esc(String(dividend))}</span>
+      <span class="div-divisor">${esc(String(divisor))}</span>
+      <span class="div-quotient">${label ? `<span class="col-label">${esc(label)}</span>` : ''}${answerBox}</span>
+    </div>`;
+}
+
 // Клавіатура під тип відповіді.
 export function keypadHtml(item, input, disabled) {
   const dis = disabled ? 'disabled' : '';

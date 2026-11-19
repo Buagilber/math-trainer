@@ -380,6 +380,20 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .col-answer { grid-column: 2; grid-row: 4; justify-self: stretch; display: flex; justify-content: flex-end; }
 .col-answer .blank { min-width: 100%; text-align: right; letter-spacing: 0.04em; }
 
+/* Ділення кутом: ділене | дільник, під дільником — частка. */
+.division-task {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+}
+.div-dividend { grid-column: 1; grid-row: 1; padding: 0 0.3em 0 0; }
+.div-divisor { grid-column: 2; grid-row: 1; padding: 0 0.3em; border-left: 3px solid currentColor; border-bottom: 3px solid currentColor; }
+.div-quotient { grid-column: 2; grid-row: 2; padding: 6px 0 0 0.3em; border-left: 3px solid currentColor; display: flex; align-items: center; gap: 0.3em; }
+.div-quotient .blank { min-width: 2.5em; text-align: left; }
+.blank-static { color: var(--muted); }
+
 /* Перемикач напряму введення: ← справа наліво (типово), → зліва направо. */
 .dir-toggle {
   width: 1.3em;

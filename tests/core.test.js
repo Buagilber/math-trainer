@@ -3,11 +3,11 @@
 
 import { createRng } from '../js/core/rng.js';
 import { evaluate, formatExpression } from '../js/core/expr.js';
-import { generateInstance, fillText, pluralUk, STEPS_MIN_DIGITS } from '../js/core/generators.js';
+import { generateInstance, fillText, pluralUk, STEPS_MIN_DIGITS, divisionSteps } from '../js/core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswer, formatAnswer, MAX_QUESTION_MS } from '../js/core/session.js';
 import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js/core/hints.js';
-import { applyKey, isComplete, mathHtml, columnHtml } from '../js/app/answer-input.js';
+import { applyKey, isComplete, mathHtml, columnHtml, divisionHtml } from '../js/app/answer-input.js';
 import { formatAgo } from '../js/app/format.js';
 import { contextText, issueUrl } from '../js/app/feedback.js';
 import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord, starsFromAccuracy, topicRating, staleness, worstStaleness } from '../js/core/progress.js';
@@ -456,6 +456,21 @@ test('стовпчик: нулі в кінці чисел винесені пр�
   eq(rows(columnHtml({ rows: ['560', '8'], sign: '×', align: 'zeros' }, '')), ['560', '8\u2007'], 'вісімка під шісткою');
   eq(rows(columnHtml({ rows: ['120', '400'], sign: '×', align: 'zeros' }, '')), ['120\u2007', '400'], 'двійка над четвіркою');
   eq(rows(columnHtml({ rows: ['560', '8'], sign: '×', align: 'right' }, '')), ['560', '8'], 'звичайний стовпчик без змін');
+});
+
+test('ділення з остачею: крок «Обрати дію» і ділення кутом', () => {
+  const st = divisionSteps(745, 8, 93, createRng(3));
+  eq(st.options.length, 4);
+  eq(st.options.filter((o) => o.correct).map((o) => `${o.left} ${o.sign} ${o.right}`), ['745 : 8'], 'правильне лише ділене : дільник');
+  eq(st.options.find((o) => o.op === '/' && o.left === 8).value, 0, 'значення ділення — неповна частка');
+  eq([st.canonical.left, st.canonical.right, st.question], [745, 8, 'Як знайти неповну частку?']);
+  const topic = { exercises: [{ id: 'q', kind: 'generator', generator: 'template', params: { text: '{a} = {b} × □ + {a % b}', vars: { a: [100, 999], b: [3, 9] }, where: ['a % b != 0'], answer: '(a - a % b) / b', divideSteps: ['a', 'b'] } }] };
+  const item = generateInstance(topic.exercises[0], createRng(5));
+  const [, a, b] = item.text.match(/^(\d+) = (\d+)/).map(Number);
+  eq(item.steps.options.find((o) => o.correct).value, item.answer, 'правильна дія дає відповідь');
+  eq([item.steps.canonical.left, item.steps.canonical.right], [a, b]);
+  const html = divisionHtml({ dividend: 745, divisor: 8 }, '<i>q</i>');
+  assert(html.includes('div-dividend">745') && html.includes('div-divisor">8') && html.includes('<i>q</i>'), 'кут: ділене, дільник, поле частки');
 });
 
 test('звернення: контекст і посилання на GitHub', () => {
