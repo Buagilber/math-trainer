@@ -342,7 +342,38 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .col-top { grid-column: 2; grid-row: 1; }
 .col-bottom { grid-column: 2; grid-row: 2; }
 .col-label { grid-column: 1; grid-row: 4; justify-self: end; white-space: nowrap; }
-.col-toggle { grid-column: 2; grid-row: 5; justify-self: center; margin-top: 6px; }
+.col-toggle { grid-column: 2; grid-row: 5; justify-self: center; margin-top: 6px; position: relative; }
+/* Бульбашка-пояснення під стрілкою; дотик, перша цифра чи перемикання її ховають. */
+.dir-tip {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: min(240px, 80vw);
+  padding: 10px 12px;
+  border: none;
+  border-radius: 12px;
+  background: #fff4d6;
+  box-shadow: 0 6px 18px rgba(31, 36, 64, 0.18);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: normal;
+  text-align: center;
+  animation: fade-in 0.3s ease-out;
+}
+.dir-tip::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top: none;
+  border-bottom-color: #fff4d6;
+}
 /* Відступ праворуч = внутрішній відступ + рамка поля відповіді, щоб цифри стояли під цифрами. */
 .col-num { justify-self: end; padding-right: calc(0.25em + 3px); letter-spacing: 0.04em; white-space: pre; }
 .col-line { grid-column: 2; grid-row: 3; border-top: 3px solid currentColor; margin: 2px 0 6px; align-self: stretch; }
@@ -359,8 +390,10 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
   color: var(--primary);
   font-size: 0.75em;
   line-height: 1;
-  transition: transform 0.3s ease-out;
+  transition: transform 0.3s ease-out, background-color 0.3s, color 0.3s;
 }
+/* Типовий напрям «як у зошиті» — яскрава стрілка, щоб її помітили; зліва направо — спокійна синя. */
+.dir-toggle.rtl { background: #ffc233; color: #6b4200; box-shadow: 0 2px 6px rgba(255, 166, 0, 0.35); }
 .dir-toggle.ltr { transform: rotate(180deg); }
 .dir-toggle.flip.ltr { animation: dir-to-ltr 0.3s ease-out; }
 .dir-toggle.flip.rtl { animation: dir-to-rtl 0.3s ease-out; }

@@ -19,6 +19,13 @@ import { progressStore, storage, pinStore } from './storage.js';
 const root = document.getElementById('app');
 const WELCOMED_KEY = 'mt.welcomed';
 const INPUT_DIR_KEY = 'mt.columnInputDir';
+// Бульбашка біля стрілки напряму: раз за сесію, у перших DIR_TIP_SESSIONS сесіях зі стовпчиком.
+const DIR_TIP_KEY = 'mt.dirTipSessions';
+const DIR_TIP_SESSIONS = 3;
+const DIR_TIP_TEXT = {
+  rtl: 'Цифри з\'являються справа, як у зошиті. Натисни стрілку, щоб писати зліва направо.',
+  ltr: 'Цифри з\'являються зліва направо. Натисни стрілку, щоб писати справа наліво, як у зошиті.',
+};
 
 const state = {
   content: null,
@@ -37,6 +44,8 @@ const state = {
   // Вибір запам'ятовується на пристрої. dirFlip — щойно перемкнули (анімація стрілки).
   inputDir: storage.get(INPUT_DIR_KEY) === 'ltr' ? 'ltr' : 'rtl',
   dirFlip: false,
+  // Бульбашка-пояснення стрілки в цій сесії: 'pending' — ще не показували, 'shown', 'done'.
+  dirTip: 'pending',
   contentLoadedAt: 0, // коли востаннє завантажено data/
   refreshPending: false, // оновлення відкладене до кінця тренування
 };
@@ -433,6 +442,7 @@ function renderTopic(topicId) {
 
 function startSession(topic, level, { replace = false } = {}) {
   state.session = buildSession(topic, level, createRng());
+  state.dirTip = 'pending';
   state.sessionStartedAt = Date.now();
   state.questionStartedAt = Date.now();
   state.input = emptyInput(state.session.items[0]);
@@ -457,7 +467,7 @@ function renderSession() {
   const rtl = !!column && state.inputDir === 'rtl';
   const answerBox = answerHtml(item, state.input, fb ? (fb.correct ? 'ok' : 'bad') : null,
     { group: !column, caret: column ? (rtl ? 'left' : 'right') : null });
-  const toggle = column ? directionToggleHtml(state.inputDir, { disabled: !!fb, flip: state.dirFlip }) : '';
+  const toggle = column ? directionToggleHtml(state.inputDir, { disabled: !!fb, flip: state.dirFlip }) + dirTipHtml(item) : '';
   state.dirFlip = false;
   const hasInlineBlank = item.text.includes('□');
   // Рівняння з x показуємо так само великим шрифтом і з кольоровими знаками, як приклади.
@@ -530,6 +540,11 @@ function renderSession() {
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
     state.dirFlip = true;
+    state.dirTip = state.dirTip === 'shown' ? 'done' : state.dirTip;
+    renderSession();
+  });
+  root.querySelector('#dir-tip')?.addEventListener('click', () => {
+    state.dirTip = 'done';
     renderSession();
   });
   if (h.open && !fb) renderHintLayer(item, h.animate);
@@ -597,6 +612,21 @@ function columnFor(item) {
   if (item.column) return item.column;
   const chosen = chosenStep(item);
   return chosen && chosen.op !== '/' ? { rows: [String(chosen.left), String(chosen.right)], sign: chosen.sign, align: 'right' } : null;
+}
+
+// Бульбашка під стрілкою напряму введення (на першому стовпчику сесії, перші 3 сесії).
+function dirTipHtml(item) {
+  if (state.feedback || state.dirTip === 'done' || !isEmpty(item, state.input)) return '';
+  if (state.dirTip === 'pending') {
+    const shown = Number(storage.get(DIR_TIP_KEY)) || 0;
+    if (shown >= DIR_TIP_SESSIONS) {
+      state.dirTip = 'done';
+      return '';
+    }
+    storage.set(DIR_TIP_KEY, String(shown + 1));
+    state.dirTip = 'shown';
+  }
+  return `<button class="dir-tip" id="dir-tip" aria-label="Закрити пояснення">${esc(DIR_TIP_TEXT[state.inputDir])}</button>`;
 }
 
 function stepsAreaHtml(item, chosen, answerBox, toggle, answered) {
@@ -712,6 +742,7 @@ function pressKey(key) {
   }
   state.input = applyKey(item, state.input, key, { rtl: isRtl(item) });
   state.lastInputAt = Date.now();
+  if (state.dirTip === 'shown' && !isEmpty(item, state.input)) state.dirTip = 'done'; // перша цифра — бульбашка зникає
   renderSession();
 }
 
