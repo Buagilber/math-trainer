@@ -1,0 +1,23 @@
+name: 🐞 Помилка в застосунку
+description: Щось працює неправильно — приклад, відповідь, екран чи підказка.
+title: "[Помилка] "
+labels: ["bug", "from-app", "needs-triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Що не так
+      description: Коротко — що сталося і що мало бути. Можна одним реченням.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Скріншот
+      description: Перетягни або встав зображення сюди (необов'язково).
+  - type: textarea
+    id: context
+    attributes:
+      label: Контекст (заповнюється застосунком)
+      description: Стан екрана в момент звернення. Не змінюй — це дані для розбору.
+      render: yaml

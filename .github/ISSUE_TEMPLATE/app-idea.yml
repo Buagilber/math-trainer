@@ -1,0 +1,23 @@
+name: 💡 Пропозиція
+description: Ідея, як зробити застосунок кращим.
+title: "[Пропозиція] "
+labels: ["enhancement", "from-app", "needs-triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Що запропонувати
+      description: Що хочеться змінити чи додати і навіщо.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Скріншот
+      description: Перетягни або встав зображення сюди (необов'язково).
+  - type: textarea
+    id: context
+    attributes:
+      label: Контекст (заповнюється застосунком)
+      description: Стан екрана в момент звернення. Не змінюй — це дані для розбору.
+      render: yaml

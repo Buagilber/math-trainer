@@ -74,6 +74,26 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
   font-size: 1.4rem;
 }
 .icon-btn:active { background: var(--border); }
+.report-btn { color: var(--muted); font-size: 1.15rem; }
+
+/* Вікно звернення */
+.report-dialog { text-align: left; }
+.report-dialog h2 { text-align: center; }
+.report-kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.report-kind { min-height: 44px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface); font-weight: 600; }
+.report-kind.active { border-color: var(--primary); background: rgba(79, 109, 245, 0.08); color: var(--primary); }
+.report-text {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  color: var(--text);
+  background: var(--surface);
+}
+.report-note { font-size: 0.85rem; color: var(--muted); margin: 8px 0 16px; line-height: 1.4; }
 
 .link-btn { flex: none; min-height: 44px; padding: 0 8px; border: none; background: transparent; color: var(--muted); font-size: 0.95rem; }
 

@@ -13,6 +13,7 @@ import { hintDelayMs, shouldOfferHint, normalizeHint } from '../core/hints.js';
 import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
 import { formatAgo } from './format.js';
+import { openReportDialog, contextText } from './feedback.js';
 import { progressStore, storage } from './storage.js';
 
 const root = document.getElementById('app');
@@ -102,6 +103,58 @@ function confirmDialog({ icon = '', title, text, confirm, cancel }) {
     document.body.append(overlay);
     overlay.querySelector('[data-answer="no"]').focus();
   });
+}
+
+// ---------- звернення про помилку чи пропозицію (docs/FEEDBACK.md) ----------
+
+const reportButton = '<button class="icon-btn report-btn" data-report aria-label="Повідомити про помилку або ідею" title="Повідомити про помилку або ідею">⚑</button>';
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-report]')) openReportDialog(reportContext());
+});
+
+// Знімок екрана для звернення: де людина, що бачить і що ввела.
+function reportContext() {
+  const route = currentRoute();
+  const s = state.session;
+  const pairs = [['екран', location.hash || '#/'], ['час', new Date().toISOString()]];
+  if (route.name === 'grade') pairs.push(['клас', findGrade(route.id)?.title]);
+  if (route.name === 'topic') {
+    pairs.push(['клас', gradeOfTopic(route.id)?.title], ['розділ', `${findTopic(route.id)?.title} (${route.id})`]);
+  }
+  if (route.sub === 'play' && s) {
+    const fb = state.feedback;
+    const item = fb ? fb.item : s.items[s.index];
+    const chosen = chosenStep(item);
+    pairs.push(
+      ['рівень', levelName(s.level)],
+      ['приклад', `${fb ? s.index : s.index + 1} з ${s.items.length}`],
+      ['завдання', item.exerciseId],
+      ['текст', item.text],
+      ['правильна відповідь', formatAnswer(item.answerType, item.answer)],
+      ['введено', formatAnswer(item.answerType, state.input)],
+      ['стан', fb ? (fb.correct ? 'відповідь правильна' : 'відповідь неправильна') : 'відповідь ще не дано'],
+      ['підказка', state.hint.open ? 'відкрита' : state.hint.visible ? 'кнопка показана' : 'не показана'],
+      ['крок «Обрати дію»', item.steps
+        ? (chosen ? `обрано ${chosen.left} ${chosen.sign} ${chosen.right}` : state.steps.stage === 'choose' ? 'обирає дію' : 'не відкривали')
+        : undefined],
+      ['напрям введення', columnFor(item) ? state.inputDir : undefined],
+    );
+  }
+  if (route.sub === 'result' && s) {
+    const sum = summarize(s);
+    pairs.push(
+      ['рівень', levelName(s.level)],
+      ['результат', `${sum.correct} з ${sum.total}`],
+      ['помилки', sum.mistakes.map((m) => `${m.exerciseId}: ${m.text} → ${m.given} (треба ${m.answerText})`).join('; ')],
+    );
+  }
+  pairs.push(
+    ['пристрій', navigator.userAgent],
+    ['розмір екрана', `${innerWidth}×${innerHeight}`],
+    ['режим', matchMedia('(display-mode: standalone)').matches ? 'встановлений застосунок' : 'браузер'],
+  );
+  return contextText(pairs);
 }
 
 // ---------- навігація ----------
@@ -223,6 +276,7 @@ function renderGrades() {
     <header class="bar">
       <h1>Математика</h1>
       <button class="link-btn" id="about">Про застосунок</button>
+      ${reportButton}
     </header>
     <main class="grades">
       <p class="muted">Обери клас:</p>
@@ -264,6 +318,7 @@ function renderGrade(gradeId) {
     <header class="bar">
       <button class="icon-btn" id="back" aria-label="Назад">←</button>
       <h1>${esc(grade.title)}</h1>
+      ${reportButton}
     </header>
     <main class="topics">${cards}</main>`;
 
@@ -298,6 +353,7 @@ function renderTopic(topicId) {
     <header class="bar">
       <button class="icon-btn" id="back" aria-label="Назад">←</button>
       <h1>${esc(topic.icon ?? '')} ${esc(topic.title)}</h1>
+      ${reportButton}
     </header>
     <main class="levels">
       <p class="muted">Обери рівень складності:</p>
@@ -369,6 +425,7 @@ function renderSession() {
       <div class="progress"><div class="progress-fill" style="width:${(s.index / s.items.length) * 100}%"></div></div>
       ${hintButton}
       <span class="counter">${number}/${s.items.length}</span>
+      ${reportButton}
     </header>
     <main class="session">
       <p class="session-topic muted">${esc(topic?.title ?? '')} · ${esc(levelName(s.level))}</p>
@@ -715,7 +772,7 @@ function renderSummary() {
     : '';
 
   root.innerHTML = `
-    <header class="bar"><h1>${esc(topic?.title ?? 'Підсумок')}</h1></header>
+    <header class="bar"><h1>${esc(topic?.title ?? 'Підсумок')}</h1>${reportButton}</header>
     <main class="summary">
       <div class="summary-stars">${starsHtml(sum.stars)}</div>
       <p class="summary-praise">${praise}</p>

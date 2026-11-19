@@ -9,6 +9,7 @@ import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers
 import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js/core/hints.js';
 import { applyKey, isComplete, mathHtml } from '../js/app/answer-input.js';
 import { formatAgo } from '../js/app/format.js';
+import { contextText, issueUrl } from '../js/app/feedback.js';
 import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord } from '../js/core/progress.js';
 import { validateTopic } from '../js/core/validate.js';
 
@@ -414,6 +415,17 @@ test('дата останньої сесії', () => {
   eq(formatAgo(daysAgo(364), now), '11 місяців тому');
   eq(formatAgo(daysAgo(365), now), 'понад рік тому');
   eq(formatAgo(at(2026, 10, 30, 1, 0), at(2026, 10, 31, 23, 0)), 'вчора');
+});
+
+test('звернення: контекст і посилання на GitHub', () => {
+  const ctx = contextText([['екран', '#/topic/g2-mul/play'], ['текст', '7 × □ = 42: "x"'], ['порожнє', ''], ['немає', undefined]]);
+  eq(ctx, 'екран: "#/topic/g2-mul/play"\nтекст: "7 × □ = 42: \\"x\\""', 'YAML-рядки в лапках, порожні пропущено');
+  const url = new URL(issueUrl('bug', 'Не та відповідь\nдеталі', ctx));
+  eq(url.pathname, '/Buagilber/math-trainer/issues/new');
+  eq(url.searchParams.get('template'), 'app-bug.yml');
+  eq(url.searchParams.get('title'), '[Помилка] Не та відповідь', 'заголовок — перший рядок опису');
+  eq(url.searchParams.get('context'), ctx);
+  eq(new URL(issueUrl('idea', '', '')).searchParams.get('template'), 'app-idea.yml');
 });
 
 test('валідація відсіює зламані завдання', () => {
