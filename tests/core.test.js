@@ -10,7 +10,7 @@ import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js
 import { applyKey, isComplete, mathHtml } from '../js/app/answer-input.js';
 import { formatAgo } from '../js/app/format.js';
 import { contextText, issueUrl } from '../js/app/feedback.js';
-import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord, starsFromAccuracy, topicRating } from '../js/core/progress.js';
+import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord, starsFromAccuracy, topicRating, staleness, worstStaleness } from '../js/core/progress.js';
 import { validateTopic } from '../js/core/validate.js';
 
 const tests = [];
@@ -441,6 +441,14 @@ test('дата останньої сесії', () => {
   eq(formatAgo(daysAgo(364), now), '11 місяців тому');
   eq(formatAgo(daysAgo(365), now), 'понад рік тому');
   eq(formatAgo(at(2026, 10, 30, 1, 0), at(2026, 10, 31, 23, 0)), 'вчора');
+});
+
+test('простій закріпленого розділу: 4 дні — жовтий, 10 — червоний', () => {
+  const now = new Date(2026, 10, 19, 12).getTime();
+  const ago = (d) => now - d * 86400000;
+  eq([0, 3, 4, 9, 10, 40].map((d) => staleness(ago(d), now)), [null, null, 'warn', 'warn', 'alert', 'alert']);
+  eq(staleness(null, now), null, 'нерозпочатий розділ не підсвічується');
+  eq([worstStaleness([null, 'warn']), worstStaleness(['warn', 'alert']), worstStaleness([])], ['warn', 'alert', null]);
 });
 
 test('звернення: контекст і посилання на GitHub', () => {

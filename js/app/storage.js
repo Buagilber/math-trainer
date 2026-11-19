@@ -31,3 +31,24 @@ export const progressStore = {
     storage.remove(PROGRESS_KEY);
   },
 };
+
+// Закріплені («обрані») розділи — список id, спільний для всіх класів.
+const PINNED_KEY = 'mt.pinned.v1';
+
+export const pinStore = {
+  all() {
+    try {
+      const ids = JSON.parse(storage.get(PINNED_KEY) ?? '[]');
+      return Array.isArray(ids) ? ids : [];
+    } catch { return []; }
+  },
+  has(id) {
+    return this.all().includes(id);
+  },
+  toggle(id) {
+    const ids = this.all();
+    const next = ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
+    storage.set(PINNED_KEY, JSON.stringify(next));
+    return next.includes(id);
+  },
+};

@@ -8,13 +8,13 @@ import { CONFIG } from '../config.js';
 import { createRng } from '../core/rng.js';
 import { pluralUk } from '../core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, levelsOf, formatAnswer } from '../core/session.js';
-import { sessionRecord, topicProgress, levelProgress, compareWithPrevious } from '../core/progress.js';
+import { sessionRecord, topicProgress, levelProgress, compareWithPrevious, staleness, worstStaleness } from '../core/progress.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint } from '../core/hints.js';
 import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
 import { formatAgo } from './format.js';
 import { openReportDialog, contextText } from './feedback.js';
-import { progressStore, storage } from './storage.js';
+import { progressStore, storage, pinStore } from './storage.js';
 
 const root = document.getElementById('app');
 const WELCOMED_KEY = 'mt.welcomed';
@@ -216,6 +216,7 @@ async function render() {
   switch (route.name) {
     case 'about': return renderWelcome({ firstRun: false });
     case 'grade': return renderGrade(route.id);
+    case 'pinned': return renderPinned();
     case 'topic':
       if (route.sub === 'play') return state.session?.topicId === route.id ? renderSession() : go(`/topic/${route.id}`, { replace: true });
       if (route.sub === 'result') return state.session?.topicId === route.id ? renderSummary() : go(`/topic/${route.id}`, { replace: true });
@@ -267,10 +268,22 @@ function renderWelcome({ firstRun }) {
 // ---------- вибір класу ----------
 
 function renderGrades() {
+  const records = progressStore.all();
+  const pinned = pinnedTopics();
+  const staleOf = (topics) => worstStaleness(topics.map((t) => topicStaleness(records, t)));
+  const dot = (level) => (level ? `<span class="stale-dot ${level}" aria-label="${STALE_LABEL[level]}"></span>` : '');
+
+  const pinnedTile = `<button class="grade-tile pinned-tile" data-pinned>
+      ${dot(staleOf(pinned))}
+      <span class="grade-number">📌</span>
+      <span class="grade-label">Обрані</span>
+      <span class="grade-meta">${pinned.length ? `${pinned.length} ${pluralUk(pinned.length, 'розділ', 'розділи', 'розділів')}` : 'порожньо'}</span>
+    </button>`;
   const tiles = state.content.grades.map((g) => {
     const count = g.topics.length;
     const meta = count ? `${count} ${pluralUk(count, 'розділ', 'розділи', 'розділів')}` : 'Незабаром';
     return `<button class="grade-tile" data-grade="${esc(g.id)}" ${count ? '' : 'disabled'}>
+        ${dot(staleOf(pinned.filter((t) => g.topics.includes(t))))}
         <span class="grade-number">${esc(g.grade ?? '')}</span>
         <span class="grade-label">клас</span>
         <span class="grade-meta">${meta}</span>
@@ -285,11 +298,12 @@ function renderGrades() {
     </header>
     <main class="grades">
       <p class="muted">Обери клас:</p>
-      <div class="grade-grid">${tiles}</div>
+      <div class="grade-grid">${pinnedTile}${tiles}</div>
     </main>
     ${problemsHtml()}`;
 
   root.querySelectorAll('[data-grade]').forEach((b) => b.addEventListener('click', () => go(`/grade/${b.dataset.grade}`)));
+  root.querySelector('[data-pinned]').addEventListener('click', () => go('/pinned'));
   root.querySelector('#about').addEventListener('click', () => go('/about'));
 }
 
@@ -300,23 +314,53 @@ function problemsHtml() {
     : '';
 }
 
-// ---------- розділи класу ----------
+// ---------- розділи класу й обрані ----------
+//
+// Закріплені розділи (📌) стоять угорі списку класу, а на екрані «Обрані» —
+// усі разом: за класами, у межах класу — за порядком у програмі.
+// Закріплений розділ, який давно не тренували, підсвічується (core/progress.js → staleness).
+
+const STALE_LABEL = { warn: 'давно не тренувались', alert: 'дуже давно не тренувались' };
+
+const topicStaleness = (records, t) => staleness(topicProgress(records, t.id, levelsOf(t)).lastAt);
+
+function pinnedTopics() {
+  const ids = new Set(pinStore.all());
+  return state.content.grades.flatMap((g) => g.topics.filter((t) => ids.has(t.id)));
+}
+
+function topicCardHtml(t, records) {
+  const p = topicProgress(records, t.id, levelsOf(t));
+  const pinned = pinStore.has(t.id);
+  const stale = pinned ? staleness(p.lastAt) : null;
+  return `<div class="topic-item${stale ? ` stale-${stale}` : ''}">
+      <button class="topic-card" data-topic="${esc(t.id)}">
+        <span class="topic-icon">${esc(t.icon ?? '📘')}</span>
+        <span class="topic-title">${esc(t.title)}</span>
+        <span class="topic-meta">${p.sessions
+          ? `${starsHtml(p.rating ?? 0)}<span class="ago"${stale ? ` title="${STALE_LABEL[stale]}"` : ''}>${formatAgo(p.lastAt)}</span>`
+          : '<span class="muted">Ще не розпочато</span>'}</span>
+      </button>
+      <button class="pin-btn${pinned ? ' on' : ''}" data-pin="${esc(t.id)}" aria-pressed="${pinned}"
+        aria-label="${pinned ? 'Відкріпити розділ' : 'Закріпити розділ'}">📌</button>
+    </div>`;
+}
+
+function bindTopicCards(rerender) {
+  root.querySelectorAll('[data-topic]').forEach((b) => b.addEventListener('click', () => go(`/topic/${b.dataset.topic}`)));
+  root.querySelectorAll('[data-pin]').forEach((b) => b.addEventListener('click', () => {
+    pinStore.toggle(b.dataset.pin);
+    rerender();
+  }));
+}
 
 function renderGrade(gradeId) {
   const grade = findGrade(gradeId);
   if (!grade || !grade.topics.length) return go('/', { replace: true });
   const records = progressStore.all();
-
-  const cards = grade.topics.map((t) => {
-    const p = topicProgress(records, t.id, levelsOf(t));
-    return `<button class="topic-card" data-topic="${esc(t.id)}">
-        <span class="topic-icon">${esc(t.icon ?? '📘')}</span>
-        <span class="topic-title">${esc(t.title)}</span>
-        <span class="topic-meta">${p.sessions
-          ? `${starsHtml(p.rating ?? 0)}<span class="ago">${formatAgo(p.lastAt)}</span>`
-          : '<span class="muted">Ще не розпочато</span>'}</span>
-      </button>`;
-  }).join('');
+  const pinned = grade.topics.filter((t) => pinStore.has(t.id));
+  const rest = grade.topics.filter((t) => !pinStore.has(t.id));
+  const sep = pinned.length && rest.length ? '<div class="topics-sep" role="separator"></div>' : '';
 
   root.innerHTML = `
     <header class="bar">
@@ -324,10 +368,29 @@ function renderGrade(gradeId) {
       <h1>${esc(grade.title)}</h1>
       ${reportButton}
     </header>
-    <main class="topics">${cards}</main>`;
+    <main class="topics">${pinned.map((t) => topicCardHtml(t, records)).join('')}${sep}${rest.map((t) => topicCardHtml(t, records)).join('')}</main>`;
 
   root.querySelector('#back').addEventListener('click', () => up('/'));
-  root.querySelectorAll('[data-topic]').forEach((b) => b.addEventListener('click', () => go(`/topic/${b.dataset.topic}`)));
+  bindTopicCards(render);
+}
+
+function renderPinned() {
+  const records = progressStore.all();
+  const topics = pinnedTopics();
+  const scrollY = window.scrollY;
+  root.innerHTML = `
+    <header class="bar">
+      <button class="icon-btn" id="back" aria-label="Назад">←</button>
+      <h1>Обрані</h1>
+      ${reportButton}
+    </header>
+    <main class="topics">${topics.length
+      ? topics.map((t) => topicCardHtml(t, records)).join('')
+      : '<p class="muted topics-empty">Тут будуть важливі розділи. Щоб додати розділ, відкрий клас і натисни 📌 на картці розділу.</p>'}</main>`;
+  window.scrollTo(0, scrollY);
+
+  root.querySelector('#back').addEventListener('click', () => up('/'));
+  bindTopicCards(renderPinned);
 }
 
 // ---------- вибір рівня ----------

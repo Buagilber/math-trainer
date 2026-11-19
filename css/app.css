@@ -233,6 +233,35 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .topic-meta { font-size: 0.9rem; margin-top: 4px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .topic-meta .ago { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
 
+/* Закріплені розділи (📌) і простій: жовтий — 4+ дні без тренувань, червоний — 10+. */
+.topic-item { position: relative; display: flex; }
+.topic-item .topic-card { flex: 1; padding-right: 48px; }
+.pin-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 1.1rem;
+  filter: grayscale(1);
+  opacity: 0.35;
+}
+.pin-btn.on { filter: none; opacity: 1; }
+.topics-sep { grid-column: 1 / -1; height: 1px; background: var(--border); margin: 2px 4px; }
+.topics-empty { grid-column: 1 / -1; text-align: center; line-height: 1.5; padding: 24px 8px; }
+.stale-warn .topic-card { box-shadow: inset 4px 0 0 var(--star), var(--shadow); }
+.stale-warn .topic-meta .ago { color: #a86a00; font-weight: 600; }
+.stale-alert .topic-card { box-shadow: inset 4px 0 0 var(--bad), var(--shadow); background: #fff6f5; }
+.stale-alert .topic-meta .ago { color: var(--bad); font-weight: 600; }
+.grade-tile { position: relative; }
+.stale-dot { position: absolute; top: 8px; right: 8px; width: 10px; height: 10px; border-radius: 50%; }
+.stale-dot.warn { background: var(--star); }
+.stale-dot.alert { background: var(--bad); }
+.pinned-tile .grade-number { font-size: 1.9rem; }
+
 .warning { margin: 0 16px 24px; padding: 12px 16px; border-radius: var(--radius); background: var(--bad-bg); font-size: 0.9rem; }
 .warning ul { padding-left: 18px; margin: 8px 0 0; }
 

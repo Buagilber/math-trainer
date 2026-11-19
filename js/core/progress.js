@@ -114,6 +114,19 @@ export function calendarDaysBetween(fromMs, toMs) {
   return Math.round(day(toMs) - day(fromMs));
 }
 
+// Простій закріпленого розділу: скільки календарних днів без тренувань.
+// Нерозпочатий розділ (lastAt = null) простоєм не вважається.
+export const STALE_DAYS = { warn: 4, alert: 10 };
+
+export function staleness(lastAt, now = Date.now()) {
+  if (lastAt == null) return null;
+  const days = calendarDaysBetween(lastAt, now);
+  return days >= STALE_DAYS.alert ? 'alert' : days >= STALE_DAYS.warn ? 'warn' : null;
+}
+
+// Найгірший простій серед кількох розділів ('alert' > 'warn' > null).
+export const worstStaleness = (levels) => (levels.includes('alert') ? 'alert' : levels.includes('warn') ? 'warn' : null);
+
 // Порівняння часу з попередньою сесією: 'faster' | 'slower' | 'same' | null.
 // Різниця до 0,1 с вважається однаковою.
 export function compareTime(currentMs, previousMs, toleranceMs = 100) {
