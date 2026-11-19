@@ -269,12 +269,9 @@ test('template з вибором відповіді', () => {
 test('підказки: поріг появи', () => {
   const inline = { text: '2 + 3 = □', hint: 'h' };
   const textTask = { text: 'Задача без поля', hint: 'h' };
-  eq(hintDelayMs(inline, 1, null), 15000, 'мінімум рівня 1');
-  eq(hintDelayMs(textTask, 1, null), 25000, 'текстова задача +10 с');
-  eq(hintDelayMs(inline, 2, 4000), 20000, 'швидка дитина — мінімум рівня');
-  eq(hintDelayMs(inline, 2, 15000), 30000, '2 × середній час');
-  eq(hintDelayMs(inline, 3, 60000), 45000, 'не пізніше 45 с');
-  eq(hintDelayMs({ ...inline, hintAfterSec: 7 }, 3, 60000), 7000, 'свій поріг завдання');
+  eq([1, 2, 3].map((l) => hintDelayMs(inline, l)), [10000, 12000, 15000], 'фіксовано за рівнем');
+  eq(hintDelayMs(textTask, 1), 15000, 'текстова задача +5 с');
+  eq(hintDelayMs({ ...inline, hintAfterSec: 7 }, 3), 7000, 'свій поріг завдання');
   const base = { item: inline, elapsedMs: 16000, sinceInputMs: 0, inputEmpty: true, delayMs: 15000 };
   assert(shouldOfferHint(base));
   assert(!shouldOfferHint({ ...base, elapsedMs: 10000 }), 'ще рано');

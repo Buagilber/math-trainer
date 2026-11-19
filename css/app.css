@@ -478,6 +478,21 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .mistakes li { padding: 12px 16px; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 4px; }
 .mistakes .given { color: var(--bad); font-size: 0.9rem; }
 .mistakes .m-step { font-size: 0.9rem; }
+/* Рядки зі значками ✕/✓ — значок по центру висоти рядка. */
+.mistakes .given, .mistakes .m-step { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 0 0.35em; }
+/* Правильна відповідь на місці поля — зелена рамка, як у тренуванні. */
+.m-answer {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 0.3em;
+  border: 2px solid var(--ok);
+  border-radius: 8px;
+  background: var(--ok-bg);
+  color: var(--ok);
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.3;
+}
 .mistakes .m-step.bad { color: var(--bad); }
 .mistakes .m-step.ok { color: var(--ok); }
 .mistakes .m-right { font-size: 0.9rem; color: var(--muted); }
@@ -492,8 +507,6 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
   font-size: 0.8em;
   font-weight: 800;
   line-height: 1;
-  vertical-align: -0.1em;
-  margin-left: 0.2em;
 }
 .mark.ok { background: var(--ok); }
 .mark.bad { background: var(--bad); }

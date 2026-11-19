@@ -1,14 +1,14 @@
 // Правило появи підказки (специфікація — docs/HINTS.md).
 //
 // Кнопка 💡 з'являється, коли одночасно:
-//   1) час на приклад ≥ поріг = clamp(2 × мій середній час на рівні, мінімум, 45 с),
-//      мінімум = 15 / 20 / 25 с для рівнів 1 / 2 / 3, +10 с для текстових задач;
+//   1) час на приклад ≥ поріг: 10 / 12 / 15 с для рівнів 1 / 2 / 3, +5 с для
+//      текстових задач (фіксовано — issue #1: підлаштування під середній час дитини
+//      відтягувало підказку саме для тих, кому вона потрібніша);
 //      автор контенту може задати свій поріг (hintAfterSec);
 //   2) дитина не вводить відповідь: поле порожнє або не змінювалося 8 с.
 
-export const HINT_MIN_SEC = { 1: 15, 2: 20, 3: 25 };
-export const TEXT_TASK_EXTRA_SEC = 10;
-export const HINT_MAX_SEC = 45;
+export const HINT_DELAY_SEC = { 1: 10, 2: 12, 3: 15 };
+export const TEXT_TASK_EXTRA_SEC = 5;
 export const INPUT_IDLE_MS = 8000;
 export const MAX_HINT_LENGTH = 200; // підказка-рядок
 export const MAX_HINT_RULES = 4;
@@ -48,12 +48,9 @@ export function hintProblems(hint) {
 // Текстова задача — без □ у тексті; рівняння з x (answerPrefix) до них не належать.
 const isTextTask = (item) => !item.text.includes('□') && !item.answerPrefix;
 
-export function hintDelayMs(item, level, lastAvgMs) {
+export function hintDelayMs(item, level) {
   if (item.hintAfterSec) return item.hintAfterSec * 1000;
-  const min = ((HINT_MIN_SEC[level] ?? HINT_MIN_SEC[3]) + (isTextTask(item) ? TEXT_TASK_EXTRA_SEC : 0)) * 1000;
-  const max = Math.max(min, HINT_MAX_SEC * 1000);
-  const adaptive = lastAvgMs ? 2 * lastAvgMs : 0;
-  return Math.min(Math.max(adaptive, min), max);
+  return ((HINT_DELAY_SEC[level] ?? HINT_DELAY_SEC[3]) + (isTextTask(item) ? TEXT_TASK_EXTRA_SEC : 0)) * 1000;
 }
 
 export function shouldOfferHint({ item, elapsedMs, sinceInputMs, inputEmpty, delayMs }) {

@@ -37,7 +37,6 @@ const state = {
   // Вибір запам'ятовується на пристрої. dirFlip — щойно перемкнули (анімація стрілки).
   inputDir: storage.get(INPUT_DIR_KEY) === 'ltr' ? 'ltr' : 'rtl',
   dirFlip: false,
-  hintBaseAvgMs: null, // середній час на приклад в останній сесії цього рівня
   contentLoadedAt: 0, // коли востаннє завантажено data/
   refreshPending: false, // оновлення відкладене до кінця тренування
 };
@@ -370,7 +369,6 @@ function startSession(topic, level, { replace = false } = {}) {
   state.questionStartedAt = Date.now();
   state.input = emptyInput(state.session.items[0]);
   state.feedback = null;
-  state.hintBaseAvgMs = levelProgress(progressStore.all(), topic.id, level).lastAvgMs;
   resetHint();
   go(`/topic/${topic.id}/play`, { replace });
 }
@@ -507,7 +505,10 @@ function mistakeHtml(m) {
   const expr = (e) => `${e.left} ${e.sign} ${e.right}`;
   const given = `<span class="given">твоя відповідь: ${m.answerPrefix ? `${esc(m.answerPrefix)} ` : ''}${mh(m.given)} ${MARK.bad}</span>`;
   if (m.text.includes('□')) {
-    return `<li><span>${mh(m.text.replace('□', answerText), { ops: true })}</span>${given}</li>`;
+    // Правильна відповідь — у зеленій рамці на місці поля, щоб було видно,
+    // яке саме число (чи знак) треба було знайти (issue #2).
+    const answerBox = `<span class="m-answer">${mh(answerText)}</span>`;
+    return `<li><span>${mh(m.text, { ops: true }).replace('□', answerBox)}</span>${given}</li>`;
   }
   const prefix = m.answerPrefix ? `${esc(m.answerPrefix)} ` : '';
   const step = m.step
@@ -687,7 +688,7 @@ setInterval(() => {
     elapsedMs: now - state.questionStartedAt,
     sinceInputMs: now - state.lastInputAt,
     inputEmpty: isEmpty(item, state.input),
-    delayMs: hintDelayMs(item, state.session.level, state.hintBaseAvgMs),
+    delayMs: hintDelayMs(item, state.session.level),
   });
   if (offer) {
     state.hint.visible = true;
