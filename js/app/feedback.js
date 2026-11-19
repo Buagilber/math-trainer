@@ -41,7 +41,8 @@ export function openReportDialog(context) {
         ${Object.entries(KINDS).map(([id, k]) => `<button class="report-kind${id === kind ? ' active' : ''}" data-kind="${id}" role="radio" aria-checked="${id === kind}">${k.label}</button>`).join('')}
       </div>
       <textarea class="report-text" rows="4" placeholder="${esc(KINDS[kind].placeholder)}"></textarea>
-      <p class="report-note">Відкриється GitHub із заповненою формою. Додай скріншот (за бажанням) і натисни «Create». Дані про цей екран додадуться самі.</p>
+      <p class="report-note">Відкриється GitHub із заповненою формою — натисни «Create». Дані про цей екран додадуться самі.</p>
+      <p class="report-note report-shot">📷 Потрібен скріншот? Натисни «Скасувати», зроби знімок екрана й натисни ⚑ знову — на GitHub додаси його з галереї.</p>
       <div class="dialog-actions">
         <button class="btn btn-primary" data-action="send">Відкрити GitHub</button>
         <button class="btn" data-action="cancel">Скасувати</button>
