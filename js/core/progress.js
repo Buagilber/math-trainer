@@ -29,9 +29,43 @@ export function sessionRecord(session, { profileId = 'default', startedAt, finis
   };
 }
 
+// Зірки рівня й розділу показують поточний рівень знань, а не рекорд (issue #3).
+
+export const RECENT_SESSIONS = 3; // скільки останніх сесій рівня визначають його зірки
+const LEVEL_WEIGHTS = { 1: 1, 2: 2, 3: 3 }; // бонус за складність в оцінці розділу
+const roundHalf = (x) => Math.round(x * 2) / 2;
+
+// Точність → зірки з кроком 0,5: кожні 10% від 40% — пів зірки (90% → 3).
+export function starsFromAccuracy(accuracy) {
+  if (accuracy == null) return null;
+  return Math.max(0, Math.min(3, Math.floor(accuracy * 10 + 1e-9) / 2 - 1.5));
+}
+
+// Оцінка розділу (0…3 з кроком 0,5) за зірками рівнів { 1: 2.5, 2: null, 3: 3 }
+// (null — рівень не розпочато):
+//   1) покриття знизу: нерозпочатий рівень під пройденим складнішим бере оцінку
+//      найближчого складнішого; рівні вище за найскладніший пройдений не враховуються;
+//   2) зважене середнє (ваги 1 / 2 / 3), округлення до 0,5;
+//   3) стеля за доказами: найвищий рівень розділу + ще один пройдений → 3;
+//      лише найвищий або найвищий-1 разом з іншим → 2,5; інакше → 2.
+export function topicRating(levelStars, levels = [1, 2, 3]) {
+  const done = levels.filter((l) => levelStars[l] != null);
+  if (!done.length) return null;
+  const top = Math.max(...done);
+  const highest = Math.max(...levels);
+  const effective = levels
+    .filter((l) => l <= top)
+    .map((l) => [l, levelStars[l] ?? levelStars[Math.min(...done.filter((h) => h > l))]]);
+  const weight = (l) => LEVEL_WEIGHTS[l] ?? l;
+  const avg = effective.reduce((acc, [l, s]) => acc + s * weight(l), 0) / effective.reduce((acc, [l]) => acc + weight(l), 0);
+  const confirmed = done.length > 1;
+  const cap = top === highest ? (confirmed ? 3 : 2.5) : top === highest - 1 && confirmed ? 2.5 : 2;
+  return Math.min(roundHalf(avg), cap);
+}
+
 // Статистика одного рівня розділу.
 //   sessions, accuracy — накопичувально за всі сесії рівня;
-//   bestStars          — найкращий результат;
+//   stars              — зірки за останніми RECENT_SESSIONS сесіями (крок 0,5);
 //   lastAvgMs          — середній час на приклад в останній сесії;
 //   prevAvgMs          — те саме для передостанньої;
 //   previous           — передостанній запис (для порівняння в підсумку).
@@ -43,10 +77,13 @@ export function levelProgress(records, topicId, level) {
   const correct = own.reduce((acc, r) => acc + r.correct, 0);
   const last = own.at(-1);
   const prev = own.at(-2);
+  const recent = own.slice(-RECENT_SESSIONS);
+  const recentTotal = recent.reduce((acc, r) => acc + r.total, 0);
+  const recentCorrect = recent.reduce((acc, r) => acc + r.correct, 0);
   return {
     sessions: own.length,
     accuracy: total ? correct / total : null,
-    bestStars: Math.max(0, ...own.map((r) => r.stars)),
+    stars: recentTotal ? starsFromAccuracy(recentCorrect / recentTotal) : null,
     lastAvgMs: last?.avgMs ?? null,
     prevAvgMs: prev?.avgMs ?? null,
     previous: prev ?? null,
@@ -54,12 +91,17 @@ export function levelProgress(records, topicId, level) {
   };
 }
 
-// Підсумок по розділу для картки на головному екрані.
-export function topicProgress(records, topicId) {
+// Підсумок по розділу для картки на головному екрані: оцінка розділу (topicRating)
+// із зірок рівнів, кількість сесій і дата останньої.
+export function topicProgress(records, topicId, levels = [1, 2, 3]) {
   const own = records.filter((r) => r.topicId === topicId);
-  const bestStars = {};
-  for (const r of own) bestStars[r.level] = Math.max(bestStars[r.level] ?? 0, r.stars);
-  return { sessions: own.length, bestStars, lastAt: own.length ? Math.max(...own.map((r) => r.finishedAt)) : null };
+  const levelStars = Object.fromEntries(levels.map((l) => [l, levelProgress(records, topicId, l).stars]));
+  return {
+    sessions: own.length,
+    levelStars,
+    rating: topicRating(levelStars, levels),
+    lastAt: own.length ? Math.max(...own.map((r) => r.finishedAt)) : null,
+  };
 }
 
 // Скільки календарних днів між двома моментами (за місцевим часом):

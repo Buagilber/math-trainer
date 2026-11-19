@@ -10,7 +10,7 @@ import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js
 import { applyKey, isComplete, mathHtml } from '../js/app/answer-input.js';
 import { formatAgo } from '../js/app/format.js';
 import { contextText, issueUrl } from '../js/app/feedback.js';
-import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord } from '../js/core/progress.js';
+import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord, starsFromAccuracy, topicRating } from '../js/core/progress.js';
 import { validateTopic } from '../js/core/validate.js';
 
 const tests = [];
@@ -151,7 +151,34 @@ test('зірки й прогрес', () => {
   while (!isFinished(s)) ({ session: s } = submitAnswer(s, s.items[s.index].answer));
   const rec = sessionRecord(s, { startedAt: 1, finishedAt: 2 });
   const p = topicProgress([rec, { ...rec, level: 2, stars: 1, correct: 5 }], 't');
-  eq(p.sessions, 2); eq(p.bestStars, { 1: 3, 2: 1 });
+  eq(p.sessions, 2);
+  eq(p.levelStars, { 1: 3, 2: 1, 3: null }, 'рівень 1: 10/10 → 3; рівень 2: 5/10 → 1');
+  eq(p.rating, 1.5, '(3·1 + 1·2) / 3 = 1,67 → 1,5 (стеля 2,5 не обмежує)');
+});
+
+test('зірки рівня: останні 3 сесії, крок 0,5', () => {
+  eq([0.95, 0.9, 0.85, 0.8, 0.7, 0.63, 0.5, 0.45, 0.4, 0.39, 0, 1].map(starsFromAccuracy), [3, 3, 2.5, 2.5, 2, 1.5, 1, 0.5, 0.5, 0, 0, 3]);
+  const rec = (finishedAt, correct) => ({ topicId: 't', level: 1, finishedAt, total: 10, correct, stars: 0 });
+  // Рекорд 10/10 давно, а останні 3 сесії — 5, 6, 8 з 10 → 19/30 = 63% → 1,5.
+  const records = [rec(1, 10), rec(2, 5), rec(3, 6), rec(4, 8)];
+  const p = levelProgress(records, 't', 1);
+  eq([p.stars, p.sessions, Math.round(p.accuracy * 100)], [1.5, 4, 73]);
+});
+
+test('оцінка розділу: покриття знизу, ваги, стеля', () => {
+  const r = (e, m, h) => topicRating({ 1: e, 2: m, 3: h });
+  eq(r(null, 3, 3), 3, '– / 3 / 3');
+  eq(r(3, null, 3), 3, '3 / – / 3');
+  eq(r(null, null, 3), 2.5, '– / – / 3');
+  eq(r(3, null, null), 2, '3 / – / –');
+  eq(r(null, 3, null), 2, '– / 3 / –');
+  eq(r(3, 3, null), 2.5, '3 / 3 / –');
+  eq(r(2, 2, 3), 2.5, '2 / 2 / 3');
+  eq(r(0, 1, 3), 2, '0 / 1 / 3');
+  eq(r(1, null, 3), 2.5, '1 / – / 3');
+  eq(r(3, 3, 3), 3, '3 / 3 / 3');
+  eq(r(1, null, null), 1, '1 / – / –');
+  eq(r(null, null, null), null, 'нічого не пройдено');
 });
 
 test('середній час: за прикладом, з обрізанням довгих пауз', () => {
@@ -170,7 +197,7 @@ test('статистика рівня: накопичувально + час о�
   ];
   const p = levelProgress(records, 't', 1);
   eq([p.sessions, p.accuracy, p.lastAvgMs, p.prevAvgMs], [3, 0.7, 5000, 7000]);
-  eq(levelProgress(records, 't', 3), { sessions: 0, accuracy: null, bestStars: 0, lastAvgMs: null, prevAvgMs: null, previous: null, lastAt: null });
+  eq(levelProgress(records, 't', 3), { sessions: 0, accuracy: null, stars: null, lastAvgMs: null, prevAvgMs: null, previous: null, lastAt: null });
   eq(levelProgress(records, 't', 1).previous.finishedAt, 2);
   eq(compareTime(5000, 7000).trend, 'faster');
   eq(compareTime(7000, 5000).trend, 'slower');

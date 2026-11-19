@@ -265,8 +265,9 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .level-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
 .level-stats { font-size: 0.9rem; font-weight: 400; color: var(--muted); }
 
-.stars { color: var(--star); letter-spacing: 2px; font-size: 1.2em; }
-.stars-off { color: var(--star-off); }
+.stars { display: inline-flex; gap: 2px; font-size: 1.2em; line-height: 1; }
+.star { position: relative; display: inline-block; color: var(--star-off); }
+.star-fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; color: var(--star); white-space: nowrap; }
 
 /* ---------- сесія ---------- */
 

@@ -62,8 +62,14 @@ function formatDuration(ms) {
   return `${min} хв ${Math.round(sec - min * 60)} с`;
 }
 
+// Зірки з кроком 0,5: кожна зірка — сіра основа й жовте заповнення потрібної ширини.
 function starsHtml(count, max = 3) {
-  return `<span class="stars" aria-label="${count} з ${max} зірок">${'★'.repeat(count)}<span class="stars-off">${'★'.repeat(max - count)}</span></span>`;
+  const label = String(count).replace('.', ',');
+  const stars = Array.from({ length: max }, (_, i) => {
+    const fill = Math.max(0, Math.min(1, count - i)) * 100;
+    return `<span class="star"><span class="star-fill" style="width:${fill}%">★</span>★</span>`;
+  }).join('');
+  return `<span class="stars" role="img" aria-label="${label} з ${max} зірок">${stars}</span>`;
 }
 
 // Власне вікно підтвердження замість системного confirm().
@@ -302,13 +308,12 @@ function renderGrade(gradeId) {
   const records = progressStore.all();
 
   const cards = grade.topics.map((t) => {
-    const p = topicProgress(records, t.id);
-    const best = Math.max(0, ...Object.values(p.bestStars));
+    const p = topicProgress(records, t.id, levelsOf(t));
     return `<button class="topic-card" data-topic="${esc(t.id)}">
         <span class="topic-icon">${esc(t.icon ?? '📘')}</span>
         <span class="topic-title">${esc(t.title)}</span>
         <span class="topic-meta">${p.sessions
-          ? `${starsHtml(best)}<span class="ago">${formatAgo(p.lastAt)}</span>`
+          ? `${starsHtml(p.rating ?? 0)}<span class="ago">${formatAgo(p.lastAt)}</span>`
           : '<span class="muted">Ще не розпочато</span>'}</span>
       </button>`;
   }).join('');
@@ -335,14 +340,14 @@ function renderTopic(topicId) {
   const levelCard = (level) => {
     const p = levelProgress(records, topic.id, level);
     const stats = p.sessions
-      ? `<span class="level-stats">Сесій: ${p.sessions} · точність ${Math.round(p.accuracy * 100)}%</span>
+      ? `<span class="level-stats">Сесій: ${p.sessions} · точність загалом ${Math.round(p.accuracy * 100)}%</span>
          <span class="level-stats">Остання сесія: ${formatAgo(p.lastAt)}${p.lastAvgMs != null ? ` · ${formatDuration(p.lastAvgMs)} на приклад` : ''}</span>`
       : '<span class="level-stats">Ще не пройдено</span>';
     return `
       <button class="level-card" data-level="${level}">
         <span class="level-head">
           <span class="level-name">${esc(levelName(level))}</span>
-          ${starsHtml(p.bestStars)}
+          ${starsHtml(p.stars ?? 0)}
         </span>
         ${stats}
       </button>`;
