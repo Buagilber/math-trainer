@@ -10,8 +10,9 @@ import { pluralUk } from '../core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, levelsOf, formatAnswer } from '../core/session.js';
 import { sessionRecord, topicProgress, levelProgress, compareWithPrevious, staleness, worstStaleness } from '../core/progress.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint } from '../core/hints.js';
-import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, divisionHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
+import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, divisionHtml, writtenDivisionHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
+import { longDivision, quotientOf } from '../core/long-division.js';
 import { formatAgo } from './format.js';
 import { openReportDialog, contextText } from './feedback.js';
 import { progressStore, storage, pinStore } from './storage.js';
@@ -39,6 +40,8 @@ const state = {
   hint: { visible: false, open: false, used: false, fresh: false, animate: false },
   // Крок «Обрати дію» в рівнянні: stage 'idle' | 'choose' | 'compute', choice — номер варіанта.
   steps: { stage: 'idle', choice: null },
+  // Розписане ділення кутом: { fields, values, active, reached } або null (див. core/long-division.js).
+  written: null,
   lastInputAt: 0,
   // Напрям введення в стовпчику: 'rtl' (справа наліво, як у зошиті) або 'ltr'.
   // Вибір запам'ятовується на пристрої. dirFlip — щойно перемкнули (анімація стрілки).
@@ -54,6 +57,7 @@ const state = {
 const resetHint = () => {
   state.hint = { visible: false, open: false, used: false, fresh: false, animate: false };
   state.steps = { stage: 'idle', choice: null };
+  state.written = null;
   state.lastInputAt = Date.now();
 };
 
@@ -511,7 +515,7 @@ function renderSession() {
       ${stepsArea}
       ${feedback}
     </main>
-    ${keypadHtml(item, state.input, !!fb || st.stage === 'choose')}`;
+    ${keypadHtml(item, state.written ? state.written.values[state.written.active] ?? '' : state.input, !!fb || st.stage === 'choose')}`;
 
   root.querySelector('#quit').addEventListener('click', async () => {
     // Якщо ще нічого не розв'язано, втрачати нічого — виходимо без питань.
@@ -555,6 +559,7 @@ function renderSession() {
   // Крок «Обрати дію»: idle → choose → compute; «Змінити дію» повертає до вибору.
   const setStage = (stage, choice = null) => {
     state.steps = { stage, choice };
+    state.written = null;
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
     renderSession();
@@ -562,6 +567,19 @@ function renderSession() {
   root.querySelector('#steps-open')?.addEventListener('click', () => setStage('choose'));
   root.querySelector('#steps-cancel')?.addEventListener('click', () => setStage('idle'));
   root.querySelector('#steps-change')?.addEventListener('click', () => setStage('choose'));
+  root.querySelector('#ld-open')?.addEventListener('click', () => {
+    const c = columnFor(item);
+    state.written = { fields: longDivision(c.dividend, c.divisor), values: [], active: 0, reached: 0 };
+    state.input = emptyInput(item);
+    state.lastInputAt = Date.now();
+    renderSession();
+  });
+  if (!fb) {
+    root.querySelectorAll('[data-ld]').forEach((el) => el.addEventListener('click', () => {
+      state.written.active = Number(el.dataset.ld);
+      renderSession();
+    }));
+  }
   root.querySelectorAll('[data-step]').forEach((b) => b.addEventListener('click', () => setStage('compute', Number(b.dataset.step))));
   if (!fb) {
     root.querySelectorAll('[data-field]').forEach((el) => el.addEventListener('click', () => {
@@ -587,19 +605,27 @@ const MARK = {
 function mistakeHtml(m) {
   const answerText = m.answerText ?? String(m.answer);
   const expr = (e) => `${e.left} ${e.sign} ${e.right}`;
-  const given = `<span class="given">твоя відповідь: ${m.answerPrefix ? `${esc(m.answerPrefix)} ` : ''}${mh(m.given)} ${MARK.bad}</span>`;
+  const prefix = m.answerPrefix ? `${esc(m.answerPrefix)} ` : '';
+  const given = `<span class="given">твоя відповідь: ${prefix}${mh(m.given)} ${MARK.bad}</span>`;
+  const step = m.step
+    ? `<span class="m-step ${m.step.correct ? 'ok' : 'bad'}">обрана дія: ${prefix}${mh(expr(m.step))} ${m.step.correct ? MARK.ok : MARK.bad}</span>`
+    : '';
+  // Розписане ділення: проміжні рядки (без цифр частки — вони видно з відповіді).
+  // Неправильний рядок — правильне число й «у тебе …».
+  const rows = (m.written ?? []).filter((r) => r.kind !== 'q');
+  const written = rows.length
+    ? `<span class="m-step m-written">розписано: ${rows.map((r) => (r.correct
+      ? `<span class="ok">${r.value} ${MARK.ok}</span>`
+      : `<span class="bad">${r.value} ${MARK.bad} (у тебе ${esc(r.given || '—')})</span>`)).join(' · ')}</span>`
+    : '';
   if (m.text.includes('□')) {
     // Правильна відповідь — у зеленій рамці на місці поля, щоб було видно,
     // яке саме число (чи знак) треба було знайти (issue #2).
     const answerBox = `<span class="m-answer">${mh(answerText)}</span>`;
-    return `<li><span>${mh(m.text, { ops: true }).replace('□', answerBox)}</span>${given}</li>`;
+    return `<li><span>${mh(m.text, { ops: true }).replace('□', answerBox)}</span>${given}${step}${written}</li>`;
   }
-  const prefix = m.answerPrefix ? `${esc(m.answerPrefix)} ` : '';
-  const step = m.step
-    ? `<span class="m-step ${m.step.correct ? 'ok' : 'bad'}">обрана дія: ${prefix}${mh(expr(m.step))} ${m.step.correct ? MARK.ok : MARK.bad}</span>`
-    : '';
   const why = m.canonical ? `, бо ${prefix}${mh(expr(m.canonical), { ops: true })}` : '';
-  return `<li><span>${mh(m.text, { ops: !!m.answerPrefix })}</span>${given}${step}`
+  return `<li><span>${mh(m.text, { ops: !!m.answerPrefix })}</span>${given}${step}${written}`
     + `<span class="m-right">правильно: ${prefix}${mh(answerText)}${why}</span></li>`;
 }
 
@@ -652,8 +678,12 @@ function stepsAreaHtml(item, chosen, answerBox, toggle, answered) {
       </div>`;
   }
   const column = columnFor(item);
-  const work = isDivision(column)
-    ? `<div class="task task-column">${divisionHtml(column, answerBox, label)}</div>`
+  const w = state.written;
+  const marks = w && answered ? state.session.results.at(-1).written.map((r) => r.correct) : null;
+  const work = isDivision(column) && w
+    ? `<div class="task task-column">${writtenDivisionHtml(column, w, marks)}</div>`
+    : isDivision(column)
+    ? `<div class="task task-column">${divisionHtml(column, answerBox, label)}</div>${answered ? '' : '<button class="link-btn" id="ld-open">Розписати ділення</button>'}`
     : column
     ? `<div class="task task-column">${columnHtml({ ...column, sign: timesSign(column.sign) }, answerBox, toggle, label)}</div>`
     : `<div class="task task-inline">${esc(label)} ${mh(`${chosen.left} ${chosen.sign} ${chosen.right}`, { ops: true })} = ${answerBox}</div>`;
@@ -745,6 +775,7 @@ const isRtl = (item) => { const c = columnFor(item); return !!c && !isDivision(c
 function pressKey(key) {
   if (state.feedback || state.steps.stage === 'choose') return;
   const item = currentItem();
+  if (state.written) return pressWrittenKey(key);
   if (key === 'ok') {
     if (isComplete(item, state.input)) answer(state.input);
     return;
@@ -755,12 +786,33 @@ function pressKey(key) {
   renderSession();
 }
 
+// Розписане ділення: цифри — у активне поле (зліва направо), ✓ — до наступного
+// поля, на останньому — відповідь (частка з цифр q).
+function pressWrittenKey(key) {
+  const w = state.written;
+  const value = w.values[w.active] ?? '';
+  if (key === 'ok') {
+    if (!value) return;
+    if (w.active < w.fields.length - 1) {
+      w.active += 1;
+      w.reached = Math.max(w.reached, w.active);
+      return renderSession();
+    }
+    return answer(quotientOf(w.fields, w.values));
+  }
+  if (key === 'del') w.values[w.active] = value.slice(0, -1);
+  else if (/^\d$/.test(key) && value.length < (w.fields[w.active].kind === 'q' ? 1 : 7)) w.values[w.active] = value + key;
+  state.lastInputAt = Date.now();
+  renderSession();
+}
+
 function answer(given) {
   if (state.feedback) return;
   const item = currentItem();
   const chosen = chosenStep(item);
   const { session, result } = submitAnswer(state.session, given, Date.now() - state.questionStartedAt,
-    { hintUsed: state.hint.used, step: chosen });
+    { hintUsed: state.hint.used, step: chosen,
+      written: state.written ? state.written.fields.map((f, i) => ({ ...f, given: state.written.values[i] ?? '' })) : null });
   state.session = session;
   state.input = given;
   state.hint.open = false;

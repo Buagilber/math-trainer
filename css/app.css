@@ -394,6 +394,38 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .div-quotient .blank { min-width: 2.5em; text-align: left; }
 .blank-static { color: var(--muted); }
 
+/* Розписане ділення кутом: цифри діленого по колонках шириною в одну цифру,
+   рядки-поля охоплюють свої колонки, цифри в них — праворуч, точно під розрядами. */
+.ld {
+  display: inline-grid;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  letter-spacing: 0;
+  row-gap: 4px;
+  text-align: right;
+}
+.ld-digit { text-align: center; }
+.ld-minus { justify-self: end; padding-right: 0.15em; color: var(--op-minus); }
+.ld-divisor { padding: 0 0.3em; margin-left: 0.3em; border-left: 3px solid currentColor; border-bottom: 3px solid currentColor; text-align: left; }
+.ld-quotient { display: flex; gap: 2px; margin-left: 0.3em; padding: 4px 0 0 0.3em; border-left: 3px solid currentColor; align-self: start; }
+.ld-field {
+  min-height: 1.3em;
+  white-space: nowrap;
+  border-radius: 6px;
+  background: rgba(79, 109, 245, 0.06);
+  outline: 2px dashed rgba(79, 109, 245, 0.45);
+  outline-offset: 1px;
+}
+.ld-field.active { outline: 2px solid var(--primary); background: rgba(79, 109, 245, 0.12); }
+.ld-field.ok { outline-color: var(--ok); outline-style: solid; background: var(--ok-bg); color: var(--ok); }
+.ld-field.bad { outline-color: var(--bad); outline-style: solid; background: var(--bad-bg); color: var(--bad); }
+/* Курсор не зсуває цифри з їхніх розрядів: стоїть за правим краєм поля. */
+.ld-field { position: relative; }
+.ld-field .caret { position: absolute; right: -6px; top: 0.15em; margin: 0; }
+.ld-q { min-width: 1ch; padding: 0 2px; text-align: center; }
+/* Риска під від'ємником, як у зошиті. */
+.ld-p::after { content: ''; position: absolute; left: -0.15em; right: -0.1em; bottom: -5px; height: 2px; border-radius: 1px; background: var(--text); }
+
 /* Перемикач напряму введення: ← справа наліво (типово), → зліва направо. */
 .dir-toggle {
   width: 1.3em;
@@ -572,6 +604,9 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 }
 .mistakes .m-step.bad { color: var(--bad); }
 .mistakes .m-step.ok { color: var(--ok); }
+.mistakes .m-written { color: var(--muted); }
+.mistakes .m-written .ok { color: var(--ok); display: inline-flex; align-items: center; gap: 0.25em; }
+.mistakes .m-written .bad { color: var(--bad); display: inline-flex; align-items: center; gap: 0.25em; }
 .mistakes .m-right { font-size: 0.9rem; color: var(--muted); }
 .mark {
   display: inline-flex;

@@ -185,6 +185,36 @@ export function divisionHtml({ dividend, divisor }, answerBox, label = '') {
     </div>`;
 }
 
+// Розписане ділення кутом: ділене, дільник, частка по цифрах і проміжні рядки
+// (поля з core/long-division.js). Сітка: колонка знака, по колонці на цифру
+// діленого, колонка дільника. Поля з'являються по черзі (до reached включно).
+// marks — після відповіді: для кожного поля true / false (зелене / червоне).
+export function writtenDivisionHtml({ dividend, divisor }, { fields, values, active, reached }, marks = null) {
+  const digits = String(dividend).split('');
+  const col = (i) => i + 2; // колонка цифри i діленого в сітці
+  const cls = (i) => `ld-field${!marks && i === active ? ' active' : ''}${marks ? (marks[i] ? ' ok' : ' bad') : ''}`;
+  const content = (i) => `${esc(values[i] ?? '')}${!marks && i === active ? '<span class="caret"></span>' : ''}`;
+  const cells = digits.map((d, i) => `<span class="ld-digit" style="grid-column:${col(i)};grid-row:1">${esc(d)}</span>`);
+  const quotient = [];
+  let row = 2;
+  fields.forEach((f, i) => {
+    if (i > reached) return;
+    if (f.kind === 'q') {
+      quotient.push(`<span class="${cls(i)} ld-q" data-ld="${i}">${content(i)}</span>`);
+      return;
+    }
+    const span = `grid-column:${col(f.from)} / ${col(f.to) + 1};grid-row:${row}`;
+    if (f.kind === 'p') cells.push(`<span class="ld-minus" style="grid-column:${col(f.from) - 1};grid-row:${row}">−</span>`);
+    cells.push(`<span class="${cls(i)} ld-${f.kind}" data-ld="${i}" style="${span}">${content(i)}</span>`);
+    row += 1;
+  });
+  return `<div class="ld" style="grid-template-columns:auto repeat(${digits.length}, 1ch) auto">
+      ${cells.join('')}
+      <span class="ld-divisor" style="grid-column:${col(digits.length)};grid-row:1">${esc(String(divisor))}</span>
+      <span class="ld-quotient" style="grid-column:${col(digits.length)};grid-row:2">${quotient.join('')}</span>
+    </div>`;
+}
+
 // Клавіатура під тип відповіді.
 export function keypadHtml(item, input, disabled) {
   const dis = disabled ? 'disabled' : '';
