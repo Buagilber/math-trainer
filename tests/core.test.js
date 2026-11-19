@@ -13,6 +13,7 @@ import { contextText, issueUrl } from '../js/app/feedback.js';
 import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord, starsFromAccuracy, topicRating, staleness, worstStaleness } from '../js/core/progress.js';
 import { validateTopic } from '../js/core/validate.js';
 import { longDivision, quotientOf } from '../js/core/long-division.js';
+import { longMultiplication } from '../js/core/long-multiplication.js';
 
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
@@ -492,6 +493,18 @@ test('ділення кутом: проміжні рядки', () => {
   const { result } = submitAnswer(buildSession(topic, 1, createRng(1)), '93', 1000,
     { written: fs.map((f, i) => ({ ...f, given: ['9', '72', '35', '3', '24'][i] })) });
   eq(result.written.map((r) => r.correct), [true, true, false, true, true, false], 'рядки перевіряються після відповіді; порожній — неправильний');
+});
+
+test('множення стовпчиком: неповні добутки', () => {
+  const short = (fs) => fs.map((f) => `${f.kind}${f.value}<${f.shift}/${f.width}`).join(' ');
+  eq(short(longMultiplication(47, 23)), 'pp141<0/3 pp94<1/3 sum1081<0/4');
+  eq(short(longMultiplication(12, 11)), 'pp12<0/3 pp12<1/2 sum132<0/3', 'ширина не виходить за добуток');
+  eq(short(longMultiplication(47, 205)), 'pp235<0/3 pp94<2/2 sum9635<0/4', '0 у множнику — рядка немає, зсув на 2');
+  eq(short(longMultiplication(47, 20)), 'pp94<1/2 sum940<0/3');
+  for (const [a, b] of [[47, 23], [99, 49], [12, 11], [365, 407]]) {
+    const fs = longMultiplication(a, b);
+    eq(fs.filter((f) => f.kind === 'pp').reduce((acc, f) => acc + f.value * 10 ** f.shift, 0), a * b, `${a} · ${b}: сума неповних добутків`);
+  }
 });
 
 test('звернення: контекст і посилання на GitHub', () => {

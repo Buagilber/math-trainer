@@ -419,12 +419,20 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .ld-field.active { outline: 2px solid var(--primary); background: rgba(79, 109, 245, 0.12); }
 .ld-field.ok { outline-color: var(--ok); outline-style: solid; background: var(--ok-bg); color: var(--ok); }
 .ld-field.bad { outline-color: var(--bad); outline-style: solid; background: var(--bad-bg); color: var(--bad); }
-/* Курсор не зсуває цифри з їхніх розрядів: стоїть за правим краєм поля. */
+/* Активне поле — блимаюча риска всередині, внизу: цифри не зсуваються з розрядів (issue #4). */
 .ld-field { position: relative; }
-.ld-field .caret { position: absolute; right: -6px; top: 0.15em; margin: 0; }
+.ld-field.active::before { content: ''; position: absolute; left: 3px; right: 3px; bottom: 3px; height: 3px; border-radius: 2px; background: var(--primary); animation: caret-blink 1s steps(1) infinite; }
+/* Наступне поле — бліде, ще не активне. */
+.ld-field.ghost { background: transparent; outline-color: rgba(79, 109, 245, 0.25); }
 .ld-q { min-width: 1ch; padding: 0 2px; text-align: center; }
 /* Риска під від'ємником, як у зошиті. */
 .ld-p::after { content: ''; position: absolute; left: -0.15em; right: -0.1em; bottom: -5px; height: 2px; border-radius: 1px; background: var(--text); }
+
+/* Розписане множення: знаки × і + ліворуч, риски під множниками й перед сумою. */
+.lm-sign { justify-self: end; padding-right: 0.2em; }
+.lm-plus { align-self: start; margin-top: -0.55em; }
+.lm-line { align-self: center; border-top: 3px solid currentColor; }
+.lm-toggle { justify-self: center; margin-top: 6px; position: relative; }
 
 /* Перемикач напряму введення: ← справа наліво (типово), → зліва направо. */
 .dir-toggle {

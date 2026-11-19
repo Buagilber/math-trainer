@@ -10,9 +10,10 @@ import { pluralUk } from '../core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, levelsOf, formatAnswer } from '../core/session.js';
 import { sessionRecord, topicProgress, levelProgress, compareWithPrevious, staleness, worstStaleness } from '../core/progress.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint } from '../core/hints.js';
-import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, divisionHtml, writtenDivisionHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
+import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, divisionHtml, writtenDivisionHtml, writtenMultiplicationHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
 import { longDivision, quotientOf } from '../core/long-division.js';
+import { longMultiplication } from '../core/long-multiplication.js';
 import { formatAgo } from './format.js';
 import { openReportDialog, contextText } from './feedback.js';
 import { progressStore, storage, pinStore } from './storage.js';
@@ -40,7 +41,8 @@ const state = {
   hint: { visible: false, open: false, used: false, fresh: false, animate: false },
   // Крок «Обрати дію» в рівнянні: stage 'idle' | 'choose' | 'compute', choice — номер варіанта.
   steps: { stage: 'idle', choice: null },
-  // Розписане ділення кутом: { fields, values, active, reached } або null (див. core/long-division.js).
+  // Розписане ділення кутом чи множення стовпчиком: { type: 'div' | 'mul', fields, values, active, reached }
+  // або null (core/long-division.js, core/long-multiplication.js).
   written: null,
   lastInputAt: 0,
   // Напрям введення в стовпчику: 'rtl' (справа наліво, як у зошиті) або 'ltr'.
@@ -476,7 +478,12 @@ function renderSession() {
   const hasInlineBlank = item.text.includes('□');
   // Рівняння з x показуємо так само великим шрифтом і з кольоровими знаками, як приклади.
   const isFormula = hasInlineBlank || !!item.answerPrefix;
-  const prompt = item.column ? columnHtml({ ...item.column, sign: timesSign(item.column.sign) }, answerBox, toggle)
+  const writtenMul = state.written?.type === 'mul';
+  const mulMarks = writtenMul && fb ? state.session.results.at(-1).written.map((r) => r.correct) : null;
+  const prompt = writtenMul
+    ? writtenMultiplicationHtml(Number(item.column.rows[0]), Number(item.column.rows[1]), timesSign(item.column.sign), state.written,
+      { marks: mulMarks, rtl: state.inputDir === 'rtl', toggle: fb ? '' : directionToggleHtml(state.inputDir, { flip: state.dirFlip }) + dirTipHtml(item) })
+    : item.column ? columnHtml({ ...item.column, sign: timesSign(item.column.sign) }, answerBox, toggle)
     // Коли дитина обирає чи вже обрала дію, поле відповіді — у блоці кроку, а в прикладі лишається □.
     : isFormula ? mh(item.text, { ops: true }).replace('□', st.stage === 'idle' ? answerBox : '<span class="blank-static">□</span>')
     : mh(item.text);
@@ -511,6 +518,7 @@ function renderSession() {
     <main class="session">
       <p class="session-topic muted">${esc(topic?.title ?? '')} · ${esc(levelName(s.level))}</p>
       <div class="task ${item.column ? 'task-column' : isFormula ? 'task-inline' : 'task-text'} ${!item.column && isFormula && item.text.length > 16 ? 'task-long' : ''}">${prompt}</div>
+      ${canWriteMultiplication(item) && !fb && !state.written ? '<button class="link-btn" id="lm-open">Розписати множення</button>' : ''}
       ${answerRow}
       ${stepsArea}
       ${feedback}
@@ -543,6 +551,7 @@ function renderSession() {
     state.inputDir = state.inputDir === 'rtl' ? 'ltr' : 'rtl';
     storage.set(INPUT_DIR_KEY, state.inputDir);
     state.input = emptyInput(item);
+    if (state.written) state.written.values[state.written.active] = '';
     state.lastInputAt = Date.now();
     state.dirFlip = true;
     state.dirTip = state.dirTip === 'shown' ? 'done' : state.dirTip;
@@ -567,16 +576,24 @@ function renderSession() {
   root.querySelector('#steps-open')?.addEventListener('click', () => setStage('choose'));
   root.querySelector('#steps-cancel')?.addEventListener('click', () => setStage('idle'));
   root.querySelector('#steps-change')?.addEventListener('click', () => setStage('choose'));
+  root.querySelector('#lm-open')?.addEventListener('click', () => {
+    state.written = { type: 'mul', fields: longMultiplication(Number(item.column.rows[0]), Number(item.column.rows[1])), values: [], active: 0, reached: 0 };
+    state.input = emptyInput(item);
+    state.lastInputAt = Date.now();
+    renderSession();
+  });
   root.querySelector('#ld-open')?.addEventListener('click', () => {
     const c = columnFor(item);
-    state.written = { fields: longDivision(c.dividend, c.divisor), values: [], active: 0, reached: 0 };
+    state.written = { type: 'div', fields: longDivision(c.dividend, c.divisor), values: [], active: 0, reached: 0 };
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
     renderSession();
   });
   if (!fb) {
     root.querySelectorAll('[data-ld]').forEach((el) => el.addEventListener('click', () => {
+      // Дотик до блідого наступного поля — те саме, що ✓.
       state.written.active = Number(el.dataset.ld);
+      state.written.reached = Math.max(state.written.reached, state.written.active);
       renderSession();
     }));
   }
@@ -610,9 +627,9 @@ function mistakeHtml(m) {
   const step = m.step
     ? `<span class="m-step ${m.step.correct ? 'ok' : 'bad'}">обрана дія: ${prefix}${mh(expr(m.step))} ${m.step.correct ? MARK.ok : MARK.bad}</span>`
     : '';
-  // Розписане ділення: проміжні рядки (без цифр частки — вони видно з відповіді).
+  // Розписане ділення чи множення: проміжні рядки (без цифр частки й суми — їх видно з відповіді).
   // Неправильний рядок — правильне число й «у тебе …».
-  const rows = (m.written ?? []).filter((r) => r.kind !== 'q');
+  const rows = (m.written ?? []).filter((r) => r.kind !== 'q' && r.kind !== 'sum'); // сума — це сама відповідь
   const written = rows.length
     ? `<span class="m-step m-written">розписано: ${rows.map((r) => (r.correct
       ? `<span class="ok">${r.value} ${MARK.ok}</span>`
@@ -642,6 +659,13 @@ function columnFor(item) {
   if (chosen.op === '/') return { kind: 'divide', dividend: chosen.left, divisor: chosen.right };
   return { rows: [String(chosen.left), String(chosen.right)], sign: chosen.sign, align: 'right' };
 }
+
+// «Розписати множення» — для цілих чисел стовпчиком, коли другий множник має
+// кілька цифр (неповні добутки). Множення з винесеними нулями й дроби — без нього.
+const canWriteMultiplication = (item) => {
+  const c = item.column;
+  return !!c && c.sign === '×' && c.align === 'right' && /^\d{2,}$/.test(c.rows[1]) && /^\d+$/.test(c.rows[0]);
+};
 
 // Частку при діленні кутом пишуть зліва направо (від старшого розряду),
 // тож перемикача напряму там немає.
@@ -798,10 +822,18 @@ function pressWrittenKey(key) {
       w.reached = Math.max(w.reached, w.active);
       return renderSession();
     }
-    return answer(quotientOf(w.fields, w.values));
+    return answer(w.type === 'div' ? quotientOf(w.fields, w.values) : value);
   }
-  if (key === 'del') w.values[w.active] = value.slice(0, -1);
-  else if (/^\d$/.test(key) && value.length < (w.fields[w.active].kind === 'q' ? 1 : 7)) w.values[w.active] = value + key;
+  // Множення рахують від одиниць, тож там цифри йдуть у вибраному напрямі (типово справа наліво).
+  const rtl = w.type === 'mul' && state.inputDir === 'rtl';
+  if (key === 'del') w.values[w.active] = rtl ? value.slice(1) : value.slice(0, -1);
+  else if (/^\d$/.test(key) && value.length < (w.fields[w.active].kind === 'q' ? 1 : 7)) w.values[w.active] = rtl ? key + value : value + key;
+  if (state.dirTip === 'shown' && w.values[w.active]) state.dirTip = 'done';
+  // Цифра частки — одна, тож після неї одразу переходимо до наступного поля (issue #4).
+  if (w.fields[w.active].kind === 'q' && w.values[w.active] && w.active < w.fields.length - 1) {
+    w.active += 1;
+    w.reached = Math.max(w.reached, w.active);
+  }
   state.lastInputAt = Date.now();
   renderSession();
 }

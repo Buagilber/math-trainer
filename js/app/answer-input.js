@@ -192,13 +192,15 @@ export function divisionHtml({ dividend, divisor }, answerBox, label = '') {
 export function writtenDivisionHtml({ dividend, divisor }, { fields, values, active, reached }, marks = null) {
   const digits = String(dividend).split('');
   const col = (i) => i + 2; // колонка цифри i діленого в сітці
-  const cls = (i) => `ld-field${!marks && i === active ? ' active' : ''}${marks ? (marks[i] ? ' ok' : ' bad') : ''}`;
-  const content = (i) => `${esc(values[i] ?? '')}${!marks && i === active ? '<span class="caret"></span>' : ''}`;
+  // Наступне поле видно заздалегідь (бліде), щоб було зрозуміло, куди писати далі.
+  const cls = (i) => `ld-field${i > reached ? ' ghost' : ''}${!marks && i === active ? ' active' : ''}${marks ? (marks[i] ? ' ok' : ' bad') : ''}`;
+  const last = marks ? reached : reached + 1;
+  const content = (i) => esc(values[i] ?? '');
   const cells = digits.map((d, i) => `<span class="ld-digit" style="grid-column:${col(i)};grid-row:1">${esc(d)}</span>`);
   const quotient = [];
   let row = 2;
   fields.forEach((f, i) => {
-    if (i > reached) return;
+    if (i > last) return;
     if (f.kind === 'q') {
       quotient.push(`<span class="${cls(i)} ld-q" data-ld="${i}">${content(i)}</span>`);
       return;
@@ -212,6 +214,44 @@ export function writtenDivisionHtml({ dividend, divisor }, { fields, values, act
       ${cells.join('')}
       <span class="ld-divisor" style="grid-column:${col(digits.length)};grid-row:1">${esc(String(divisor))}</span>
       <span class="ld-quotient" style="grid-column:${col(digits.length)};grid-row:2">${quotient.join('')}</span>
+    </div>`;
+}
+
+// Розписане множення стовпчиком: множники, неповні добутки зі зсувом і сума
+// (поля з core/long-multiplication.js). Сітка — колонка знака й по колонці на
+// цифру добутку; поля з'являються по черзі (до reached включно).
+// rtl — цифри вводяться справа наліво (курсор ліворуч від числа).
+export function writtenMultiplicationHtml(a, b, sign, { fields, values, active, reached }, { marks = null, rtl = true, toggle = '' } = {}) {
+  const width = fields.at(-1).width;
+  const col = (i) => i + 2; // колонка розряду i (зліва, з 0)
+  const number = (n, row) => String(n).split('').map((d, i, all) =>
+    `<span class="ld-digit" style="grid-column:${col(width - all.length + i)};grid-row:${row}">${esc(d)}</span>`).join('');
+  const cls = (i) => `ld-field${rtl ? ' rtl' : ''}${i > reached ? ' ghost' : ''}${!marks && i === active ? ' active' : ''}${marks ? (marks[i] ? ' ok' : ' bad') : ''}`;
+  const last = marks ? reached : reached + 1;
+  const content = (i) => esc(values[i] ?? '');
+  const cells = [
+    number(a, 1),
+    `<span class="lm-sign" style="grid-column:1;grid-row:2">${opHtml(sign)}</span>`,
+    number(b, 2),
+    `<span class="lm-line" style="grid-column:2 / ${col(width)};grid-row:3"></span>`,
+  ];
+  let row = 4;
+  const partials = fields.filter((f) => f.kind === 'pp').length;
+  fields.forEach((f, i) => {
+    if (i > last) return;
+    if (f.kind === 'sum') {
+      if (partials > 1) cells.push(`<span class="lm-line" style="grid-column:2 / ${col(width)};grid-row:${row}"></span>`);
+      row += 1;
+    } else if (i === 1) {
+      cells.push(`<span class="lm-sign lm-plus" style="grid-column:1;grid-row:${row}">${opHtml('+')}</span>`);
+    }
+    const end = width - f.shift; // колонка після останньої цифри рядка
+    cells.push(`<span class="${cls(i)}" data-ld="${i}" style="grid-column:${col(end - f.width)} / ${col(end)};grid-row:${row}">${content(i)}</span>`);
+    row += 1;
+  });
+  return `<div class="ld lm" style="grid-template-columns:auto repeat(${width}, 1ch)">
+      ${cells.join('')}
+      ${toggle ? `<span class="lm-toggle" style="grid-column:2 / ${col(width)};grid-row:${row}">${toggle}</span>` : ''}
     </div>`;
 }
 
