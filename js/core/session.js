@@ -101,9 +101,11 @@ export function formatAnswer(answerType, value) {
 // step — обраний варіант кроку «Обрати дію» ({ left, sign, right, correct }) або null.
 // written — розписаний запис: [{ kind, value, given, correct? }] або null; correct, якщо є,
 // уже пораховано (рядки ділення перевіряються за введеними числами), інакше — given = value.
-export function submitAnswer(session, given, ms = 0, { hintUsed = false, step = null, written = null } = {}) {
+// multi — підсумок «Розв'язання по діях» (core/multistep.js → multiSummary) або null:
+// якщо дитина склала дії сама, а шлях не розв'язує задачу (числа підібрано), приклад не зараховуємо.
+export function submitAnswer(session, given, ms = 0, { hintUsed = false, step = null, written = null, multi = null } = {}) {
   const item = session.items[session.index];
-  const correct = checkAnswer(item, given);
+  const correct = checkAnswer(item, given) && multi?.pathOk !== false;
   const result = {
     exerciseId: item.exerciseId,
     text: item.text,
@@ -123,6 +125,7 @@ export function submitAnswer(session, given, ms = 0, { hintUsed = false, step = 
     // Чи правильно пораховано обрану дію (навіть якщо сама дія неправильна).
     stepCalcCorrect: step ? Number(given) === step.value : null,
     // Розписане ділення: кожен рядок і чи збігається він із правильним.
+    multi,
     written: written ? written.map(({ kind, value, given: g = '', correct }) => ({ kind, value, given: g, correct: correct ?? (g !== '' && Number(g) === value) })) : null,
   };
   return {

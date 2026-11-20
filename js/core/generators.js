@@ -7,6 +7,7 @@
 // text може містити «□» — місце, куди дитина вписує відповідь.
 
 import { evaluate, formatExpression } from './expr.js';
+import { buildMultiStep } from './multistep.js';
 import { pow10, formatDecimal, normalizeDecimal, compareDecimals } from './numbers.js';
 
 const BLANK = '□';
@@ -302,6 +303,7 @@ function template(params, rng) {
       const [left, right] = spec.args.map((e) => evaluate(String(e), numeric).value);
       item.steps = actionSteps(spec.op, left, right, value, rng, spec.question, { ops: spec.ops, inline: spec.inline });
     }
+    if (params.multiStep) item.multi = buildMultiStep(params.multiStep, numeric, params.answer);
     if (params.divideSteps) {
       // ["a", "b"] — шукаємо неповну частку; { "args": ["a", "b"], "find": "remainder" } — остачу.
       const spec = Array.isArray(params.divideSteps) ? { args: params.divideSteps } : params.divideSteps;

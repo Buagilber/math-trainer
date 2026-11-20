@@ -14,6 +14,7 @@ import { topicProgress, levelProgress, compareTime, compareWithPrevious, session
 import { validateTopic } from '../js/core/validate.js';
 import { longDivision, quotientOf, divisionRows } from '../js/core/long-division.js';
 import { longMultiplication } from '../js/core/long-multiplication.js';
+import { buildMultiStep, askOptions, meaningOf, noteOptions, pathValid, multiSummary } from '../js/core/multistep.js';
 
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
@@ -564,6 +565,34 @@ test('етап 1: «Обрати дію» у 2 класі (у рядок) і п�
   const e = generateInstance(eqMul, createRng(3));
   assert(e.steps && !e.steps.inline, 'рівняння 5 класу з · має крок, обчислення стовпчиком/кутом');
   eq(e.steps.question, 'Як знайти невідомий множник?');
+});
+
+test('розв\'язання по діях: варіанти, пояснення, перевірка шляху', () => {
+  const spec = { numbers: ['a', 'b'],
+    plan: [{ op: '+', args: ['a', 'b'], question: 'Разом?' }, { op: '*', args: ['#1', '2'], question: 'Периметр?' }],
+    meanings: { 'a + b': 'довжина й ширина разом', 'a * 2': 'дві довжини', '(a + b) * 2': 'периметр' }, spare: ['площа'] };
+  const ms = buildMultiStep(spec, { a: 7, b: 4 }, '(a + b) * 2');
+  const id = (x) => x;
+  const o1 = askOptions(ms, 0, [], id);
+  eq(o1.map((o) => `${o.left}${o.op}${o.right}${o.correct ? '✓' : ''}`), ['7+4✓', '7-4', '7*4'], 'ділення з остачею не пропонуємо');
+  const o2 = askOptions(ms, 1, [{ given: '11' }], id);
+  eq(o2.find((o) => o.correct), { op: '*', left: 11, right: 2, refs: ['l:0', null], correct: true }, '«#1» — результат дитини');
+  eq([meaningOf(ms, 11), meaningOf(ms, 14), meaningOf(ms, 5)], ['довжина й ширина разом', 'дві довжини', null]);
+  eq(noteOptions(ms, 11, id).length, 3);
+  const L = (l, op, r, refs, given) => ({ expr: [l, op, r], refs, given: String(given) });
+  const fake = [L(3, '*', 4, ['x', 'n:1'], 12), L(7, '+', 3, ['n:0', 'x'], 10), L(12, '+', 10, ['l:0', 'l:1'], 22)];
+  eq(pathValid(ms, fake, 2), false, 'числа підібрано під відповідь');
+  const real = [L(2, '*', 7, ['x', 'n:0'], 14), L(4, '*', 2, ['n:1', 'x'], 8), L(14, '+', 8, ['l:0', 'l:1'], 22)];
+  eq(pathValid(ms, real, 2), true, 'a · 2 + b · 2');
+  const loop = [L(7, '+', 4, ['n:0', 'n:1'], 11), L(11, '+', 7, ['l:0', 'n:0'], 18), L(18, '+', 4, ['l:1', 'n:1'], 22)];
+  eq(pathValid(ms, loop, 2), true, 'a + b + a + b');
+  const ms2 = buildMultiStep(spec, { a: 7, b: 2 }, '(a + b) * 2');
+  eq(pathValid(ms2, [L(7, '+', 2, ['n:0', 'n:1'], 9), L(9, '*', 2, ['l:0', 'n:1'], 18)], 1), true, 'двійка з умови як стала');
+  const sum = multiSummary(ms, { mode: 'free', noteMode: 'pick', lines: real.map((l) => ({ ...l, note: 'дві довжини' })), finalLine: 2 }, '22');
+  eq([sum.pathOk, sum.lines.map((l) => l.calcOk).every(Boolean), sum.lines[0].noteOk, sum.lines[1].noteOk], [true, true, true, false]);
+  const { result } = submitAnswer(buildSession({ id: 't', title: 'T', exercises: [{ id: 'p', kind: 'fixed', text: 'Периметр?', answer: 22 }] }, 1, createRng(1)), '22', 1000,
+    { multi: { pathOk: false, lines: [] } });
+  eq(result.correct, false, 'правильне число, але підібраний шлях — не зараховано');
 });
 
 test('звернення: контекст і посилання на GitHub', () => {

@@ -24,8 +24,8 @@ export function sessionRecord(session, { profileId = 'default', startedAt, finis
     avgMs: s.avgMs,
     hintsUsed: s.hintsUsed,
     stepStats: s.stepStats,
-    mistakes: s.mistakes.map(({ exerciseId, text, answer, answerText, given, answerPrefix, canonical, step, written }) =>
-      ({ exerciseId, text, answer, answerText, given, answerPrefix, canonical, step, written })),
+    mistakes: s.mistakes.map(({ exerciseId, text, answer, answerText, given, answerPrefix, canonical, step, written, multi }) =>
+      ({ exerciseId, text, answer, answerText, given, answerPrefix, canonical, step, written, multi })),
   };
 }
 

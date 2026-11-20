@@ -441,6 +441,34 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .lm-line-empty { border-top-color: transparent; }
 .lm-toggle { justify-self: center; margin-top: 6px; position: relative; }
 
+/* «Розв'язання по діях»: рядки «1) 6 + 8 = 14 — поїхало на екскурсію», варіанти дій,
+   конструктор дії з кнопок-чисел (схема Б), пояснення кнопками. */
+.ms { gap: 10px; }
+.ms-lines { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 440px; }
+.ms-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 8px 12px; border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); font-size: 1.2rem; font-weight: 600; text-align: left; font-variant-numeric: tabular-nums; }
+.ms-line.ok { background: var(--ok-bg); }
+.ms-line.bad { background: var(--bad-bg); }
+.ms-no { color: var(--muted); font-size: 0.95rem; font-weight: 500; }
+.ms-note { color: var(--op-times); font-size: 0.95rem; font-weight: 500; }
+.ms-marks { display: inline-flex; flex-wrap: wrap; gap: 6px; font-size: 0.85rem; font-weight: 600; }
+.ms-mark { display: inline-flex; align-items: center; gap: 0.25em; }
+.ms-mark.ok { color: var(--ok); }
+.ms-mark.bad { color: var(--bad); }
+.ms-box { display: inline-flex; align-items: center; min-width: 2.4em; min-height: 1.4em; padding: 0 6px; border-radius: 8px; border: 2px solid var(--primary); background: rgba(79, 109, 245, 0.08); justify-content: flex-end; }
+.ms-hint { margin: 0; font-size: 0.9rem; color: var(--muted); }
+.ms-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.ms-choices { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 440px; }
+.ms-builder { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; max-width: 440px; padding: 10px; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+.ms-slot { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ms-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.ms-chip { min-width: 3em; min-height: 44px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 1.1rem; font-weight: 600; }
+.ms-chip:disabled { opacity: 0.45; }
+.ms-chip.found { border-color: var(--op-times); }
+.ms-sign { font-size: 1.4rem; }
+.ms-extra { display: inline-flex; }
+.ms-extra .ms-chip:first-child { border-style: dashed; border-radius: 12px 0 0 12px; }
+.ms-extra .ms-x { min-width: 2.4em; border-left: none; border-radius: 0 12px 12px 0; color: var(--muted); font-weight: 400; }
+
 /* Перемикач напряму введення: ← справа наліво (типово), → зліва направо. */
 .dir-toggle {
   width: 1.3em;

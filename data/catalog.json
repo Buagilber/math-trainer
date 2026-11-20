@@ -32,7 +32,21 @@
         "topics/g2-mul.json",
         "topics/g2-div.json",
         "topics/g2-word.json"
-      ]
+      ],
+      "multiStep": {
+        "1": [
+          "ask",
+          "auto"
+        ],
+        "2": [
+          "ask",
+          "auto"
+        ],
+        "3": [
+          "free",
+          "pick"
+        ]
+      }
     },
     {
       "id": "g3",
@@ -71,7 +85,21 @@
       ],
       "hiddenTopics": [
         "topics/g5-divisibility.json"
-      ]
+      ],
+      "multiStep": {
+        "1": [
+          "ask",
+          "auto"
+        ],
+        "2": [
+          "free",
+          "auto"
+        ],
+        "3": [
+          "free",
+          "pick"
+        ]
+      }
     },
     {
       "id": "g6",
