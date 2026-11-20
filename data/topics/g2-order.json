@@ -83,7 +83,8 @@
         "steps": [
           0,
           100
-        ]
+        ],
+        "orderSteps": true
       }
     },
     {
@@ -124,7 +125,8 @@
         "steps": [
           0,
           100
-        ]
+        ],
+        "orderSteps": true
       }
     }
   ]

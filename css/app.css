@@ -469,6 +469,12 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .ms-extra .ms-chip:first-child { border-style: dashed; border-radius: 12px 0 0 12px; }
 .ms-extra .ms-x { min-width: 2.4em; border-left: none; border-radius: 0 12px 12px 0; color: var(--muted); font-weight: 400; }
 
+/* Порядок дій по кроках: вираз зі знаками-кнопками, правило з підручника. */
+.ms-expr { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 6px; font-size: clamp(1.6rem, 7vw, 2.2rem); font-weight: 700; font-variant-numeric: tabular-nums; }
+.ms-par { color: var(--muted); font-weight: 500; }
+.ms-op { min-width: 1.6em; min-height: 1.5em; padding: 0 4px; border: 2px solid var(--primary); border-radius: 12px; background: rgba(79, 109, 245, 0.08); font-size: 1em; line-height: 1; }
+.ms-rule { margin: 0; text-align: left; line-height: 1.45; }
+
 /* Перемикач напряму введення: ← справа наліво (типово), → зліва направо. */
 .dir-toggle {
   width: 1.3em;

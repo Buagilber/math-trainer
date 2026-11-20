@@ -8,6 +8,7 @@
 
 import { evaluate, formatExpression } from './expr.js';
 import { buildMultiStep } from './multistep.js';
+import { orderTokens } from './order-steps.js';
 import { pow10, formatDecimal, normalizeDecimal, compareDecimals } from './numbers.js';
 
 const BLANK = '□';
@@ -328,6 +329,8 @@ function expression(params, rng) {
       text: `${formatExpression(expr, vars)} = ${BLANK}`,
       answerType: 'number',
       answer: value,
+      // orderSteps — «Розв'язати по діях» для виразу (core/order-steps.js).
+      order: params.orderSteps ? { tokens: orderTokens(expr, vars) } : undefined,
     };
   });
 }

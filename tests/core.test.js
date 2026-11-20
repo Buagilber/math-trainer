@@ -15,6 +15,7 @@ import { validateTopic } from '../js/core/validate.js';
 import { longDivision, quotientOf, divisionRows } from '../js/core/long-division.js';
 import { longMultiplication } from '../js/core/long-multiplication.js';
 import { buildMultiStep, askOptions, meaningOf, noteOptions, pathValid, multiSummary } from '../js/core/multistep.js';
+import { orderTokens, evalTokens, reduceTokens, allowedOps, whyNotOp, orderCalc } from '../js/core/order-steps.js';
 
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
@@ -686,6 +687,48 @@ test('етап 3: у кожної задачі «по діях» план дає
     }
   }
   assert(!problems.length, [...new Set(problems)].slice(0, 6).join('; '));
+});
+
+test('порядок дій по кроках: дозволені дії й правила', () => {
+  const T = (src) => orderTokens(src, {});
+  const ops = (src) => allowedOps(T(src));
+  eq(ops('41 - 5 + 13'), [1], '+ і − — зліва направо');
+  eq(whyNotOp(T('41 - 5 + 13'), 3), 'order');
+  eq(ops('41 - 5 * 2'), [3]);
+  eq(whyNotOp(T('41 - 5 * 2'), 1), 'priority');
+  eq(ops('49 * (6 + 60) / 2'), [4], 'спочатку дужки');
+  eq(whyNotOp(T('49 * (6 + 60) / 2'), 1), 'brackets');
+  const after = reduceTokens(T('49 * (6 + 60) / 2'), 4, 66);
+  eq(after.map((t) => t.n ?? t.o ?? t.p).join(' '), '49 * 66 / 2', 'дужки навколо числа зникають');
+  eq(allowedOps(after), [1, 3], '· і : — у зручному порядку');
+  eq(ops('60 / 6 * 2'), [1], 'але не тоді, коли значення зміниться');
+  eq(whyNotOp(T('60 / 6 * 2'), 3), 'orderMul');
+  eq(ops('13 * 20 - 66 / 6'), [1, 5]);
+  eq(ops('(67 + 14) - 4 * 5'), [2]);
+  eq(evalTokens(T('(67 + 14) - 4 * 5')), 61);
+});
+
+test('порядок дій: у кожному виразі з orderSteps дозволені дії ведуть до відповіді цілими числами', async () => {
+  const problems = [];
+  for (const path of ['topics/g2-order.json', 'topics/g5-order.json']) {
+    const topic = await (await fetch(`../data/${path}`)).json();
+    for (const ex of topic.exercises.filter((e) => e.params?.orderSteps)) {
+      for (let i = 0; i < 30; i++) {
+        const item = generateInstance(ex, createRng(i + 1));
+        let tokens = item.order.tokens;
+        while (tokens.length > 1) {
+          const allowed = allowedOps(tokens);
+          if (!allowed.length) { problems.push(`${ex.id}: немає дозволеної дії в ${item.text}`); break; }
+          const k = allowed[allowed.length - 1];
+          const v = orderCalc(tokens[k - 1].n, tokens[k].o, tokens[k + 1].n);
+          if (!Number.isInteger(v) || v < 0) problems.push(`${ex.id}: ${item.text} → ${v}`);
+          tokens = reduceTokens(tokens, k, v);
+        }
+        if (tokens[0]?.n !== item.answer) problems.push(`${ex.id}: ${item.text} → ${tokens[0]?.n}`);
+      }
+    }
+  }
+  assert(!problems.length, problems.slice(0, 5).join('; '));
 });
 
 export async function run() {

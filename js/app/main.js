@@ -15,6 +15,7 @@ import { loadContent } from './content.js';
 import { longDivision, divisionRows } from '../core/long-division.js';
 import { longMultiplication } from '../core/long-multiplication.js';
 import { MAX_EXTRA, MULTI_SIGNS, calc, askOptions, meaningOf, noteOptions, multiSummary } from '../core/multistep.js';
+import { ORDER_RULES, allowedOps, whyNotOp, reduceTokens, orderCalc } from '../core/order-steps.js';
 import { formatAgo } from './format.js';
 import { openReportDialog, contextText } from './feedback.js';
 import { progressStore, storage, pinStore } from './storage.js';
@@ -486,7 +487,7 @@ function renderSession() {
   const work = item.column ? workHtml(item, item.column, answerBox, toggle, '', !!fb) : null;
   const prompt = work ? work.inner
     // Коли дитина обирає чи вже обрала дію, поле відповіді — у блоці кроку, а в прикладі лишається □.
-    : isFormula ? mh(item.text, { ops: true }).replace('□', st.stage === 'idle' ? answerBox : '<span class="blank-static">□</span>')
+    : isFormula ? mh(item.text, { ops: true }).replace('□', st.stage === 'idle' && (!state.multi || state.multi.phase === 'answer' || fb) ? answerBox : '<span class="blank-static">□</span>')
     : mh(item.text);
   // Під завданням без □: «Відповідь: □ см» або, для рівнянь, «x = □».
   // Коли дитина обирає чи вже обрала дію, x вводиться в блоці кроку.
@@ -494,7 +495,7 @@ function renderSession() {
   const m = state.multi;
   const answerRow = hasInlineBlank || item.column || st.stage !== 'idle' || (m && m.phase !== 'answer' && !fb) ? ''
     : `<div class="answer-row">${esc(item.answerPrefix ?? 'Відповідь:')} ${answerBox} ${esc(item.unit ?? '')}</div>`;
-  const stepsArea = item.steps ? stepsAreaHtml(item, chosen, answerBox, toggle, !!fb) : item.multi ? multiAreaHtml(item, !!fb) : '';
+  const stepsArea = item.steps ? stepsAreaHtml(item, chosen, answerBox, toggle, !!fb) : item.multi || item.order ? multiAreaHtml(item, !!fb) : '';
 
   const canonical = item.steps?.canonical;
   const pathFailed = fb && !fb.correct && s.results.at(-1)?.multi?.pathOk === false && checkAnswer(item, state.input);
@@ -578,7 +579,7 @@ function renderSession() {
   if (h.open && !fb) renderHintLayer(item, h.animate);
   h.animate = false;
   root.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => pressKey(b.dataset.key)));
-  if (item.multi && !fb) bindMulti(item);
+  if ((item.multi || item.order) && !fb) bindMulti(item);
   root.querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => answer(b.dataset.choice)));
   // Крок «Обрати дію»: idle → choose → compute; «Змінити дію» повертає до вибору.
   const setStage = (stage, choice = null) => {
@@ -972,6 +973,11 @@ function multiModeFor(level) {
 }
 
 function openMulti(item) {
+  if (item.order) {
+    // Порядок дій: дитина торкається знака у виразі; вираз скорочується після кожної дії.
+    state.multi = { mode: 'order', noteMode: null, phase: 'pick', lines: [], tokens: item.order.tokens, slips: 0, input: '', finalLine: null };
+    return;
+  }
   const { mode, noteMode } = multiModeFor(state.session.level);
   state.multi = { mode, noteMode, phase: 'build', lines: [], build: {}, extra: [], input: '', finalLine: null };
   if (mode === 'ask') state.multi.options = askOptions(item.multi, 0, [], shuffled);
@@ -980,7 +986,7 @@ function openMulti(item) {
 // Що вводиться з клавіатури зараз (для активності ✓).
 function multiKeypadInput(item) {
   const m = state.multi;
-  if (!m || !item.multi) return state.input;
+  if (!m || (!item.multi && !item.order)) return state.input;
   if (m.phase === 'column') return m.col.input;
   return MULTI_INPUT_PHASES.includes(m.phase) ? m.input : state.input;
 }
@@ -990,6 +996,25 @@ const multiKeypadOff = () => !!state.multi && !MULTI_INPUT_PHASES.includes(state
 const multiExpr = ([l, op, r]) => mh(`${l} ${MULTI_SIGNS[op]} ${r}`, { ops: true });
 const multiCaret = '<span class="caret"></span>';
 
+// Вираз зі знаками-кнопками (порядок дій): дитина торкається знака дії, яку виконує.
+function orderExprHtml(tokens, clickable) {
+  const sign = (op) => timesSign(MULTI_SIGNS[op]);
+  return `<div class="ms-expr">${tokens.map((t, i) => (t.n != null ? `<span>${mh(String(t.n))}</span>`
+    : t.p ? `<span class="ms-par">${t.p}</span>`
+    : clickable ? `<button class="ms-op" data-ms-op="${i}" aria-label="Дія ${sign(t.o)}">${mh(` ${sign(t.o)} `, { ops: true })}</button>`
+    : `<span>${mh(` ${sign(t.o)} `, { ops: true })}</span>`)).join(' ')}</div>`;
+}
+
+// Підсумок порядку дій для результату: обчислення кожної дії й кількість спроб «не з тієї дії».
+function orderSummary(m) {
+  return {
+    mode: 'order',
+    lines: m.lines.filter((l) => l.given !== '').map((l) => ({ expr: l.expr, given: l.given, calcOk: Number(l.given) === orderCalc(...l.expr), actionOk: null, note: null, noteOk: null })),
+    pathOk: null,
+    slips: m.slips,
+  };
+}
+
 function multiAreaHtml(item, answered) {
   const m = state.multi;
   if (!m) return answered ? '' : '<div class="steps-area"><button class="link-btn steps-btn" id="ms-open">Розв\'язати по діях</button></div>';
@@ -997,13 +1022,16 @@ function multiAreaHtml(item, answered) {
   const lines = m.lines.map((l, i) => multiLineHtml(item, l, i, res?.lines[i])).join('');
   const pathLine = res?.pathOk != null
     ? `<p class="ms-hint">${res.pathOk ? '✓ Дії розв\'язують задачу.' : '✕ Числа підібрано під відповідь: з іншими числами ці дії дали б іншу відповідь.'}</p>` : '';
-  return `<div class="steps-area ms">${lines ? `<div class="ms-lines">${lines}</div>` : ''}${answered ? pathLine : multiWorkHtml(item)}</div>`;
+  const expr = m.mode === 'order' && !answered && m.tokens.length > 1 ? orderExprHtml(m.tokens, m.phase === 'pick') : '';
+  const slips = m.mode === 'order' && answered && m.slips
+    ? `<p class="ms-hint">Спроб почати не з тієї дії: ${m.slips} — як і підказка, на зірки не впливає.</p>` : '';
+  return `<div class="steps-area ms">${expr}${lines ? `<div class="ms-lines">${lines}</div>` : ''}${answered ? pathLine + slips : multiWorkHtml(item)}</div>`;
 }
 
 function multiLineHtml(item, line, i, res) {
   const typing = line.typing && state.multi.phase !== 'column';
   const value = typing ? `<span class="ms-box active">${esc(state.multi.input)}${multiCaret}</span>` : `<b>${esc(line.given)}</b>`;
-  const noteText = state.multi.noteMode === 'auto' ? (line.typing ? null : meaningOf(item.multi, Number(line.given))) : line.note;
+  const noteText = state.multi.noteMode === 'auto' ? (line.typing ? null : meaningOf(item.multi, Number(line.given))) : state.multi.noteMode === 'pick' ? line.note : null;
   const marks = res ? [
     res.calcOk ? `<span class="ms-mark ok">${MARK.ok} пораховано</span>` : `<span class="ms-mark bad">${MARK.bad} має бути ${mh(String(+calc(...line.expr).toFixed(4)))}</span>`,
     res.actionOk === false ? `<span class="ms-mark bad">${MARK.bad} дія</span>` : '',
@@ -1018,6 +1046,10 @@ function multiWorkHtml(item) {
   const n = m.lines.length;
   const answerLink = '<button class="link-btn" id="ms-answer">Вписати відповідь</button>';
   switch (m.phase) {
+    case 'pick':
+      return `<p class="steps-question">${n + 1}) Яку дію виконати? Торкнись знака у виразі.</p>${answerLink}`;
+    case 'why':
+      return `<div class="ms-builder"><p class="steps-question">Цю дію ще рано виконувати</p><p class="ms-rule">${esc(ORDER_RULES[m.why])}</p><button class="link-btn" id="ms-why-ok">Зрозуміло</button></div>`;
     case 'typing':
       return `<p class="ms-hint">Порахуй і натисни ✓</p>${multiColumnAllowed(m.lines.at(-1)) ? '<button class="link-btn" id="ms-column">Порахувати в стовпчик</button>' : ''}`;
     case 'column':
@@ -1110,6 +1142,18 @@ function bindMulti(item) {
   const on = (sel, fn) => root.querySelectorAll(sel).forEach((el) => el.addEventListener('click', () => fn(el)));
   const go = () => { state.lastInputAt = Date.now(); renderSession(); };
   on('#ms-open', () => { openMulti(item); go(); });
+  on('[data-ms-op]', (el) => {
+    const m = state.multi;
+    const i = Number(el.dataset.msOp);
+    if (!allowedOps(m.tokens).includes(i)) { m.slips += 1; m.why = whyNotOp(m.tokens, i); m.phase = 'why'; return go(); }
+    const t = m.tokens;
+    m.lines.push({ expr: [t[i - 1].n, t[i].o, t[i + 1].n], refs: ['x', 'x'], given: '', typing: true });
+    m.pendingOp = i;
+    m.phase = 'typing';
+    m.input = '';
+    go();
+  });
+  on('#ms-why-ok', () => { state.multi.phase = 'pick'; go(); });
   on('#ms-answer', () => { state.multi.phase = 'answer'; state.input = emptyInput(item); go(); });
   on('[data-ms-opt]', (el) => {
     const o = state.multi.options[Number(el.dataset.msOpt)];
@@ -1197,6 +1241,16 @@ function pressMultiKey(key) {
 
 function afterMultiLine(item) {
   const m = state.multi;
+  if (m.mode === 'order') {
+    // Вираз скорочується числом, яке порахувала дитина; коли лишилось одне число — це відповідь.
+    m.tokens = reduceTokens(m.tokens, m.pendingOp, Number(m.lines.at(-1).given));
+    if (m.tokens.length === 1) {
+      m.finalLine = m.lines.length - 1;
+      return answer(m.lines.at(-1).given);
+    }
+    m.phase = 'pick';
+    return renderSession();
+  }
   if (m.mode === 'ask') {
     if (m.lines.length < item.multi.plan.length) {
       m.phase = 'build';
@@ -1217,7 +1271,8 @@ function answer(given) {
   const { session, result } = submitAnswer(state.session, given, Date.now() - state.questionStartedAt,
     { hintUsed: state.hint.used, step: chosen,
       written: state.written ? writtenResult(state.written) : null,
-      multi: state.multi && item.multi ? multiSummary(item.multi, state.multi, given) : null });
+      multi: state.multi && item.multi ? multiSummary(item.multi, state.multi, given)
+        : state.multi && item.order ? orderSummary(state.multi) : null });
   state.session = session;
   state.input = given;
   state.hint.open = false;

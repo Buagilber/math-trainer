@@ -120,7 +120,8 @@
         "steps": [
           0,
           100000
-        ]
+        ],
+        "orderSteps": true
       }
     },
     {
@@ -190,7 +191,8 @@
         "steps": [
           0,
           100000
-        ]
+        ],
+        "orderSteps": true
       }
     }
   ]
