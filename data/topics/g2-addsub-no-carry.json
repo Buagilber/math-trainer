@@ -117,6 +117,7 @@
       "kind": "generator",
       "generator": "arithmetic",
       "difficulty": 3,
+      "prompt": "Яке число пропущено?",
       "hint": {
         "rules": [
           "Щоб знайти невідомий доданок, від суми відніми відомий доданок.",

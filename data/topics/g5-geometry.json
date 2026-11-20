@@ -46,12 +46,12 @@
         "text": "Сторони прямокутника {a} см і {b} см. Знайди його площу.",
         "vars": {
           "a": [
-            3,
-            25
+            2,
+            10
           ],
           "b": [
             2,
-            15
+            10
           ]
         },
         "answer": "a * b",
@@ -69,7 +69,7 @@
         "vars": {
           "a": [
             2,
-            20
+            10
           ]
         },
         "answer": "a * a",
@@ -77,25 +77,117 @@
       }
     },
     {
+      "id": "rect-area-2x1",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 2,
+      "params": {
+        "text": "Сторони прямокутника {a} см і {b} см. Знайди його площу.",
+        "vars": {
+          "a": [
+            11,
+            40
+          ],
+          "b": [
+            2,
+            9
+          ]
+        },
+        "answer": "a * b",
+        "unit": "см²",
+        "actionSteps": {
+          "op": "*",
+          "args": [
+            "a",
+            "b"
+          ],
+          "question": "Як знайти площу?"
+        }
+      }
+    },
+    {
+      "id": "square-area-big",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "hint": "Площа квадрата = сторона × сторона.",
+      "params": {
+        "text": "Сторона квадрата {a} м. Знайди його площу.",
+        "vars": {
+          "a": [
+            11,
+            25
+          ]
+        },
+        "answer": "a * a",
+        "unit": "м²",
+        "actionSteps": {
+          "op": "*",
+          "args": [
+            "a",
+            "a"
+          ],
+          "question": "Як знайти площу?"
+        }
+      }
+    },
+    {
+      "id": "rect-area-2x2",
+      "kind": "generator",
+      "generator": "template",
+      "difficulty": 3,
+      "params": {
+        "text": "Сторони прямокутника {a} см і {b} см. Знайди його площу.",
+        "vars": {
+          "a": [
+            11,
+            30
+          ],
+          "b": [
+            11,
+            20
+          ]
+        },
+        "answer": "a * b",
+        "unit": "см²",
+        "actionSteps": {
+          "op": "*",
+          "args": [
+            "a",
+            "b"
+          ],
+          "question": "Як знайти площу?"
+        }
+      }
+    },
+    {
       "id": "rect-side",
       "kind": "generator",
       "generator": "template",
       "difficulty": 2,
-      "hint": "Ширина прямокутника = площа : довжина.",
+      "hint": "Довжина прямокутника = площа : ширина.",
       "params": {
-        "text": "Площа прямокутника {a * b} дм², а його довжина {a} дм. Знайди ширину.",
+        "text": "Площа прямокутника {a * b} дм², а його ширина {a} дм. Знайди довжину.",
         "vars": {
           "a": [
-            4,
-            20
+            2,
+            9
           ],
           "b": [
-            2,
-            15
+            11,
+            30
           ]
         },
         "answer": "b",
-        "unit": "дм"
+        "unit": "дм",
+        "actionSteps": {
+          "op": "/",
+          "args": [
+            "a * b",
+            "a"
+          ],
+          "question": "Як знайти довжину?"
+        }
       }
     },
     {
@@ -113,7 +205,15 @@
           ]
         },
         "answer": "a",
-        "unit": "см"
+        "unit": "см",
+        "actionSteps": {
+          "op": "/",
+          "args": [
+            "4 * a",
+            "4"
+          ],
+          "question": "Як знайти сторону?"
+        }
       }
     },
     {

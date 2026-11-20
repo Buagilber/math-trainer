@@ -17,6 +17,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 1,
+      "prompt": "Заміни іменоване число.",
       "params": {
         "text": "{a} дм = □ см",
         "vars": {
@@ -33,6 +34,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 1,
+      "prompt": "Заміни іменоване число.",
       "params": {
         "text": "{a * 10} см = □ дм",
         "vars": {
@@ -49,6 +51,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 1,
+      "prompt": "Заміни іменоване число.",
       "params": {
         "text": "{a} м = □ дм",
         "vars": {
@@ -64,6 +67,7 @@
       "id": "m-cm",
       "kind": "fixed",
       "difficulty": 1,
+      "prompt": "Заміни іменоване число.",
       "text": "1 м = □ см",
       "answer": 100
     },
@@ -71,6 +75,7 @@
       "id": "h-min",
       "kind": "fixed",
       "difficulty": 1,
+      "prompt": "Заміни іменоване число.",
       "text": "1 год = □ хв",
       "answer": 60
     },
@@ -78,6 +83,7 @@
       "id": "day-h",
       "kind": "fixed",
       "difficulty": 1,
+      "prompt": "Заміни іменоване число.",
       "text": "1 доба = □ год",
       "answer": 24,
       "hint": {
@@ -91,6 +97,7 @@
       "id": "week-days",
       "kind": "fixed",
       "difficulty": 1,
+      "prompt": "Заміни іменоване число.",
       "text": "1 тиждень = □ діб",
       "answer": 7,
       "hint": {
@@ -104,6 +111,7 @@
       "id": "year-months",
       "kind": "fixed",
       "difficulty": 1,
+      "prompt": "Заміни іменоване число.",
       "text": "1 рік = □ міс.",
       "answer": 12,
       "hint": {
@@ -118,6 +126,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 2,
+      "prompt": "Заміни іменоване число.",
       "hint": "Переведи більші одиниці в менші й додай: 3 дм 4 см = 30 см + 4 см = ? см.",
       "params": {
         "text": "{a} дм {b} см = □ см",
@@ -139,6 +148,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 2,
+      "prompt": "Заміни іменоване число.",
       "hint": "Кожні 10 см — це 1 дм, решта — сантиметри: 47 см = ? дм ? см.",
       "params": {
         "text": "{a * 10 + b} см = {a} дм □ см",
@@ -160,6 +170,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 2,
+      "prompt": "Заміни іменоване число.",
       "hint": "1 м = 10 дм. Метри помнож на 10 і додай дециметри.",
       "params": {
         "text": "{a} м {b} дм = □ дм",
@@ -181,6 +192,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 2,
+      "prompt": "Заміни іменоване число.",
       "hint": {
         "rules": [
           "1 доба = 24 год, 1 год = 60 хв.",
@@ -203,6 +215,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 2,
+      "prompt": "Заміни іменоване число.",
       "hint": {
         "rules": [
           "1 доба = 24 год, 1 год = 60 хв.",
@@ -227,6 +240,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 2,
+      "prompt": "Заміни іменоване число.",
       "hint": {
         "rules": [
           "1 доба = 24 год, 1 год = 60 хв.",
@@ -337,6 +351,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 3,
+      "prompt": "Заміни іменоване число.",
       "hint": "1 год = 60 хв. До 60 додай решту хвилин.",
       "params": {
         "text": "1 год {b} хв = □ хв",

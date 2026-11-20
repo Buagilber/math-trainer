@@ -8,6 +8,8 @@ import { hintProblems } from './hints.js';
 
 // Скільки цифр можна ввести у відповідь (обмеження екранної клавіатури).
 export const MAX_ANSWER_DIGITS = 7;
+// Інструкція над завданням («Порівняй числа.») — коротка, в один-два рядки.
+export const MAX_PROMPT_LENGTH = 90;
 
 export function validateTopic(topic, { samples = 20 } = {}) {
   const errors = [];
@@ -41,6 +43,9 @@ export function validateTopic(topic, { samples = 20 } = {}) {
     }
     if (ex.kind === 'generator' && !GENERATORS[ex.generator]) {
       errors.push(`${where}: невідомий генератор «${ex.generator}»`); continue;
+    }
+    if (ex.prompt !== undefined && (typeof ex.prompt !== 'string' || ex.prompt.length > MAX_PROMPT_LENGTH)) {
+      errors.push(`${where}: prompt має бути рядком до ${MAX_PROMPT_LENGTH} символів`); continue;
     }
     if (ex.kind === 'fixed' && (ex.text === undefined || ex.answer === undefined)) {
       errors.push(`${where}: для fixed потрібні text і answer`); continue;

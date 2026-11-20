@@ -315,6 +315,8 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
   text-align: center;
 }
 .session-topic { margin: 0; font-size: 0.9rem; }
+/* Інструкція над завданням, як у підручнику: «Порівняй числа.» */
+.task-prompt { margin: 0 0 -8px; font-size: 1.1rem; font-weight: 600; }
 /* Плавний зсув прикладу вгору, поки відкрита підказка (і назад). */
 .session { transition: transform 0.25s ease-out; }
 

@@ -3,7 +3,7 @@
 
 import { createRng } from '../js/core/rng.js';
 import { evaluate, formatExpression } from '../js/core/expr.js';
-import { generateInstance, fillText, pluralUk, STEPS_MIN_DIGITS, divisionSteps } from '../js/core/generators.js';
+import { generateInstance, fillText, pluralUk, STEPS_MIN_DIGITS, divisionSteps, defaultPrompt, actionSteps } from '../js/core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswer, formatAnswer, MAX_QUESTION_MS } from '../js/core/session.js';
 import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js/core/hints.js';
@@ -347,7 +347,7 @@ test('запис стовпчиком', () => {
   const missing = generateInstance({ ...col, params: { ...col.params, missing: 'a' } }, rng);
   eq(missing.column, undefined, 'з невідомим компонентом — у рядок');
   const div = generateInstance({ id: 'd', kind: 'generator', generator: 'arithmetic', params: { op: '/', b: [2, 9], result: [10, 99], layout: 'column' } }, rng);
-  eq(div.column, undefined, 'ділення — у рядок');
+  eq(div.column?.kind, 'divide', 'ділення — кутом');
   const dec = generateInstance({ id: 'x', kind: 'generator', generator: 'decimal', params: { op: '+', a: [11, 99], aScale: 1, b: [101, 999], bScale: 2, layout: 'column' } }, rng);
   eq([dec.column.align, dec.column.rows.length], ['comma', 2]);
   const decMul = generateInstance({ id: 'y', kind: 'generator', generator: 'decimal', params: { op: '*', a: [11, 99], aScale: 1, b: [2, 9], bScale: 0, layout: 'column' } }, rng);
@@ -523,6 +523,33 @@ test('множення стовпчиком: неповні добутки', () 
     const fs = longMultiplication(a, b);
     eq(fs.filter((f) => f.kind === 'pp').reduce((acc, f) => acc + f.value * 10 ** f.shift, 0), a * b, `${a} · ${b}: сума неповних добутків`);
   }
+});
+
+test('інструкція над завданням (prompt)', () => {
+  const cmp = (text) => ({ text, answerType: 'choice', choices: ['<', '=', '>'] });
+  eq([defaultPrompt(cmp('2 □ 14')), defaultPrompt(cmp('3/5 □ 2/5')), defaultPrompt(cmp('35 + 7 □ 40'))],
+    ['Порівняй числа.', 'Порівняй числа.', 'Порівняй вирази.']);
+  eq(defaultPrompt({ text: '7 + 5 = □', answerType: 'number' }), undefined, 'обчислення — без інструкції');
+  const ex = { id: 'c', kind: 'generator', generator: 'template', prompt: 'Запиши число.', params: { text: '{d} дес. {u} од. = □', vars: { d: [1, 9], u: [0, 9] }, answer: 'd * 10 + u' } };
+  eq(generateInstance(ex, createRng(1)).prompt, 'Запиши число.');
+  const topic = { id: 't', title: 'T', exercises: [{ ...ex, prompt: 'х'.repeat(91) }] };
+  eq(validateTopic(topic).errors.length, 1, 'задовга інструкція');
+});
+
+test('«Обрати дію» в задачах і ділення кутом у прикладах', () => {
+  const st = actionSteps('*', 12, 12, 144, createRng(1), 'Як знайти площу?');
+  eq(st.options.map((o) => o.sign).sort(), ['+', ':', '×', '−'].sort());
+  eq(st.options.filter((o) => o.correct).map((o) => `${o.left} ${o.sign} ${o.right}`), ['12 × 12']);
+  eq([st.question, st.label], ['Як знайти площу?', '']);
+  const div = actionSteps('/', 96, 4, 24, createRng(2));
+  eq(div.options.find((o) => o.correct).value, 24);
+  eq(div.options.find((o) => o.op === '-').left, 96, 'для − більше число першим');
+  const area = { id: 'a', kind: 'generator', generator: 'template', params: { text: 'Сторона квадрата {a} м. Знайди його площу.', vars: { a: [11, 25] }, answer: 'a * a', unit: 'м²', actionSteps: { op: '*', args: ['a', 'a'], question: 'Як знайти площу?' } } };
+  const it = generateInstance(area, createRng(3));
+  eq(it.steps.options.find((o) => o.correct).value, it.answer, 'правильна дія дає відповідь');
+  const d = generateInstance({ id: 'd', kind: 'generator', generator: 'arithmetic', params: { op: '/', b: [2, 9], result: [21, 150], layout: 'column' } }, createRng(4));
+  eq(d.column.kind, 'divide', 'ділення стовпчиком — кутом');
+  eq(d.column.dividend / d.column.divisor, d.answer);
 });
 
 test('звернення: контекст і посилання на GitHub', () => {

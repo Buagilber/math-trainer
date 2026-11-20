@@ -63,6 +63,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 1,
+      "prompt": "Яке число пропущено?",
       "hint": "Скільки однакових доданків — на стільки й множимо: 6 + 6 = 6 · 2.",
       "params": {
         "text": "{a} + {a} + {a} = {a} × □",
@@ -118,6 +119,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 2,
+      "prompt": "Яке число пропущено?",
       "hint": "Скільки однакових доданків — на стільки й множимо: 6 + 6 = 6 · 2.",
       "params": {
         "text": "{a} + {a} + {a} + {a} = □ × 4",
@@ -154,6 +156,7 @@
       "kind": "generator",
       "generator": "arithmetic",
       "difficulty": 3,
+      "prompt": "Яке число пропущено?",
       "hint": {
         "rules": [
           "Щоб знайти невідомий множник, добуток поділи на відомий множник."

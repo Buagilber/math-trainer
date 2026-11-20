@@ -14,12 +14,16 @@ const BLANK = '□';
 // Запис стовпчиком (params.layout = "column") — для +, − і × з невідомим
 // результатом. Інтерфейс малює числа одне над одним: align "right" — розряди
 // під розрядами, "comma" — десяткові дроби кома під комою.
-const COLUMN_OPS = ['+', '-', '*'];
+const COLUMN_OPS = ['+', '-', '*', '/'];
 const SIGNS = { '+': '+', '-': '−', '*': '×', '/': ':' };
 // columnAlign "zeros" — множення чисел, що закінчуються нулями (як у підручнику):
 // остання ненульова цифра під останньою ненульовою, нулі винесені праворуч.
-const columnOf = (params, op, rows, align = 'right') =>
-  params.layout === 'column' && COLUMN_OPS.includes(op) ? { rows, sign: SIGNS[op], align: params.columnAlign ?? align } : undefined;
+// Ділення цілих чисел — кутом: { kind: 'divide', dividend, divisor }.
+const columnOf = (params, op, rows, align = 'right') => {
+  if (params.layout !== 'column' || !COLUMN_OPS.includes(op)) return undefined;
+  if (op === '/') return /^\d+$/.test(rows[0]) && /^\d+$/.test(rows[1]) ? { kind: 'divide', dividend: Number(rows[0]), divisor: Number(rows[1]) } : undefined;
+  return { rows, sign: SIGNS[op], align: params.columnAlign ?? align };
+};
 const MAX_TRIES = 500;
 
 export class GenerationError extends Error {}
@@ -139,6 +143,28 @@ function arithmetic(params, rng) {
   });
 }
 
+// Крок «Обрати дію» для задачі в одну дію (actionSteps у template: площа,
+// вартість, швидкість…): { "op": "*", "args": ["a", "b"], "question"?: "…" }.
+// Варіанти — чотири дії з тими самими двома числами (+, −, ·, :; для − і :
+// більше число першим); правильний — дія автора, якщо вона дає відповідь.
+// Обрана дія рахується стовпчиком чи кутом, як у рівняннях.
+export function actionSteps(op, a, b, answer, rng, question = 'Яку дію виконати?') {
+  const big = Math.max(a, b);
+  const small = Math.min(a, b);
+  const options = ['+', '-', '*', '/'].map((o) => {
+    const [left, right] = o === '-' || o === '/' ? (o === op ? [a, b] : [big, small]) : [a, b];
+    const value = o === '/' ? Math.floor(left / right) : applyOp(o, left, right);
+    return { op: o, sign: SIGNS[o], left, right, value, correct: o === op && value === answer };
+  });
+  const canonical = options.find((o) => o.correct) ?? { op, sign: SIGNS[op], left: a, right: b };
+  return {
+    options: rng.shuffle(options),
+    canonical: { op: canonical.op, sign: canonical.sign, left: canonical.left, right: canonical.right },
+    question,
+    label: '',
+  };
+}
+
 // Крок «Обрати дію» для ділення з остачею (divideSteps у template): неповну
 // частку чи остачу знаходять діленням a : b кутом. Варіанти, як у рівняннях, —
 // 2 дії (: і ×) × 2 порядки чисел; правильний — той, що дає відповідь.
@@ -250,6 +276,11 @@ function template(params, rng) {
     if (!valid || !Number.isInteger(value) || !inRange(value, params.result ?? [0, Infinity])) return null;
     if (params.steps && !steps.every((s) => inRange(s, params.steps))) return null;
     const item = { text, answerType: 'number', answer: value, unit: params.unit, answerPrefix: params.answerPrefix };
+    if (params.actionSteps) {
+      const spec = params.actionSteps;
+      const [left, right] = spec.args.map((e) => evaluate(String(e), numeric).value);
+      item.steps = actionSteps(spec.op, left, right, value, rng, spec.question);
+    }
     if (params.divideSteps) {
       // ["a", "b"] — шукаємо неповну частку; { "args": ["a", "b"], "find": "remainder" } — остачу.
       const spec = Array.isArray(params.divideSteps) ? { args: params.divideSteps } : params.divideSteps;
@@ -460,5 +491,15 @@ export function generateInstance(exercise, rng) {
   if (instance.answerType === 'choice' && exercise.shuffleChoices) {
     instance.choices = rng.shuffle(instance.choices);
   }
-  return { exerciseId: exercise.id, ...instance };
+  return { exerciseId: exercise.id, ...instance, prompt: exercise.prompt ?? defaultPrompt(instance) };
+}
+
+// Інструкція над завданням (issues #10, #11), коли автор її не задав: голий
+// запис «2 □ 14» без слів незрозумілий. Порівняння — «Порівняй числа.» або,
+// якщо в записі є дії, «Порівняй вирази.» (як у підручнику). Решта — без інструкції:
+// «7 + 5 = □» чи текстова задача зрозумілі й так.
+export function defaultPrompt(instance) {
+  const isCompare = instance.answerType === 'choice' && instance.choices?.includes('<') && instance.text.includes('□');
+  if (!isCompare) return undefined;
+  return /\s[+−×·:]\s/.test(instance.text) ? 'Порівняй вирази.' : 'Порівняй числа.';
 }

@@ -149,6 +149,7 @@ function reportContext() {
       ['рівень', levelName(s.level)],
       ['приклад', `${fb ? s.index : s.index + 1} з ${s.items.length}`],
       ['завдання', item.exerciseId],
+      ['інструкція', item.prompt],
       ['текст', item.text],
       ['правильна відповідь', formatAnswer(item.answerType, item.answer)],
       ['введено', formatAnswer(item.answerType, state.input)],
@@ -477,12 +478,8 @@ function renderSession() {
   const hasInlineBlank = item.text.includes('□');
   // Рівняння з x показуємо так само великим шрифтом і з кольоровими знаками, як приклади.
   const isFormula = hasInlineBlank || !!item.answerPrefix;
-  const writtenMul = state.written?.type === 'mul';
-  const mulMarks = writtenMul && fb ? writtenMarks(state.written) : null;
-  const prompt = writtenMul
-    ? writtenMultiplicationHtml(Number(item.column.rows[0]), Number(item.column.rows[1]), timesSign(item.column.sign), state.written,
-      { marks: mulMarks, rtl: state.inputDir === 'rtl', toggle: fb ? '' : directionToggleHtml(state.inputDir, { flip: state.dirFlip }) + dirTipHtml(item) })
-    : item.column ? columnHtml({ ...item.column, sign: timesSign(item.column.sign) }, answerBox, toggle)
+  const work = item.column ? workHtml(item, item.column, answerBox, toggle, '', !!fb) : null;
+  const prompt = work ? work.inner
     // Коли дитина обирає чи вже обрала дію, поле відповіді — у блоці кроку, а в прикладі лишається □.
     : isFormula ? mh(item.text, { ops: true }).replace('□', st.stage === 'idle' ? answerBox : '<span class="blank-static">□</span>')
     : mh(item.text);
@@ -516,8 +513,9 @@ function renderSession() {
     </header>
     <main class="session">
       <p class="session-topic muted">${esc(topic?.title ?? '')} · ${esc(levelName(s.level))}</p>
+      ${item.prompt ? `<p class="task-prompt">${esc(item.prompt)}</p>` : ''}
       <div class="task ${item.column ? 'task-column' : isFormula ? 'task-inline' : 'task-text'} ${!item.column && isFormula && item.text.length > 16 ? 'task-long' : ''}">${prompt}</div>
-      ${canWriteMultiplication(item) && !fb && !state.written ? '<button class="link-btn" id="lm-open">Розписати множення</button>' : ''}
+      ${work ? work.after : ''}
       ${answerRow}
       ${stepsArea}
       ${feedback}
@@ -588,7 +586,8 @@ function renderSession() {
   root.querySelector('#steps-cancel')?.addEventListener('click', () => setStage('idle'));
   root.querySelector('#steps-change')?.addEventListener('click', () => setStage('choose'));
   root.querySelector('#lm-open')?.addEventListener('click', () => {
-    openWritten('mul', 'sum', longMultiplication(Number(item.column.rows[0]), Number(item.column.rows[1])), [Number(item.column.rows[0]), Number(item.column.rows[1])]);
+    const [a, b] = columnFor(item).rows.map(Number);
+    openWritten('mul', 'sum', longMultiplication(a, b), [a, b]);
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
     renderSession();
@@ -677,8 +676,7 @@ function columnFor(item) {
 
 // «Розписати множення» — для цілих чисел стовпчиком, коли другий множник має
 // кілька цифр (неповні добутки). Множення з винесеними нулями й дроби — без нього.
-const canWriteMultiplication = (item) => {
-  const c = item.column;
+const canWriteMultiplication = (c) => {
   return !!c && c.sign === '×' && c.align === 'right' && /^\d{2,}$/.test(c.rows[1]) && /^\d+$/.test(c.rows[0]);
 };
 
@@ -717,16 +715,32 @@ function stepsAreaHtml(item, chosen, answerBox, toggle, answered) {
       </div>`;
   }
   const column = columnFor(item);
-  const w = state.written;
-  const marks = w && answered ? writtenMarks(w) : null;
-  const work = isDivision(column) && w
-    ? `<div class="task task-column">${writtenDivisionHtml(column, w, marks)}</div>`
-    : isDivision(column)
-    ? `<div class="task task-column">${divisionHtml(column, answerBox, label)}</div>${answered ? '' : '<button class="link-btn" id="ld-open">Розписати ділення</button>'}`
-    : column
-    ? `<div class="task task-column">${columnHtml({ ...column, sign: timesSign(column.sign) }, answerBox, toggle, label)}</div>`
+  const w = column ? workHtml(item, column, answerBox, toggle, label, answered) : null;
+  const work = w
+    ? `<div class="task task-column">${w.inner}</div>${w.after}`
     : `<div class="task task-inline">${esc(label)} ${mh(`${chosen.left} ${chosen.sign} ${chosen.right}`, { ops: true })} = ${answerBox}</div>`;
   return `<div class="steps-area">${work}${answered ? '' : '<button class="link-btn" id="steps-change">Змінити дію</button>'}</div>`;
+}
+
+// Обчислення стовпчиком чи кутом — і для прикладу, записаного стовпчиком
+// (item.column), і для дії, обраної на кроці «Обрати дію». inner — сам запис,
+// after — кнопка «Розписати ділення / множення» під ним.
+function workHtml(item, column, answerBox, toggle, label, answered) {
+  const w = state.written;
+  const marks = w && answered ? writtenMarks(w) : null;
+  if (isDivision(column)) {
+    return w
+      ? { inner: writtenDivisionHtml(column, w, marks), after: '' }
+      : { inner: divisionHtml(column, answerBox, label), after: answered ? '' : '<button class="link-btn" id="ld-open">Розписати ділення</button>' };
+  }
+  if (w?.type === 'mul') {
+    const mulToggle = answered ? '' : directionToggleHtml(state.inputDir, { flip: state.dirFlip }) + dirTipHtml(item);
+    return { inner: writtenMultiplicationHtml(Number(column.rows[0]), Number(column.rows[1]), timesSign(column.sign), w, { marks, rtl: state.inputDir === 'rtl', toggle: mulToggle }), after: '' };
+  }
+  return {
+    inner: columnHtml({ ...column, sign: timesSign(column.sign) }, answerBox, toggle, label),
+    after: canWriteMultiplication(column) && !answered ? '<button class="link-btn" id="lm-open">Розписати множення</button>' : '',
+  };
 }
 
 // Картка підказки — окремим шаром поверх екрана. Вона стоїть одразу під

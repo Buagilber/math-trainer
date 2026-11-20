@@ -20,6 +20,7 @@
       "kind": "generator",
       "generator": "arithmetic",
       "difficulty": 1,
+      "prompt": "Яке число пропущено?",
       "params": {
         "op": [
           "+",
@@ -45,6 +46,7 @@
       "kind": "generator",
       "generator": "arithmetic",
       "difficulty": 2,
+      "prompt": "Яке число пропущено?",
       "params": {
         "op": [
           "+",
@@ -71,6 +73,7 @@
       "kind": "generator",
       "generator": "arithmetic",
       "difficulty": 3,
+      "prompt": "Яке число пропущено?",
       "params": {
         "op": [
           "+",
@@ -97,6 +100,7 @@
       "kind": "generator",
       "generator": "arithmetic",
       "difficulty": 3,
+      "prompt": "Яке число пропущено?",
       "hint": {
         "rules": [
           "Щоб знайти невідомий множник, добуток поділи на відомий множник."
