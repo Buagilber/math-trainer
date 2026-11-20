@@ -596,6 +596,16 @@ test('розв\'язання по діях: варіанти, пояснення
   eq(result.correct, false, 'правильне число, але підібраний шлях — не зараховано');
 });
 
+test('обрана дія має бути порахована правильно, навіть якщо число — відповідь прикладу', () => {
+  const topic = { id: 't', title: 'T', exercises: [{ id: 'm', kind: 'fixed', text: '□ + 34 = 85', answer: 51 }] };
+  const sess = buildSession(topic, 1, createRng(1));
+  const wrongOp = { left: 85, sign: '+', right: 34, value: 119, correct: false };
+  eq(submitAnswer(sess, '51', 1000, { step: wrongOp }).result.correct, false, '85 + 34 ≠ 51');
+  const rightOp = { left: 85, sign: '−', right: 34, value: 51, correct: true };
+  eq(submitAnswer(sess, '51', 1000, { step: rightOp }).result.correct, true);
+  eq(submitAnswer(sess, '51', 1000).result.correct, true, 'без кроку — як і раніше');
+});
+
 test('звернення: контекст і посилання на GitHub', () => {
   const ctx = contextText([['екран', '#/topic/g2-mul/play'], ['текст', '7 × □ = 42: "x"'], ['порожнє', ''], ['немає', undefined]]);
   eq(ctx, 'екран: "#/topic/g2-mul/play"\nтекст: "7 × □ = 42: \\"x\\""', 'YAML-рядки в лапках, порожні пропущено');

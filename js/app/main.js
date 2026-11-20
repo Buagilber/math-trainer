@@ -499,9 +499,14 @@ function renderSession() {
 
   const canonical = item.steps?.canonical;
   const pathFailed = fb && !fb.correct && s.results.at(-1)?.multi?.pathOk === false && checkAnswer(item, state.input);
+  // Обрана дія порахована неправильно, хоча число збіглося з відповіддю прикладу.
+  const stepCalcFailed = fb && !fb.correct && chosen && checkAnswer(item, state.input) && Number(state.input) !== chosen.value;
   const feedback = fb
     ? fb.correct
       ? '<div class="feedback ok">Молодець! 🎉</div>'
+      : stepCalcFailed
+      ? `<div class="feedback bad">${mh(`${chosen.left} ${chosen.sign} ${chosen.right}`, { ops: true })} = ${mh(String(chosen.value))}, а не ${mh(String(state.input))}. Обрано не ту дію: ${esc(item.steps.label ?? item.answerPrefix ?? 'x =')} ${mh(`${canonical.left} ${canonical.sign} ${canonical.right}`, { ops: true })}.</div>
+         <button class="btn btn-primary next" id="next">Далі</button>`
       : pathFailed
       ? `<div class="feedback bad">Відповідь збігається, але дії задачу не розв'язують: з іншими числами вони дали б іншу відповідь.</div>
          <button class="btn btn-primary next" id="next">Далі</button>`

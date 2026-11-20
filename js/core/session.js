@@ -105,7 +105,10 @@ export function formatAnswer(answerType, value) {
 // якщо дитина склала дії сама, а шлях не розв'язує задачу (числа підібрано), приклад не зараховуємо.
 export function submitAnswer(session, given, ms = 0, { hintUsed = false, step = null, written = null, multi = null } = {}) {
   const item = session.items[session.index];
-  const correct = checkAnswer(item, given) && multi?.pathOk !== false;
+  // Обрана дія (крок «Обрати дію») має бути порахована правильно: «85 + 34 = 51» — помилка,
+  // навіть якщо 51 — відповідь рівняння. Спершу результат дії, потім — відповідь прикладу.
+  const stepCalcOk = !step || Number(given) === step.value;
+  const correct = checkAnswer(item, given) && multi?.pathOk !== false && stepCalcOk;
   const result = {
     exerciseId: item.exerciseId,
     text: item.text,
