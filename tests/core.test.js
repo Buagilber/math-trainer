@@ -656,6 +656,38 @@ test('кожне завдання має інструкцію або питан�
     [true, false, false, true]);
 });
 
+test('етап 3: у кожної задачі «по діях» план дає відповідь, а шлях плану — правильний', async () => {
+  const catalog = await (await fetch('../data/catalog.json')).json();
+  const problems = [];
+  for (const g of catalog.grades) {
+    for (const path of g.topics) {
+      const topic = await (await fetch(`../data/${path}`)).json();
+      for (const ex of topic.exercises.filter((e) => e.params?.multiStep)) {
+        for (let i = 0; i < 15; i++) {
+          const item = generateInstance(ex, createRng(i + 1));
+          const ms = item.multi;
+          const lines = [];
+          for (const step of ms.plan) {
+            const vals = step.args.map((a) => (a.startsWith('#') ? Number(lines[Number(a.slice(1)) - 1].given) : evaluate(a, ms.env).value));
+            const refs = step.args.map((a) => {
+              if (a.startsWith('#')) return `l:${Number(a.slice(1)) - 1}`;
+              const ni = ms.numbers.findIndex((num) => num.expr === a);
+              return ni >= 0 ? `n:${ni}` : 'x';
+            });
+            const value = ({ '+': vals[0] + vals[1], '-': vals[0] - vals[1], '*': vals[0] * vals[1], '/': vals[0] / vals[1] })[step.op];
+            lines.push({ expr: [vals[0], step.op, vals[1]], refs, given: String(value) });
+            if (!Number.isInteger(value)) problems.push(`${topic.id}/${ex.id}: дія плану дає неціле ${value}`);
+          }
+          if (Number(lines.at(-1).given) !== item.answer) problems.push(`${topic.id}/${ex.id}: план дає ${lines.at(-1).given}, відповідь ${item.answer}`);
+          if (!pathValid(ms, lines, lines.length - 1)) problems.push(`${topic.id}/${ex.id}: шлях плану не пройшов перевірку`);
+          if (!meaningOf(ms, item.answer)) problems.push(`${topic.id}/${ex.id}: немає пояснення для відповіді`);
+        }
+      }
+    }
+  }
+  assert(!problems.length, [...new Set(problems)].slice(0, 6).join('; '));
+});
+
 export async function run() {
   const results = [];
   for (const t of tests) {
