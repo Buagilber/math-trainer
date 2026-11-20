@@ -922,7 +922,15 @@ function writtenMarks(w) {
 function pressWrittenKey(key) {
   const w = state.written;
   if (key === 'ok') {
-    if (writtenReady(w)) answer(writtenAnswer(w));
+    if (!writtenReady(w)) return;
+    // Розписаний запис із «Порахувати в стовпчик» (розв'язання по діях): результат — у рядок дії, без перевірки.
+    if (w.returnTo === 'multi') {
+      state.multi.input = writtenAnswer(w);
+      state.multi.phase = 'typing';
+      state.written = null;
+      return renderSession();
+    }
+    answer(writtenAnswer(w));
     return;
   }
   const value = w.active === 'q' ? w.q : w.rows[w.active] ?? '';
@@ -1066,15 +1074,36 @@ function multiColumnAllowed(line) {
 }
 
 // Стовпчик (+ − ×) чи кут (:) з числами дії; результат повертається в рядок дії без перевірки.
-function multiColumnHtml([l, op, r]) {
+// Числа для стовпчика: при множенні більше число — зверху, як у підручнику (47 · 3, а не 3 · 47).
+function multiColumnNumbers([l, op, r]) {
+  return op === '*' && String(r).length > String(l).length ? [r, l] : [l, r];
+}
+
+function multiColumnHtml(expr) {
   const m = state.multi;
+  const op = expr[1];
+  const [l, r] = multiColumnNumbers(expr);
   const kut = op === '/';
+  const w = state.written?.returnTo === 'multi' ? state.written : null;
+  const back = '<button class="link-btn" id="ms-col-back">Назад до дії</button>';
+  // Розписаний запис (неповні добутки / ділення-конструктор) — та сама форма, що й у прикладах стовпчиком;
+  // ✓ повертає суму чи частку в рядок дії.
+  if (w) {
+    const form = w.type === 'div'
+      ? writtenDivisionHtml({ dividend: l, divisor: r }, w)
+      : writtenMultiplicationHtml(l, r, timesSign(MULTI_SIGNS[op]), w,
+        { rtl: state.inputDir === 'rtl', toggle: directionToggleHtml(state.inputDir, { flip: state.dirFlip }) });
+    return `<div class="task task-column">${form}</div><p class="ms-hint">✓ — повернути ${w.type === 'div' ? 'частку' : 'результат'} у дію.</p>${back}`;
+  }
   const box = `<span class="blank${kut ? '' : ' rtl'}">${kut ? '' : multiCaret}${esc(m.col.input)}${kut ? multiCaret : ''}</span>`;
+  const column = { rows: [String(l), String(r)], sign: MULTI_SIGNS[op], align: 'right' };
   const form = kut ? divisionHtml({ dividend: l, divisor: r }, box)
-    : columnHtml({ rows: [String(l), String(r)], sign: timesSign(MULTI_SIGNS[op]), align: 'right' }, box);
+    : columnHtml({ ...column, sign: timesSign(column.sign) }, box);
+  const writeBtn = kut ? '<button class="link-btn" id="ms-ld-open">Розписати ділення</button>'
+    : op === '*' && canWriteMultiplication(column) ? '<button class="link-btn" id="ms-lm-open">Розписати множення</button>' : '';
   return `<div class="task task-column">${form}</div>
     <p class="ms-hint">${kut ? 'Частку пиши зліва направо.' : 'Цифри — справа наліво, як у зошиті.'} ✓ — повернути результат у дію.</p>
-    <button class="link-btn" id="ms-col-back">Назад до дії</button>`;
+    ${writeBtn}${back}`;
 }
 
 function bindMulti(item) {
@@ -1096,7 +1125,19 @@ function bindMulti(item) {
   on('#ms-more', () => { state.multi.phase = 'build'; go(); });
   on('#ms-final', () => { state.multi.finalLine = state.multi.lines.length - 1; answer(state.multi.lines.at(-1).given); });
   on('#ms-column', () => { state.multi.phase = 'column'; state.multi.col = { input: '' }; go(); });
-  on('#ms-col-back', () => { state.multi.phase = 'typing'; go(); });
+  on('#ms-col-back', () => { state.multi.phase = 'typing'; state.written = null; go(); });
+  on('#ms-lm-open', () => {
+    const [l, r] = multiColumnNumbers(state.multi.lines.at(-1).expr);
+    openWritten('mul', 'sum', longMultiplication(l, r), [l, r]);
+    state.written.returnTo = 'multi';
+    go();
+  });
+  on('#ms-ld-open', () => {
+    const [l, , r] = state.multi.lines.at(-1).expr;
+    openWritten('div', 'quotient', longDivision(l, r), [l, r]);
+    state.written.returnTo = 'multi';
+    go();
+  });
 }
 
 function multiOperand(value, ref) {
