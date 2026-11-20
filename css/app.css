@@ -407,7 +407,10 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
   row-gap: 4px;
   text-align: right;
 }
-.ld-digit { text-align: center; }
+.ld-digit { text-align: center; position: relative; }
+/* Кома десяткового дробу — позначка біля цифри, без власної колонки. */
+.ld-comma::after { content: ','; position: absolute; right: -0.2em; bottom: 0; }
+.ld-cm { display: inline-block; width: 0; overflow: visible; transform: translateX(-0.12em); }
 /* Знак дії — між верхнім і нижнім числом, як у підручниках: стоїть на межі рядків. */
 .ld-minus { justify-self: end; align-self: start; transform: translateY(-60%); padding-right: calc(0.1em + 6px); color: var(--op-minus); }
 .ld-divisor { padding: 0 0.3em; margin-left: 0.3em; border-left: 3px solid currentColor; border-bottom: 3px solid currentColor; text-align: left; }

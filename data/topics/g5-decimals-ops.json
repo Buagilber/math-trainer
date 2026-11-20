@@ -156,7 +156,8 @@
           11,
           99
         ],
-        "aScale": 1
+        "aScale": 1,
+        "layout": "column"
       }
     }
   ]

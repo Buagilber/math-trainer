@@ -205,6 +205,16 @@ function rowSpan(slot, value, active) {
   return { from: Math.max(0, from), to: slot.to };
 }
 
+// Десятковий дріб у записі («19,4»): цифри по колонках, кома — позначка біля цифри,
+// без власної колонки, тож цифри лишаються точно під розрядами (як у зошиті).
+function digitsOf(n) {
+  const raw = String(n);
+  const commaAt = raw.indexOf(','); // скільки цифр до коми (−1 — ціле)
+  return { digits: raw.replace(',', '').split(''), commaAt };
+}
+// Кома всередині поля не займає місця — цифри не зсуваються з розрядів.
+const fieldText = (value) => esc(value ?? '').replace(',', '<span class="ld-cm">,</span>');
+
 const fieldCls = (key, active, marks, extra = '') =>
   `ld-field${extra}${!marks && active === key ? ' active' : ''}${marks ? (marks[key] ? ' ok' : ' bad') : ''}`;
 
@@ -216,10 +226,11 @@ const shownRows = (rows, marks) => (marks && rows.length && !rows.at(-1) ? rows.
 // за введеними числами (core/long-division.js → divisionRows), тож можна
 // відняти й більший добуток одразу (72 − 70).
 export function writtenDivisionHtml({ dividend, divisor }, w, marks = null) {
-  const digits = String(dividend).split('');
+  // Десяткове ділене ділиться як натуральне (рядки — без коми), кому ставить дитина в частці.
+  const { digits, commaAt } = digitsOf(dividend);
   const col = (i) => i + 2; // колонка цифри i діленого в сітці (1 — для «−»)
-  const layout = divisionRows(dividend, divisor, w.rows);
-  const cells = digits.map((d, i) => `<span class="ld-digit" style="grid-column:${col(i)};grid-row:1">${esc(d)}</span>`);
+  const layout = divisionRows(Number(digits.join('')), divisor, w.rows);
+  const cells = digits.map((d, i) => `<span class="ld-digit${i === commaAt - 1 ? ' ld-comma' : ''}" style="grid-column:${col(i)};grid-row:1">${esc(d)}</span>`);
   shownRows(w.rows, marks).forEach((value, i) => {
     const { kind, end, minuendStart } = layout[i];
     const active = !marks && w.active === i;
@@ -230,12 +241,12 @@ export function writtenDivisionHtml({ dividend, divisor }, w, marks = null) {
       const signCol = Math.min(from, minuendStart ?? from, end - value.length + 1);
       cells.push(`<span class="ld-minus" style="grid-column:${Math.max(1, col(signCol) - 1)};grid-row:${i + 2}">−</span>`);
     }
-    cells.push(`<span class="${fieldCls(i, w.active, marks, value ? ` ld-${kind}` : '')}" data-row="${i}" style="grid-column:${col(from)} / ${col(end) + 1};grid-row:${i + 2}">${esc(value)}</span>`);
+    cells.push(`<span class="${fieldCls(i, w.active, marks, value ? ` ld-${kind}` : '')}" data-row="${i}" style="grid-column:${col(from)} / ${col(end) + 1};grid-row:${i + 2}">${fieldText(value)}</span>`);
   });
   return `<div class="ld" style="grid-template-columns:auto repeat(${digits.length}, 1ch) auto">
       ${cells.join('')}
       <span class="ld-divisor" style="grid-column:${col(digits.length)};grid-row:1">${esc(String(divisor))}</span>
-      <span class="ld-quotient" style="grid-column:${col(digits.length)};grid-row:2"><span class="${fieldCls('q', w.active, marks, ' ld-qfield')}" data-row="q">${esc(w.q)}</span></span>
+      <span class="ld-quotient" style="grid-column:${col(digits.length)};grid-row:2"><span class="${fieldCls('q', w.active, marks, ' ld-qfield')}" data-row="q">${fieldText(w.q)}</span></span>
     </div>`;
 }
 
@@ -246,8 +257,12 @@ export function writtenMultiplicationHtml(a, b, sign, w, { marks = null, rtl = t
   const width = slots.at(-1).width;
   const sumIndex = slots.length - 1;
   const col = (i) => i + 2;
-  const number = (n, row) => String(n).split('').map((d, i, all) =>
-    `<span class="ld-digit" style="grid-column:${col(width - all.length + i)};grid-row:${row}">${esc(d)}</span>`).join('');
+  // Десяткові множники: множимо як натуральні, кома — лише позначка біля цифри.
+  const number = (n, row) => {
+    const { digits, commaAt } = digitsOf(n);
+    return digits.map((d, i) =>
+      `<span class="ld-digit${i === commaAt - 1 ? ' ld-comma' : ''}" style="grid-column:${col(width - digits.length + i)};grid-row:${row}">${esc(d)}</span>`).join('');
+  };
   const cells = [
     number(a, 1),
     `<span class="lm-sign" style="grid-column:1;grid-row:1 / 3">${opHtml(sign)}</span>`, // × — між множниками
@@ -262,7 +277,7 @@ export function writtenMultiplicationHtml(a, b, sign, w, { marks = null, rtl = t
     if (i === 1 && sumIndex > 1 && value) cells.push(`<span class="lm-sign lm-plus" style="grid-column:1;grid-row:${row}">${opHtml('+')}</span>`);
     const end = width - 1 - slot.shift; // остання колонка рядка
     const { from, to } = rowSpan({ from: end - slot.width + 1, to: end }, value, !marks && w.active === i);
-    cells.push(`<span class="${fieldCls(i, w.active, marks, rtl ? ' rtl' : '')}" data-row="${i}" style="grid-column:${col(from)} / ${col(to) + 1};grid-row:${row++}">${esc(value)}</span>`);
+    cells.push(`<span class="${fieldCls(i, w.active, marks, rtl ? ' rtl' : '')}" data-row="${i}" style="grid-column:${col(from)} / ${col(to) + 1};grid-row:${row++}">${fieldText(value)}</span>`);
   });
   return `<div class="ld lm" style="grid-template-columns:auto repeat(${width}, 1ch)">
       ${cells.join('')}
@@ -283,8 +298,11 @@ export function keypadHtml(item, input, disabled, written = null) {
   const ok = (wide) => `<button class="key key-ok${wide ? ' key-wide' : ''}" data-key="ok" ${disabled || !isComplete(item, input) ? 'disabled' : ''} aria-label="Перевірити">✓</button>`;
 
   if (written) {
-    return `<div class="numpad numpad-compact">${digits}${del}${zero}`
-      + `<button class="key key-ok" data-key="ok" ${disabled || !written.ok ? 'disabled' : ''} aria-label="Перевірити">✓</button></div>`;
+    const okKey = (wide) => `<button class="key key-ok${wide ? ' key-wide' : ''}" data-key="ok" ${disabled || !written.ok ? 'disabled' : ''} aria-label="Перевірити">✓</button>`;
+    // Десяткові дроби: кома для частки чи добутку.
+    return written.comma
+      ? `<div class="numpad numpad-compact">${digits}<button class="key key-extra" data-key="," ${dis} aria-label="Кома">,</button>${zero}${del}${okKey(true)}</div>`
+      : `<div class="numpad numpad-compact">${digits}${del}${zero}${okKey(false)}</div>`;
   }
   if (item.answerType === 'decimal') {
     return `<div class="numpad">${digits}<button class="key key-extra" data-key="," ${dis} aria-label="Кома">,</button>${zero}${del}${ok(true)}</div>`;

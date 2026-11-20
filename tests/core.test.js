@@ -606,6 +606,18 @@ test('обрана дія має бути порахована правильн�
   eq(submitAnswer(sess, '51', 1000).result.correct, true, 'без кроку — як і раніше');
 });
 
+test('десяткові: ділення кутом і розписування як для натуральних', () => {
+  const ex = { id: 'd', kind: 'generator', generator: 'decimal', params: { op: '/', b: [2, 9], result: [11, 99], aScale: 1, layout: 'column' } };
+  const it = generateInstance(ex, createRng(4));
+  eq(it.column.kind, 'divide', 'десяткове ділене — кутом');
+  assert(String(it.column.dividend).includes(','), 'ділене з комою');
+  const digits = Number(String(it.column.dividend).replace(',', ''));
+  const q = longDivision(digits, it.column.divisor).filter((f) => f.kind === 'q').map((f) => f.value).join('');
+  eq(q, String(it.answer).replace(',', ''), 'цифри частки — як у натуральному діленні, кома — у відповіді');
+  const mul = longMultiplication(13, 49);
+  eq(mul.at(-1).value, 637, '1,3 · 4,9: неповні добутки й сума — як 13 · 49, у відповіді 6,37');
+});
+
 test('звернення: контекст і посилання на GitHub', () => {
   const ctx = contextText([['екран', '#/topic/g2-mul/play'], ['текст', '7 × □ = 42: "x"'], ['порожнє', ''], ['немає', undefined]]);
   eq(ctx, 'екран: "#/topic/g2-mul/play"\nтекст: "7 × □ = 42: \\"x\\""', 'YAML-рядки в лапках, порожні пропущено');

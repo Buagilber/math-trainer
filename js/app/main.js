@@ -17,6 +17,9 @@ import { longMultiplication } from '../core/long-multiplication.js';
 import { MAX_EXTRA, MULTI_SIGNS, calc, askOptions, meaningOf, noteOptions, multiSummary } from '../core/multistep.js';
 import { ORDER_RULES, allowedOps, whyNotOp, reduceTokens, orderCalc } from '../core/order-steps.js';
 import { formatAgo } from './format.js';
+import { decimalsEqual, parseDecimal } from '../core/numbers.js';
+// «9,7» і «9,70» — те саме число.
+const sameDecimal = (x, y) => { const a = parseDecimal(String(x)); const b = parseDecimal(String(y)); return !!a && !!b && decimalsEqual(a, b); };
 import { openReportDialog, contextText } from './feedback.js';
 import { progressStore, storage, pinStore } from './storage.js';
 
@@ -537,7 +540,7 @@ function renderSession() {
       ${stepsArea}
       ${feedback}
     </main>
-    ${keypadHtml(item, multiKeypadInput(item), !!fb || st.stage === 'choose' || multiKeypadOff(), state.written && { ok: writtenReady(state.written) })}`;
+    ${keypadHtml(item, multiKeypadInput(item), !!fb || st.stage === 'choose' || multiKeypadOff(), state.written && { ok: writtenReady(state.written), comma: !!state.written.answerText })}`;
 
   root.querySelector('#quit').addEventListener('click', async () => {
     // Якщо ще нічого не розв'язано, втрачати нічого — виходимо без питань.
@@ -604,15 +607,17 @@ function renderSession() {
   root.querySelector('#steps-cancel')?.addEventListener('click', () => setStage('idle'));
   root.querySelector('#steps-change')?.addEventListener('click', () => setStage('choose'));
   root.querySelector('#lm-open')?.addEventListener('click', () => {
-    const [a, b] = columnFor(item).rows.map(Number);
+    const [a, b] = columnFor(item).rows.map(asInteger);
     openWritten('mul', 'sum', longMultiplication(a, b), [a, b]);
+    if (item.answerType === 'decimal') state.written.answerText = item.answer;
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
     renderSession();
   });
   root.querySelector('#ld-open')?.addEventListener('click', () => {
     const c = columnFor(item);
-    openWritten('div', 'quotient', longDivision(c.dividend, c.divisor), [c.dividend, c.divisor]);
+    openWritten('div', 'quotient', longDivision(asInteger(c.dividend), c.divisor), [asInteger(c.dividend), c.divisor]);
+    if (item.answerType === 'decimal') state.written.answerText = item.answer;
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
     renderSession();
@@ -701,9 +706,12 @@ function columnFor(item) {
 
 // «Розписати множення» — для цілих чисел стовпчиком, коли другий множник має
 // кілька цифр (неповні добутки). Множення з винесеними нулями й дроби — без нього.
+// Десяткові множники теж (1,3 · 4,9): неповні добутки — як для натуральних, кома — у добутку.
 const canWriteMultiplication = (c) => {
-  return !!c && c.sign === '×' && c.align === 'right' && /^\d{2,}$/.test(c.rows[1]) && /^\d+$/.test(c.rows[0]);
+  const digits = (r) => String(r).replace(',', '');
+  return !!c && c.sign === '×' && c.align === 'right' && c.rows.every((r) => /^\d+(,\d+)?$/.test(r)) && digits(c.rows[1]).length >= 2;
 };
+const asInteger = (r) => Number(String(r).replace(',', '')); // «4,9» → 49
 
 // Частку при діленні кутом пишуть зліва направо (від старшого розряду),
 // тож перемикача напряму там немає.
@@ -760,7 +768,7 @@ function workHtml(item, column, answerBox, toggle, label, answered) {
   }
   if (w?.type === 'mul') {
     const mulToggle = answered ? '' : directionToggleHtml(state.inputDir, { flip: state.dirFlip }) + dirTipHtml(item);
-    return { inner: writtenMultiplicationHtml(Number(column.rows[0]), Number(column.rows[1]), timesSign(column.sign), w, { marks, rtl: state.inputDir === 'rtl', toggle: mulToggle }), after: '' };
+    return { inner: writtenMultiplicationHtml(column.rows[0], column.rows[1], timesSign(column.sign), w, { marks, rtl: state.inputDir === 'rtl', toggle: mulToggle }), after: '' };
   }
   return {
     inner: columnHtml({ ...column, sign: timesSign(column.sign) }, answerBox, toggle, label),
@@ -904,13 +912,22 @@ function writtenResult(w) {
   if (w.type === 'div') {
     const [dividend, divisor] = w.numbers;
     const layout = divisionRows(dividend, divisor, rows);
+    // Десяткова частка (19,4 : 2 = 9,7) порівнюється з відповіддю прикладу.
+    const q = w.answerText
+      ? { kind: 'q', value: w.answerText, given: w.q, correct: !!w.q && sameDecimal(w.q, w.answerText) }
+      : { kind: 'q', value: Math.floor(dividend / divisor), given: w.q };
     return [
-      { kind: 'q', value: Math.floor(dividend / divisor), given: w.q },
+      q,
       ...rows.map((given, i) => ({ kind: layout[i].kind, value: layout[i].value, given, correct: !!given && layout[i].correct })),
     ];
   }
   const slots = w.expected;
-  return rows.map((given, i) => ({ kind: slots[i]?.kind ?? 'extra', value: slots[i]?.value ?? null, given }));
+  return rows.map((given, i) => {
+    const kind = slots[i]?.kind ?? 'extra';
+    // Сума десяткових множників — з комою: порівнюємо з відповіддю прикладу.
+    if (kind === 'sum' && w.answerText) return { kind, value: w.answerText, given, correct: !!given && sameDecimal(given, w.answerText) };
+    return { kind, value: slots[i]?.value ?? null, given };
+  });
 }
 
 // Після відповіді: позначки для полів { q, 0, 1, … }.
@@ -944,6 +961,8 @@ function pressWrittenKey(key) {
   let next = value;
   if (key === 'del') next = rtl ? value.slice(1) : value.slice(0, -1);
   else if (/^\d$/.test(key) && value.length < 7) next = rtl ? key + value : value + key;
+  // Кома — для десяткової частки чи добутку: одна на число й не першою.
+  else if (key === ',' && w.answerText && value && !value.includes(',')) next = rtl ? key + value : value + key;
   if (w.active === 'q') w.q = next;
   else w.rows[w.active] = next;
   tidyRows(w);

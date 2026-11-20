@@ -23,7 +23,11 @@ const SIGNS = { '+': '+', '-': '−', '*': '×', '/': ':' };
 // Ділення цілих чисел — кутом: { kind: 'divide', dividend, divisor }.
 const columnOf = (params, op, rows, align = 'right') => {
   if (params.layout !== 'column' || !COLUMN_OPS.includes(op)) return undefined;
-  if (op === '/') return /^\d+$/.test(rows[0]) && /^\d+$/.test(rows[1]) ? { kind: 'divide', dividend: Number(rows[0]), divisor: Number(rows[1]) } : undefined;
+  // Ціле чи десяткове ділене на натуральне число: «19,4 : 2» — теж кутом (кома в частці — справа дитини).
+  if (op === '/') {
+    if (!/^\d+$/.test(rows[1]) || !/^\d+(,\d+)?$/.test(rows[0])) return undefined;
+    return { kind: 'divide', dividend: rows[0].includes(',') ? rows[0] : Number(rows[0]), divisor: Number(rows[1]) };
+  }
   return { rows, sign: SIGNS[op], align: params.columnAlign ?? align };
 };
 const MAX_TRIES = 500;
