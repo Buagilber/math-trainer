@@ -63,3 +63,56 @@ export function longDivision(dividend, divisor) {
 // Частка, складена з цифр q, введених дитиною (порожні цифри — пропуск).
 export const quotientOf = (fields, values) =>
   fields.map((f, i) => (f.kind === 'q' ? values[i] ?? '' : '')).join('');
+
+// Рядки, які дитина сама вписала під діленим (конструктор, issue #8): дитина
+// може відняти й більший добуток одразу (72 − 70, а не 7 − 5), тож і місце
+// рядка, і його перевірку визначаємо за введеними числами, а не за одним
+// «правильним» розв'язком. Рядки йдуть по черзі: від'ємник, різниця, від'ємник…
+//   від'ємник — під найкоротшим початком діленого, не меншим за нього
+//              (перший), або під попередньою різницею; правильний, якщо
+//              ділиться на дільник і не більший за зменшуване;
+//   різниця    — зменшуване мінус від'ємник і знесені цифри (0, 1, 2… —
+//              скільки дитина знесла); правильна, якщо збігається з одним
+//              із цих варіантів; value — правильна з однією знесеною цифрою.
+// Повертає для кожного рядка { kind: 'p' | 'd', end, minuendStart, correct, value }:
+// end — номер цифри діленого, під якою закінчується рядок.
+export function divisionRows(dividend, divisor, rows) {
+  const digits = String(dividend).split('').map(Number);
+  const last = digits.length - 1;
+  const out = [];
+  let minuend = 0;
+  let mEnd = 0;
+  let mStart = 0;
+  let sub = null;
+  rows.forEach((raw, i) => {
+    const v = raw === '' ? null : Number(raw);
+    if (i % 2 === 0) {
+      if (i === 0) {
+        const target = v ?? divisor;
+        let end = 0;
+        let val = digits[0];
+        while (val < target && end < last) val = val * 10 + digits[++end];
+        minuend = val;
+        mEnd = end;
+        mStart = 0;
+      }
+      sub = v;
+      out.push({ kind: 'p', end: mEnd, minuendStart: mStart, correct: v != null && v > 0 && v % divisor === 0 && v <= minuend, value: null });
+      return;
+    }
+    const rest = sub == null ? null : minuend - sub;
+    const withDigits = (k) => Number(String(rest) + digits.slice(mEnd + 1, mEnd + 1 + k).join(''));
+    let k = null;
+    if (v != null && rest != null && rest >= 0) {
+      for (let j = 0; j <= last - mEnd && k == null; j++) if (withDigits(j) === v) k = j;
+    }
+    const brought = k ?? Math.min(1, last - mEnd);
+    const end = mEnd + brought;
+    const value = rest != null && rest >= 0 ? withDigits(Math.min(1, last - mEnd)) : null;
+    out.push({ kind: 'd', end, minuendStart: null, correct: k != null, value });
+    minuend = v ?? value ?? 0;
+    mStart = end - (raw || String(minuend)).length + 1;
+    mEnd = end;
+  });
+  return out;
+}

@@ -95,7 +95,8 @@ export function formatAnswer(answerType, value) {
 
 // Повертає новий стан сесії та результат відповіді.
 // step — обраний варіант кроку «Обрати дію» ({ left, sign, right, correct }) або null.
-// written — проміжні рядки ділення кутом: [{ kind, value, given }] (core/long-division.js) або null.
+// written — розписаний запис: [{ kind, value, given, correct? }] або null; correct, якщо є,
+// уже пораховано (рядки ділення перевіряються за введеними числами), інакше — given = value.
 export function submitAnswer(session, given, ms = 0, { hintUsed = false, step = null, written = null } = {}) {
   const item = session.items[session.index];
   const correct = checkAnswer(item, given);
@@ -118,7 +119,7 @@ export function submitAnswer(session, given, ms = 0, { hintUsed = false, step = 
     // Чи правильно пораховано обрану дію (навіть якщо сама дія неправильна).
     stepCalcCorrect: step ? Number(given) === step.value : null,
     // Розписане ділення: кожен рядок і чи збігається він із правильним.
-    written: written ? written.map(({ kind, value, given: g = '' }) => ({ kind, value, given: g, correct: g !== '' && Number(g) === value })) : null,
+    written: written ? written.map(({ kind, value, given: g = '', correct }) => ({ kind, value, given: g, correct: correct ?? (g !== '' && Number(g) === value) })) : null,
   };
   return {
     session: { ...session, index: session.index + 1, results: [...session.results, result] },

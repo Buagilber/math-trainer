@@ -407,29 +407,33 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 }
 .ld-digit { text-align: center; }
 /* Знак дії — між верхнім і нижнім числом, як у підручниках: стоїть на межі рядків. */
-.ld-minus { justify-self: end; align-self: start; transform: translateY(-60%); padding-right: 0.15em; color: var(--op-minus); }
+.ld-minus { justify-self: end; align-self: start; transform: translateY(-60%); padding-right: calc(0.1em + 6px); color: var(--op-minus); }
 .ld-divisor { padding: 0 0.3em; margin-left: 0.3em; border-left: 3px solid currentColor; border-bottom: 3px solid currentColor; text-align: left; }
 .ld-quotient { display: flex; gap: 2px; margin-left: 0.3em; padding: 4px 0 0 0.3em; border-left: 3px solid currentColor; align-self: start; }
 .ld-field {
+  position: relative;
   min-height: 1.3em;
   white-space: nowrap;
+  /* Поле ширше за свої колонки на 6px з кожного боку — там курсор, а цифри
+     лишаються точно під розрядами. Без рамки, лише фон на кілька тонів (issue #7). */
+  margin: 0 -6px;
+  padding: 0 6px;
   border-radius: 6px;
-  background: rgba(79, 109, 245, 0.06);
-  outline: 2px dashed rgba(79, 109, 245, 0.45);
-  outline-offset: 1px;
+  background: rgba(79, 109, 245, 0.07);
+  scroll-margin: 12px 0 270px; /* низ — висота клавіатури */
 }
-.ld-field.active { outline: 2px solid var(--primary); background: rgba(79, 109, 245, 0.12); }
-.ld-field.ok { outline-color: var(--ok); outline-style: solid; background: var(--ok-bg); color: var(--ok); }
-.ld-field.bad { outline-color: var(--bad); outline-style: solid; background: var(--bad-bg); color: var(--bad); }
-/* Активне поле — блимаюча риска всередині, внизу: цифри не зсуваються з розрядів (issue #4). */
-.ld-field { position: relative; scroll-margin: 12px 0 270px; } /* низ — висота клавіатури */
-.ld-field.active::before { content: ''; position: absolute; left: 3px; right: 3px; bottom: 3px; height: 3px; border-radius: 2px; background: var(--primary); animation: caret-blink 1s steps(1) infinite; }
-.ld-qfield { min-width: 1.6ch; padding: 0 3px; text-align: left; }
+.ld-field.active { background: rgba(79, 109, 245, 0.15); }
+.ld-field.ok { background: var(--ok-bg); color: var(--ok); }
+.ld-field.bad { background: var(--bad-bg); color: var(--bad); }
+/* Курсор — вертикальна риска праворуч від останньої цифри (у множенні справа наліво — ліворуч від першої). */
+.ld-field.active::before { content: ''; position: absolute; right: 2px; top: 16%; bottom: 16%; width: 3px; border-radius: 2px; background: var(--primary); animation: caret-blink 1s steps(1) infinite; }
+.ld-field.rtl.active::before { left: 2px; right: auto; }
+.ld-qfield { min-width: 1.6ch; margin: 0; padding: 0 9px 0 4px; text-align: left; }
 /* Риска під від'ємником, як у зошиті. */
-.ld-p::after { content: ''; position: absolute; left: -0.15em; right: -0.1em; bottom: -5px; height: 2px; border-radius: 1px; background: var(--text); }
+.ld-p::after { content: ''; position: absolute; left: 2px; right: 2px; bottom: -5px; height: 2px; border-radius: 1px; background: var(--text); }
 
 /* Розписане множення: знаки × і + ліворуч, риски під множниками й перед сумою. */
-.lm-sign { justify-self: end; align-self: center; padding-right: 0.2em; }
+.lm-sign { justify-self: end; align-self: center; padding-right: calc(0.2em + 6px); }
 .lm-plus { align-self: start; transform: translateY(-60%); }
 .lm-line { align-self: center; border-top: 3px solid currentColor; }
 .lm-line-empty { border-top-color: transparent; }

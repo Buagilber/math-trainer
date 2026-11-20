@@ -12,7 +12,7 @@ import { sessionRecord, topicProgress, levelProgress, compareWithPrevious, stale
 import { hintDelayMs, shouldOfferHint, normalizeHint } from '../core/hints.js';
 import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, divisionHtml, writtenDivisionHtml, writtenMultiplicationHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
-import { longDivision } from '../core/long-division.js';
+import { longDivision, divisionRows } from '../core/long-division.js';
 import { longMultiplication } from '../core/long-multiplication.js';
 import { formatAgo } from './format.js';
 import { openReportDialog, contextText } from './feedback.js';
@@ -578,7 +578,7 @@ function renderSession() {
     // з'являється лише в кінці ділення, а відповідь — останнє поле (issue #5).
     const picked = stage === 'compute' ? item.steps.options[choice] : null;
     if (picked?.op === '/' && item.steps.find === 'remainder') {
-      openWritten('div', 'remainder', longDivision(picked.left, picked.right));
+      openWritten('div', 'remainder', longDivision(picked.left, picked.right), [picked.left, picked.right]);
     }
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
@@ -588,14 +588,14 @@ function renderSession() {
   root.querySelector('#steps-cancel')?.addEventListener('click', () => setStage('idle'));
   root.querySelector('#steps-change')?.addEventListener('click', () => setStage('choose'));
   root.querySelector('#lm-open')?.addEventListener('click', () => {
-    openWritten('mul', 'sum', longMultiplication(Number(item.column.rows[0]), Number(item.column.rows[1])));
+    openWritten('mul', 'sum', longMultiplication(Number(item.column.rows[0]), Number(item.column.rows[1])), [Number(item.column.rows[0]), Number(item.column.rows[1])]);
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
     renderSession();
   });
   root.querySelector('#ld-open')?.addEventListener('click', () => {
     const c = columnFor(item);
-    openWritten('div', 'quotient', longDivision(c.dividend, c.divisor));
+    openWritten('div', 'quotient', longDivision(c.dividend, c.divisor), [c.dividend, c.divisor]);
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
     renderSession();
@@ -640,8 +640,12 @@ function mistakeHtml(m) {
   // Неправильний рядок — правильне число й «у тебе …».
   const rows = (m.written ?? []).filter((r) => r.kind !== 'q' && r.kind !== 'sum'); // сума — це сама відповідь
   const written = rows.length
-    ? `<span class="m-step m-written">розписано: ${rows.map((r) => (r.value == null
+    ? `<span class="m-step m-written">розписано: ${rows.map((r) => (r.kind === 'extra'
       ? `<span>${esc(r.given)} (зайвий рядок)</span>`
+      : r.correct
+      ? `<span class="ok">${esc(r.given)} ${MARK.ok}</span>`
+      : r.value == null
+      ? `<span class="bad">${esc(r.given || '—')} ${MARK.bad}</span>`
       : r.correct
       ? `<span class="ok">${r.value} ${MARK.ok}</span>`
       : `<span class="bad">${r.value} ${MARK.bad} (у тебе ${esc(r.given || '—')})</span>`)).join(' · ')}</span>`
@@ -832,8 +836,8 @@ function pressKey(key) {
 //            (останній заповнений рядок);
 //   expected — правильний розв'язок: для розташування рядків і перевірки після відповіді.
 
-function openWritten(type, answerKind, expected) {
-  state.written = { type, answer: answerKind, expected, q: '', rows: [''], active: type === 'div' ? 'q' : 0 };
+function openWritten(type, answerKind, expected, numbers) {
+  state.written = { type, answer: answerKind, expected, numbers, q: '', rows: [''], active: type === 'div' ? 'q' : 0 };
 }
 
 // Останній порожній рядок лише один: під заповненим з'являється новий, а зайві
@@ -852,22 +856,28 @@ function writtenAnswer(w) {
 
 const writtenReady = (w) => !!writtenAnswer(w);
 
-// Що зберегти в результаті: кожен рядок порівнюємо з рядком правильного
-// розв'язку з тим самим номером (зайві рядки — kind 'extra').
+// Що зберегти в результаті. Ділення: рядки перевіряються за введеними числами
+// (divisionRows — дитина може піти своїм шляхом, issue #8); множення: рядок
+// порівнюємо з рядком правильного розв'язку з тим самим номером (зайві — 'extra').
 function writtenResult(w) {
-  const slots = w.expected.filter((f) => f.kind !== 'q');
   const rows = w.rows.filter((r, i) => r || i < w.rows.length - 1);
-  const list = rows.map((given, i) => ({ kind: slots[i]?.kind ?? 'extra', value: slots[i]?.value ?? null, given }));
-  if (w.type !== 'div') return list;
-  const quotient = w.expected.filter((f) => f.kind === 'q').map((f) => f.value).join('');
-  return [{ kind: 'q', value: Number(quotient), given: w.q }, ...list];
+  if (w.type === 'div') {
+    const [dividend, divisor] = w.numbers;
+    const layout = divisionRows(dividend, divisor, rows);
+    return [
+      { kind: 'q', value: Math.floor(dividend / divisor), given: w.q },
+      ...rows.map((given, i) => ({ kind: layout[i].kind, value: layout[i].value, given, correct: !!given && layout[i].correct })),
+    ];
+  }
+  const slots = w.expected;
+  return rows.map((given, i) => ({ kind: slots[i]?.kind ?? 'extra', value: slots[i]?.value ?? null, given }));
 }
 
 // Після відповіді: позначки для полів { q, 0, 1, … }.
 function writtenMarks(w) {
   const marks = {};
   writtenResult(w).forEach((r, i) => {
-    marks[w.type === 'div' ? (i === 0 ? 'q' : i - 1) : i] = r.given !== '' && Number(r.given) === r.value;
+    marks[w.type === 'div' ? (i === 0 ? 'q' : i - 1) : i] = r.correct ?? (r.given !== '' && Number(r.given) === r.value);
   });
   return marks;
 }

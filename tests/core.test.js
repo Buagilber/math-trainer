@@ -12,7 +12,7 @@ import { formatAgo } from '../js/app/format.js';
 import { contextText, issueUrl } from '../js/app/feedback.js';
 import { topicProgress, levelProgress, compareTime, compareWithPrevious, sessionRecord, starsFromAccuracy, topicRating, staleness, worstStaleness } from '../js/core/progress.js';
 import { validateTopic } from '../js/core/validate.js';
-import { longDivision, quotientOf } from '../js/core/long-division.js';
+import { longDivision, quotientOf, divisionRows } from '../js/core/long-division.js';
 import { longMultiplication } from '../js/core/long-multiplication.js';
 
 const tests = [];
@@ -497,6 +497,20 @@ test('ділення кутом: проміжні рядки', () => {
   const { result } = submitAnswer(buildSession(topic, 1, createRng(1)), '93', 1000,
     { written: fs.map((f, i) => ({ ...f, given: ['9', '72', '35', '3', '24'][i] })) });
   eq(result.written.map((r) => r.correct), [true, true, false, true, true, false], 'рядки перевіряються після відповіді; порожній — неправильний');
+});
+
+test('ділення кутом: рядки дитини (конструктор)', () => {
+  const short = (rs) => rs.map((r) => `${r.kind}@${r.end}${r.correct ? '✓' : '✕'}`).join(' ');
+  eq(short(divisionRows(72, 5, ['70', '2'])), 'p@1✓ d@1✓', 'одразу 5 · 14 = 70 під «72» (issue #8)');
+  eq(short(divisionRows(72, 5, ['5', '22', '20', '2'])), 'p@0✓ d@1✓ p@1✓ d@1✓', 'звичайний шлях');
+  eq(short(divisionRows(554, 9, ['54', '14', '9', '5'])), 'p@1✓ d@2✓ p@2✓ d@2✓');
+  const wrong = divisionRows(745, 8, ['72', '35']);
+  eq([wrong[1].correct, wrong[1].value, wrong[1].end], [false, 25, 2], 'неправильна різниця: правильне значення й місце');
+  eq(short(divisionRows(745, 8, ['73', '1'])), 'p@1✕ d@1✓', 'від\'ємник не ділиться на дільник');
+  eq(short(divisionRows(950, 9, ['9', '50', '45', '5'])), 'p@0✓ d@2✓ p@2✓ d@2✓', 'знесено дві цифри');
+  eq(divisionRows(745, 8, ['']).map((r) => r.end), [1], 'порожній перший рядок — під першим неповним діленим');
+  const fs = longDivision(745, 8);
+  eq(quotientOf(fs, fs.map((f) => String(f.value))), '93');
 });
 
 test('множення стовпчиком: неповні добутки', () => {

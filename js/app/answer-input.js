@@ -8,6 +8,7 @@
 //   choice   — кнопки з варіантами.
 
 import { MAX_ANSWER_DIGITS } from '../core/validate.js';
+import { divisionRows } from '../core/long-division.js';
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
@@ -210,19 +211,25 @@ const fieldCls = (key, active, marks, extra = '') =>
 const shownRows = (rows, marks) => (marks && rows.length && !rows.at(-1) ? rows.slice(0, -1) : rows);
 
 // Ділення кутом: ділене | дільник, під дільником поле частки, під діленим — рядки
-// (від'ємник з «−» і рискою, різниця зі знесеними цифрами, …).
+// (від'ємник з «−» і рискою, різниця зі знесеними цифрами, …). Місце рядка —
+// за введеними числами (core/long-division.js → divisionRows), тож можна
+// відняти й більший добуток одразу (72 − 70).
 export function writtenDivisionHtml({ dividend, divisor }, w, marks = null) {
   const digits = String(dividend).split('');
   const col = (i) => i + 2; // колонка цифри i діленого в сітці (1 — для «−»)
-  const slots = w.expected.filter((f) => f.kind !== 'q');
+  const layout = divisionRows(dividend, divisor, w.rows);
   const cells = digits.map((d, i) => `<span class="ld-digit" style="grid-column:${col(i)};grid-row:1">${esc(d)}</span>`);
   shownRows(w.rows, marks).forEach((value, i) => {
-    const slot = slots[i] ?? slots.at(-1);
-    const kind = slots[i]?.kind ?? (i % 2 ? 'd' : 'p'); // від'ємник / різниця по черзі
-    const { from, to } = rowSpan(slot, value, !marks && w.active === i);
-    // Знак і риска — лише коли в рядку вже є число: порожній рядок нічого не підказує.
-    if (kind === 'p' && value) cells.push(`<span class="ld-minus" style="grid-column:${col(from) - 1};grid-row:${i + 2}">−</span>`);
-    cells.push(`<span class="${fieldCls(i, w.active, marks, value ? ` ld-${kind}` : '')}" data-row="${i}" style="grid-column:${col(from)} / ${col(to) + 1};grid-row:${i + 2}">${esc(value)}</span>`);
+    const { kind, end, minuendStart } = layout[i];
+    const active = !marks && w.active === i;
+    const len = active || !value ? Math.max(value.length, 2) : value.length;
+    const from = Math.max(0, end - len + 1);
+    // Знак і риска — лише коли в рядку вже є число; «−» — ліворуч від зменшуваного (верхнього числа).
+    if (kind === 'p' && value) {
+      const signCol = Math.min(from, minuendStart ?? from, end - value.length + 1);
+      cells.push(`<span class="ld-minus" style="grid-column:${Math.max(1, col(signCol) - 1)};grid-row:${i + 2}">−</span>`);
+    }
+    cells.push(`<span class="${fieldCls(i, w.active, marks, value ? ` ld-${kind}` : '')}" data-row="${i}" style="grid-column:${col(from)} / ${col(end) + 1};grid-row:${i + 2}">${esc(value)}</span>`);
   });
   return `<div class="ld" style="grid-template-columns:auto repeat(${digits.length}, 1ch) auto">
       ${cells.join('')}
