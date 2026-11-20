@@ -552,6 +552,20 @@ test('«Обрати дію» в задачах і ділення кутом у 
   eq(d.column.dividend / d.column.divisor, d.answer);
 });
 
+test('етап 1: «Обрати дію» у 2 класі (у рядок) і поріг для рівнянь', () => {
+  const st = actionSteps('-', 13, 4, 9, createRng(1), 'Як дізнатися, скільки залишилось?', { ops: ['+', '-'], inline: true });
+  eq(st.options.map((o) => `${o.left} ${o.sign} ${o.right}`).sort(), ['13 + 4', '13 − 4']);
+  eq([st.inline, st.options.find((o) => o.correct).value], [true, 9]);
+  const miss = { id: 'm', kind: 'generator', generator: 'arithmetic', params: { op: '+', a: [2, 9], b: [2, 9], missing: 'operand', steps: true, stepsMinDigits: 0 } };
+  const it = generateInstance(miss, createRng(2));
+  eq([it.steps.inline, it.steps.label, it.steps.question], [true, '', 'Як знайти невідомий доданок?']);
+  eq(it.steps.options.find((o) => o.correct).value, it.answer);
+  const eqMul = { id: 'e', kind: 'generator', generator: 'arithmetic', params: { op: '*', a: [2, 9], b: [11, 99], missing: 'operand', unknown: 'x', steps: true, stepsMinDigits: 3 } };
+  const e = generateInstance(eqMul, createRng(3));
+  assert(e.steps && !e.steps.inline, 'рівняння 5 класу з · має крок, обчислення стовпчиком/кутом');
+  eq(e.steps.question, 'Як знайти невідомий множник?');
+});
+
 test('звернення: контекст і посилання на GitHub', () => {
   const ctx = contextText([['екран', '#/topic/g2-mul/play'], ['текст', '7 × □ = 42: "x"'], ['порожнє', ''], ['немає', undefined]]);
   eq(ctx, 'екран: "#/topic/g2-mul/play"\nтекст: "7 × □ = 42: \\"x\\""', 'YAML-рядки в лапках, порожні пропущено');

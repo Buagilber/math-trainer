@@ -71,7 +71,8 @@
         ],
         "missing": "operand",
         "unknown": "x",
-        "steps": true
+        "steps": true,
+        "stepsMinDigits": 3
       },
       "hint": {
         "rules": [
@@ -108,7 +109,8 @@
         ],
         "missing": "operand",
         "unknown": "x",
-        "steps": true
+        "steps": true,
+        "stepsMinDigits": 3
       }
     },
     {

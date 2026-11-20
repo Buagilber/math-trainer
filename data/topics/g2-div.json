@@ -179,7 +179,9 @@
           2,
           10
         ],
-        "missing": "any"
+        "missing": "any",
+        "steps": true,
+        "stepsMinDigits": 0
       }
     }
   ]

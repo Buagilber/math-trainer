@@ -148,7 +148,9 @@
           100
         ],
         "carry": "forbidden",
-        "missing": "operand"
+        "missing": "operand",
+        "steps": true,
+        "stepsMinDigits": 0
       }
     },
     {

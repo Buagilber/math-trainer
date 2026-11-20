@@ -176,7 +176,9 @@
           2,
           10
         ],
-        "missing": "operand"
+        "missing": "operand",
+        "steps": true,
+        "stepsMinDigits": 0
       }
     }
   ]

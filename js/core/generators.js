@@ -82,9 +82,19 @@ function canonicalStep(op, hide, a, b, c) {
 
 const applyOp = (o, l, r) => ({ '+': l + r, '-': l - r, '*': l * r, '/': l / r })[o];
 
-export function equationSteps(op, hide, a, b, c, rng) {
+// Питання кроку — як у підручнику: «Як знайти невідомий доданок?» (Скворцова, с. 7).
+const COMPONENT_QUESTION = {
+  '+': () => 'Як знайти невідомий доданок?',
+  '-': (hide) => (hide === 'a' ? 'Як знайти невідоме зменшуване?' : 'Як знайти невідомий від\'ємник?'),
+  '*': () => 'Як знайти невідомий множник?',
+  '/': (hide) => (hide === 'a' ? 'Як знайти невідоме ділене?' : 'Як знайти невідомий дільник?'),
+};
+
+// minDigits — поріг кроку (за замовчуванням STEPS_MIN_DIGITS); inline — обчислення
+// в рядок, без стовпчика (2 клас: пропущене число «□ + 53 = 87»).
+export function equationSteps(op, hide, a, b, c, rng, { minDigits = STEPS_MIN_DIGITS, inline = false } = {}) {
   const other = hide === 'a' ? b : a;
-  if (String(c).length + String(other).length < STEPS_MIN_DIGITS) return undefined;
+  if (String(c).length + String(other).length < minDigits) return undefined;
   const x = hide === 'a' ? a : b;
   const [cOp, cLeft, cRight] = canonicalStep(op, hide, a, b, c);
   const options = [];
@@ -94,7 +104,12 @@ export function equationSteps(op, hide, a, b, c, rng) {
       options.push({ op: o, sign: SIGNS[o], left, right, value, correct: value === x });
     }
   }
-  return { options: rng.shuffle(options), canonical: { op: cOp, sign: SIGNS[cOp], left: cLeft, right: cRight } };
+  return {
+    options: rng.shuffle(options),
+    canonical: { op: cOp, sign: SIGNS[cOp], left: cLeft, right: cRight },
+    question: COMPONENT_QUESTION[op](hide),
+    ...(inline ? { inline: true, label: '' } : {}),
+  };
 }
 
 function arithmetic(params, rng) {
@@ -137,7 +152,10 @@ function arithmetic(params, rng) {
       answerType: 'number',
       answer,
       answerPrefix: letter ? `${letter} =` : undefined,
-      steps: letter && params.steps ? equationSteps(op, hide, a, b, c, rng) : undefined,
+      // Крок «Обрати дію»: у рівнянні з x — стовпчиком; для □ (2 клас) — у рядок.
+      steps: params.steps && hide !== 'result'
+        ? equationSteps(op, hide, a, b, c, rng, { minDigits: params.stepsMinDigits ?? STEPS_MIN_DIGITS, inline: !letter })
+        : undefined,
       column: hide === 'result' ? columnOf(params, op, [String(a), String(b)]) : undefined,
     };
   });
@@ -148,10 +166,12 @@ function arithmetic(params, rng) {
 // Варіанти — чотири дії з тими самими двома числами (+, −, ·, :; для − і :
 // більше число першим); правильний — дія автора, якщо вона дає відповідь.
 // Обрана дія рахується стовпчиком чи кутом, як у рівняннях.
-export function actionSteps(op, a, b, answer, rng, question = 'Яку дію виконати?') {
+// ops — які дії пропонувати (2 клас: лише + і − або · і :, як у задачі);
+// inline — обчислення в рядок, без стовпчика (2 клас).
+export function actionSteps(op, a, b, answer, rng, question = 'Яку дію виконати?', { ops = ['+', '-', '*', '/'], inline = false } = {}) {
   const big = Math.max(a, b);
   const small = Math.min(a, b);
-  const options = ['+', '-', '*', '/'].map((o) => {
+  const options = ops.map((o) => {
     const [left, right] = o === '-' || o === '/' ? (o === op ? [a, b] : [big, small]) : [a, b];
     const value = o === '/' ? Math.floor(left / right) : applyOp(o, left, right);
     return { op: o, sign: SIGNS[o], left, right, value, correct: o === op && value === answer };
@@ -162,6 +182,7 @@ export function actionSteps(op, a, b, answer, rng, question = 'Яку дію в�
     canonical: { op: canonical.op, sign: canonical.sign, left: canonical.left, right: canonical.right },
     question,
     label: '',
+    ...(inline ? { inline: true } : {}),
   };
 }
 
@@ -279,7 +300,7 @@ function template(params, rng) {
     if (params.actionSteps) {
       const spec = params.actionSteps;
       const [left, right] = spec.args.map((e) => evaluate(String(e), numeric).value);
-      item.steps = actionSteps(spec.op, left, right, value, rng, spec.question);
+      item.steps = actionSteps(spec.op, left, right, value, rng, spec.question, { ops: spec.ops, inline: spec.inline });
     }
     if (params.divideSteps) {
       // ["a", "b"] — шукаємо неповну частку; { "args": ["a", "b"], "find": "remainder" } — остачу.

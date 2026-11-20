@@ -669,7 +669,7 @@ const chosenStep = (item) => (item.steps && state.steps.stage === 'compute' ? it
 function columnFor(item) {
   if (item.column) return item.column;
   const chosen = chosenStep(item);
-  if (!chosen) return null;
+  if (!chosen || item.steps.inline) return null; // 2 клас: обрана дія — у рядок
   if (chosen.op === '/') return { kind: 'divide', dividend: chosen.left, divisor: chosen.right };
   return { rows: [String(chosen.left), String(chosen.right)], sign: chosen.sign, align: 'right' };
 }

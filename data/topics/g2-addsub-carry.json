@@ -127,7 +127,9 @@
           100
         ],
         "carry": "required",
-        "missing": "operand"
+        "missing": "operand",
+        "steps": true,
+        "stepsMinDigits": 0
       }
     },
     {
