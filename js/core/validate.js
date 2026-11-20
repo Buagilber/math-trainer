@@ -29,6 +29,10 @@ export function validateTopic(topic, { samples = 20 } = {}) {
     return { ...owner, hint: undefined };
   };
   topic = checkHint(topic, topic.id);
+  if (topic.prompt !== undefined && (typeof topic.prompt !== 'string' || topic.prompt.length > MAX_PROMPT_LENGTH)) {
+    errors.push(`${topic.id}: prompt розділу має бути рядком до ${MAX_PROMPT_LENGTH} символів`);
+    topic = { ...topic, prompt: undefined };
+  }
 
   const ids = new Set();
   const goodExercises = [];

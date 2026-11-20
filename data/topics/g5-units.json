@@ -17,7 +17,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 1,
-      "prompt": "Заміни іменоване число.",
+      "prompt": "Вирази в метрах.",
       "params": {
         "text": "{a} км = □ м",
         "vars": {
@@ -34,7 +34,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 1,
-      "prompt": "Заміни іменоване число.",
+      "prompt": "Вирази в кілограмах.",
       "params": {
         "text": "{a} т = □ кг",
         "vars": {
@@ -51,7 +51,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 1,
-      "prompt": "Заміни іменоване число.",
+      "prompt": "Вирази в хвилинах.",
       "params": {
         "text": "{a} год = □ хв",
         "vars": {
@@ -68,7 +68,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 2,
-      "prompt": "Заміни іменоване число.",
+      "prompt": "Вирази в метрах.",
       "params": {
         "text": "{a} км {b} м = □ м",
         "vars": {
@@ -90,7 +90,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 2,
-      "prompt": "Заміни іменоване число.",
+      "prompt": "Вирази в грамах.",
       "params": {
         "text": "{a} кг {b} г = □ г",
         "vars": {
@@ -112,7 +112,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 2,
-      "prompt": "Заміни іменоване число.",
+      "prompt": "Вирази в секундах.",
       "params": {
         "text": "{a} хв {b} с = □ с",
         "vars": {
@@ -134,7 +134,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 3,
-      "prompt": "Заміни іменоване число.",
+      "prompt": "Вирази в квадратних дециметрах.",
       "params": {
         "text": "{a} м² = □ дм²",
         "vars": {
@@ -151,7 +151,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 3,
-      "prompt": "Заміни іменоване число.",
+      "prompt": "Вирази в годинах.",
       "params": {
         "text": "{a} {a|доба|доби|діб} {b} год = □ год",
         "vars": {
@@ -172,7 +172,7 @@
       "kind": "generator",
       "generator": "template",
       "difficulty": 3,
-      "prompt": "Заміни іменоване число.",
+      "prompt": "Вирази в кілометрах і метрах.",
       "params": {
         "text": "{a * 1000 + b} м = {a} км □ м",
         "vars": {

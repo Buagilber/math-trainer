@@ -3,7 +3,7 @@
 
 import { createRng } from '../js/core/rng.js';
 import { evaluate, formatExpression } from '../js/core/expr.js';
-import { generateInstance, fillText, pluralUk, STEPS_MIN_DIGITS, divisionSteps, defaultPrompt, actionSteps } from '../js/core/generators.js';
+import { generateInstance, fillText, pluralUk, STEPS_MIN_DIGITS, divisionSteps, defaultPrompt, actionSteps, isRecordTask } from '../js/core/generators.js';
 import { buildSession, submitAnswer, isFinished, summarize, starsFor, checkAnswer, formatAnswer, MAX_QUESTION_MS } from '../js/core/session.js';
 import { formatDecimal, parseDecimal, compareDecimals } from '../js/core/numbers.js';
 import { hintDelayMs, shouldOfferHint, normalizeHint, hintProblems } from '../js/core/hints.js';
@@ -593,6 +593,24 @@ test('весь контент з data/ валідний', async () => {
       assert(!errors.length, `${path}: ${errors.join('; ')}`);
     }
   }
+});
+
+test('кожне завдання має інструкцію або питання (етап 0, STEPS-ROLLOUT)', async () => {
+  const catalog = await (await fetch('../data/catalog.json')).json();
+  const missing = [];
+  for (const g of catalog.grades) {
+    for (const path of g.topics) {
+      const topic = validateTopic(await (await fetch(`../data/${path}`)).json(), { samples: 1 }).topic;
+      for (const level of [1, 2, 3]) {
+        for (const item of buildSession({ ...topic, sessionSize: 40 }, level, createRng(level)).items) {
+          if (isRecordTask(item) && !item.prompt) missing.push(`${topic.id}/${item.exerciseId}: ${item.text}`);
+        }
+      }
+    }
+  }
+  assert(!missing.length, `без інструкції: ${[...new Set(missing.map((m) => m.split(':')[0]))].join(', ')}`);
+  eq([isRecordTask({ text: '34 + 53 = □' }), isRecordTask({ text: 'Скільки десятків у числі 47?' }), isRecordTask({ text: 'Округли до десятків: 216 ≈ □0' }), isRecordTask({ text: '12 кг + 9 кг = □ кг' })],
+    [true, false, false, true]);
 });
 
 export async function run() {

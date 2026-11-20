@@ -1,7 +1,7 @@
 // Тренувальна сесія: набір із N прикладів з одного розділу і рівня.
 // Чисті функції без DOM і сховища — стан передається явно.
 
-import { generateInstance } from './generators.js';
+import { generateInstance, isRecordTask } from './generators.js';
 import { parseDecimal, decimalsEqual, fractionsEqual, formatFraction } from './numbers.js';
 
 export const DEFAULT_SESSION_SIZE = 10;
@@ -32,7 +32,11 @@ export function buildSession(topic, level, rng, size = topic.sessionSize ?? DEFA
     if (!available.length) break;
     const exercise = rng.weighted(available, (e) => e.weight ?? 1);
     // Підказка: своя в завдання або запасна з розділу.
-    const instance = { ...generateInstance(exercise, rng), hint: exercise.hint ?? topic.hint, hintAfterSec: exercise.hintAfterSec };
+    const generated = generateInstance(exercise, rng);
+    // Інструкція: своя в завдання, автоматична (порівняння) або, для завдань-записів,
+    // спільна інструкція розділу («Знайди значення виразу.»).
+    const prompt = generated.prompt ?? (isRecordTask(generated) ? topic.prompt : undefined);
+    const instance = { ...generated, prompt, hint: exercise.hint ?? topic.hint, hintAfterSec: exercise.hintAfterSec };
     if (seenTexts.has(instance.text) && guard > size) continue; // уникаємо повторів
     if (exercise.kind === 'fixed') usedFixed.add(exercise.id);
     seenTexts.add(instance.text);
