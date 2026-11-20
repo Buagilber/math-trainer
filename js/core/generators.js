@@ -139,23 +139,25 @@ function arithmetic(params, rng) {
   });
 }
 
-// Крок «Обрати дію» для ділення з остачею (divideSteps: ["a", "b"] у template):
-// неповну частку знаходять діленням a : b кутом. Варіанти, як у рівняннях, —
-// 2 дії (: і ×) × 2 порядки чисел; правильний — той, що дає неповну частку.
-// Значення ділення — неповна частка (ціла частина).
-export function divisionSteps(a, b, quotient, rng) {
+// Крок «Обрати дію» для ділення з остачею (divideSteps у template): неповну
+// частку чи остачу знаходять діленням a : b кутом. Варіанти, як у рівняннях, —
+// 2 дії (: і ×) × 2 порядки чисел; правильний — той, що дає відповідь.
+// find: 'quotient' — значення ділення = неповна частка; 'remainder' — остача
+// (тоді кут одразу розписаний: остача з'являється лише в кінці ділення).
+export function divisionSteps(a, b, answer, rng, { find = 'quotient' } = {}) {
   const options = [];
   for (const o of ['/', '*']) {
     for (const [left, right] of [[a, b], [b, a]]) {
-      const value = o === '/' ? Math.floor(left / right) : left * right;
-      options.push({ op: o, sign: SIGNS[o], left, right, value, correct: o === '/' && left === a && value === quotient });
+      const value = o === '*' ? left * right : find === 'remainder' ? left % right : Math.floor(left / right);
+      options.push({ op: o, sign: SIGNS[o], left, right, value, correct: o === '/' && left === a && value === answer });
     }
   }
   return {
     options: rng.shuffle(options),
     canonical: { op: '/', sign: SIGNS['/'], left: a, right: b },
-    question: 'Як знайти неповну частку?',
+    question: find === 'remainder' ? 'Як знайти остачу?' : 'Як знайти неповну частку?',
     label: '',
+    find,
   };
 }
 
@@ -249,8 +251,10 @@ function template(params, rng) {
     if (params.steps && !steps.every((s) => inRange(s, params.steps))) return null;
     const item = { text, answerType: 'number', answer: value, unit: params.unit, answerPrefix: params.answerPrefix };
     if (params.divideSteps) {
-      const [left, right] = params.divideSteps.map((name) => numeric[name]);
-      item.steps = divisionSteps(left, right, value, rng);
+      // ["a", "b"] — шукаємо неповну частку; { "args": ["a", "b"], "find": "remainder" } — остачу.
+      const spec = Array.isArray(params.divideSteps) ? { args: params.divideSteps } : params.divideSteps;
+      const [left, right] = spec.args.map((name) => numeric[name]);
+      item.steps = divisionSteps(left, right, value, rng, { find: spec.find ?? 'quotient' });
     }
     return item;
   });

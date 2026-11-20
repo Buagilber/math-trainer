@@ -398,6 +398,7 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
    рядки-поля охоплюють свої колонки, цифри в них — праворуч, точно під розрядами. */
 .ld {
   display: inline-grid;
+  font-size: 0.85em;
   font-variant-numeric: tabular-nums;
   line-height: 1.3;
   letter-spacing: 0;
@@ -405,7 +406,8 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
   text-align: right;
 }
 .ld-digit { text-align: center; }
-.ld-minus { justify-self: end; padding-right: 0.15em; color: var(--op-minus); }
+/* Знак дії — між верхнім і нижнім числом, як у підручниках: стоїть на межі рядків. */
+.ld-minus { justify-self: end; align-self: start; transform: translateY(-60%); padding-right: 0.15em; color: var(--op-minus); }
 .ld-divisor { padding: 0 0.3em; margin-left: 0.3em; border-left: 3px solid currentColor; border-bottom: 3px solid currentColor; text-align: left; }
 .ld-quotient { display: flex; gap: 2px; margin-left: 0.3em; padding: 4px 0 0 0.3em; border-left: 3px solid currentColor; align-self: start; }
 .ld-field {
@@ -420,18 +422,17 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .ld-field.ok { outline-color: var(--ok); outline-style: solid; background: var(--ok-bg); color: var(--ok); }
 .ld-field.bad { outline-color: var(--bad); outline-style: solid; background: var(--bad-bg); color: var(--bad); }
 /* Активне поле — блимаюча риска всередині, внизу: цифри не зсуваються з розрядів (issue #4). */
-.ld-field { position: relative; }
+.ld-field { position: relative; scroll-margin: 12px 0 270px; } /* низ — висота клавіатури */
 .ld-field.active::before { content: ''; position: absolute; left: 3px; right: 3px; bottom: 3px; height: 3px; border-radius: 2px; background: var(--primary); animation: caret-blink 1s steps(1) infinite; }
-/* Наступне поле — бліде, ще не активне. */
-.ld-field.ghost { background: transparent; outline-color: rgba(79, 109, 245, 0.25); }
-.ld-q { min-width: 1ch; padding: 0 2px; text-align: center; }
+.ld-qfield { min-width: 1.6ch; padding: 0 3px; text-align: left; }
 /* Риска під від'ємником, як у зошиті. */
 .ld-p::after { content: ''; position: absolute; left: -0.15em; right: -0.1em; bottom: -5px; height: 2px; border-radius: 1px; background: var(--text); }
 
 /* Розписане множення: знаки × і + ліворуч, риски під множниками й перед сумою. */
-.lm-sign { justify-self: end; padding-right: 0.2em; }
-.lm-plus { align-self: start; margin-top: -0.55em; }
+.lm-sign { justify-self: end; align-self: center; padding-right: 0.2em; }
+.lm-plus { align-self: start; transform: translateY(-60%); }
 .lm-line { align-self: center; border-top: 3px solid currentColor; }
+.lm-line-empty { border-top-color: transparent; }
 .lm-toggle { justify-self: center; margin-top: 6px; position: relative; }
 
 /* Перемикач напряму введення: ← справа наліво (типово), → зліва направо. */
@@ -491,6 +492,10 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
   margin: 0 auto;
   padding: 12px 16px 20px;
 }
+/* Розписаний запис буває високим (до 8 рядків): клавіатура нижча й прилипає до низу
+   екрана, тож ✓ і → завжди видно, а запис прокручується над нею. */
+.numpad-compact { position: sticky; bottom: 0; z-index: 2; background: var(--bg); gap: 8px; padding-top: 8px; }
+.numpad-compact .key { min-height: 50px; font-size: 1.5rem; }
 .key {
   min-height: 64px;
   border: none;

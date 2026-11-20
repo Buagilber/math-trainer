@@ -11,8 +11,8 @@
 // займає не більше цифр, ніж дільник.
 //
 // 745 : 8 → q 9 · p 72 (0…1) · d 25 (1…2) · q 3 · p 24 (1…2) · r 1 (2…2).
-// 816 : 8 → q 1 · p 8 · q 0 · d 16 · q 2 · p 16 · r 0 (0 у частці — коли знесене
-// число менше за дільник: пишемо 0 і зносимо наступну цифру).
+// 816 : 8 → q 1 · p 8 · d 16 · q 0 · q 2 · p 16 · r 0 (0 у частці — коли знесене
+// число менше за дільник: зносимо ще цифру, а в частці пишемо 0).
 
 export function longDivision(dividend, divisor) {
   const digits = String(dividend).split('').map(Number);
@@ -43,16 +43,18 @@ export function longDivision(dividend, divisor) {
       break;
     }
     // Зносимо цифру; поки число менше за дільник — у частці 0 і зносимо ще.
+    // Спершу дитина записує різницю з усіма знесеними цифрами, потім нулі частки (issue #6).
     cur = rest * 10 + digits[++pos];
+    const zeros = [];
     while (cur < divisor && pos < last) {
-      fields.push({ kind: 'q', value: 0 });
+      zeros.push({ kind: 'q', value: 0 });
       cur = cur * 10 + digits[++pos];
     }
     if (cur < divisor) {
-      fields.push({ kind: 'q', value: 0 }, { kind: 'r', value: cur, from: restFrom, to: pos });
+      fields.push({ kind: 'r', value: cur, from: restFrom, to: pos }, ...zeros, { kind: 'q', value: 0 });
       break;
     }
-    fields.push({ kind: 'd', value: cur, from: restFrom, to: pos });
+    fields.push({ kind: 'd', value: cur, from: restFrom, to: pos }, ...zeros);
     from = restFrom;
   }
   return fields;

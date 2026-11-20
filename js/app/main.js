@@ -12,7 +12,7 @@ import { sessionRecord, topicProgress, levelProgress, compareWithPrevious, stale
 import { hintDelayMs, shouldOfferHint, normalizeHint } from '../core/hints.js';
 import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, answerHtml, columnHtml, divisionHtml, writtenDivisionHtml, writtenMultiplicationHtml, directionToggleHtml, keypadHtml, physicalKey } from './answer-input.js';
 import { loadContent } from './content.js';
-import { longDivision, quotientOf } from '../core/long-division.js';
+import { longDivision } from '../core/long-division.js';
 import { longMultiplication } from '../core/long-multiplication.js';
 import { formatAgo } from './format.js';
 import { openReportDialog, contextText } from './feedback.js';
@@ -41,8 +41,7 @@ const state = {
   hint: { visible: false, open: false, used: false, fresh: false, animate: false },
   // Крок «Обрати дію» в рівнянні: stage 'idle' | 'choose' | 'compute', choice — номер варіанта.
   steps: { stage: 'idle', choice: null },
-  // Розписане ділення кутом чи множення стовпчиком: { type: 'div' | 'mul', fields, values, active, reached }
-  // або null (core/long-division.js, core/long-multiplication.js).
+  // Розписаний запис (ділення кутом чи множення стовпчиком) — див. «конструктор» нижче; null — немає.
   written: null,
   lastInputAt: 0,
   // Напрям введення в стовпчику: 'rtl' (справа наліво, як у зошиті) або 'ltr'.
@@ -479,7 +478,7 @@ function renderSession() {
   // Рівняння з x показуємо так само великим шрифтом і з кольоровими знаками, як приклади.
   const isFormula = hasInlineBlank || !!item.answerPrefix;
   const writtenMul = state.written?.type === 'mul';
-  const mulMarks = writtenMul && fb ? state.session.results.at(-1).written.map((r) => r.correct) : null;
+  const mulMarks = writtenMul && fb ? writtenMarks(state.written) : null;
   const prompt = writtenMul
     ? writtenMultiplicationHtml(Number(item.column.rows[0]), Number(item.column.rows[1]), timesSign(item.column.sign), state.written,
       { marks: mulMarks, rtl: state.inputDir === 'rtl', toggle: fb ? '' : directionToggleHtml(state.inputDir, { flip: state.dirFlip }) + dirTipHtml(item) })
@@ -523,7 +522,7 @@ function renderSession() {
       ${stepsArea}
       ${feedback}
     </main>
-    ${keypadHtml(item, state.written ? state.written.values[state.written.active] ?? '' : state.input, !!fb || st.stage === 'choose')}`;
+    ${keypadHtml(item, state.input, !!fb || st.stage === 'choose', state.written && { ok: writtenReady(state.written) })}`;
 
   root.querySelector('#quit').addEventListener('click', async () => {
     // Якщо ще нічого не розв'язано, втрачати нічого — виходимо без питань.
@@ -551,7 +550,11 @@ function renderSession() {
     state.inputDir = state.inputDir === 'rtl' ? 'ltr' : 'rtl';
     storage.set(INPUT_DIR_KEY, state.inputDir);
     state.input = emptyInput(item);
-    if (state.written) state.written.values[state.written.active] = '';
+    if (state.written) {
+      if (state.written.active === 'q') state.written.q = '';
+      else state.written.rows[state.written.active] = '';
+      tidyRows(state.written);
+    }
     state.lastInputAt = Date.now();
     state.dirFlip = true;
     state.dirTip = state.dirTip === 'shown' ? 'done' : state.dirTip;
@@ -561,6 +564,8 @@ function renderSession() {
     state.dirTip = 'done';
     renderSession();
   });
+  // Розписаний запис: активне поле не ховається під клавіатурою.
+  if (state.written && !fb) root.querySelector('.ld-field.active')?.scrollIntoView({ block: 'nearest' });
   if (h.open && !fb) renderHintLayer(item, h.animate);
   h.animate = false;
   root.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => pressKey(b.dataset.key)));
@@ -569,6 +574,12 @@ function renderSession() {
   const setStage = (stage, choice = null) => {
     state.steps = { stage, choice };
     state.written = null;
+    // Задачі на остачу (find: 'remainder'): обране ділення одразу розписане — остача
+    // з'являється лише в кінці ділення, а відповідь — останнє поле (issue #5).
+    const picked = stage === 'compute' ? item.steps.options[choice] : null;
+    if (picked?.op === '/' && item.steps.find === 'remainder') {
+      openWritten('div', 'remainder', longDivision(picked.left, picked.right));
+    }
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
     renderSession();
@@ -577,23 +588,21 @@ function renderSession() {
   root.querySelector('#steps-cancel')?.addEventListener('click', () => setStage('idle'));
   root.querySelector('#steps-change')?.addEventListener('click', () => setStage('choose'));
   root.querySelector('#lm-open')?.addEventListener('click', () => {
-    state.written = { type: 'mul', fields: longMultiplication(Number(item.column.rows[0]), Number(item.column.rows[1])), values: [], active: 0, reached: 0 };
+    openWritten('mul', 'sum', longMultiplication(Number(item.column.rows[0]), Number(item.column.rows[1])));
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
     renderSession();
   });
   root.querySelector('#ld-open')?.addEventListener('click', () => {
     const c = columnFor(item);
-    state.written = { type: 'div', fields: longDivision(c.dividend, c.divisor), values: [], active: 0, reached: 0 };
+    openWritten('div', 'quotient', longDivision(c.dividend, c.divisor));
     state.input = emptyInput(item);
     state.lastInputAt = Date.now();
     renderSession();
   });
   if (!fb) {
-    root.querySelectorAll('[data-ld]').forEach((el) => el.addEventListener('click', () => {
-      // Дотик до блідого наступного поля — те саме, що ✓.
-      state.written.active = Number(el.dataset.ld);
-      state.written.reached = Math.max(state.written.reached, state.written.active);
+    root.querySelectorAll('[data-row]').forEach((el) => el.addEventListener('click', () => {
+      state.written.active = el.dataset.row === 'q' ? 'q' : Number(el.dataset.row);
       renderSession();
     }));
   }
@@ -631,7 +640,9 @@ function mistakeHtml(m) {
   // Неправильний рядок — правильне число й «у тебе …».
   const rows = (m.written ?? []).filter((r) => r.kind !== 'q' && r.kind !== 'sum'); // сума — це сама відповідь
   const written = rows.length
-    ? `<span class="m-step m-written">розписано: ${rows.map((r) => (r.correct
+    ? `<span class="m-step m-written">розписано: ${rows.map((r) => (r.value == null
+      ? `<span>${esc(r.given)} (зайвий рядок)</span>`
+      : r.correct
       ? `<span class="ok">${r.value} ${MARK.ok}</span>`
       : `<span class="bad">${r.value} ${MARK.bad} (у тебе ${esc(r.given || '—')})</span>`)).join(' · ')}</span>`
     : '';
@@ -703,7 +714,7 @@ function stepsAreaHtml(item, chosen, answerBox, toggle, answered) {
   }
   const column = columnFor(item);
   const w = state.written;
-  const marks = w && answered ? state.session.results.at(-1).written.map((r) => r.correct) : null;
+  const marks = w && answered ? writtenMarks(w) : null;
   const work = isDivision(column) && w
     ? `<div class="task task-column">${writtenDivisionHtml(column, w, marks)}</div>`
     : isDivision(column)
@@ -810,30 +821,75 @@ function pressKey(key) {
   renderSession();
 }
 
-// Розписане ділення: цифри — у активне поле (зліва направо), ✓ — до наступного
-// поля, на останньому — відповідь (частка з цифр q).
+// ---------- розписаний запис: конструктор (docs/EQUATION-STEPS.md) ----------
+//
+// state.written = { type: 'div' | 'mul', answer, expected, q, rows, active }:
+//   q      — поле частки під дільником (лише ділення), будь-скільки цифр;
+//   rows   — рядки під діленим / множниками; заповнений рядок додає під собою
+//            ще один порожній (неактивний), порожній — нічого не додає;
+//   active — 'q' або номер рядка; курсор сам не рухається — поле обирає дитина;
+//   answer — що є відповіддю: 'quotient' (поле частки), 'remainder' / 'sum'
+//            (останній заповнений рядок);
+//   expected — правильний розв'язок: для розташування рядків і перевірки після відповіді.
+
+function openWritten(type, answerKind, expected) {
+  state.written = { type, answer: answerKind, expected, q: '', rows: [''], active: type === 'div' ? 'q' : 0 };
+}
+
+// Останній порожній рядок лише один: під заповненим з'являється новий, а зайві
+// порожні в кінці зникають (дитина стерла рядок — зник і порожній під ним).
+function tidyRows(w) {
+  while (w.rows.length > 1 && !w.rows.at(-1) && !w.rows.at(-2)) w.rows.pop();
+  if (w.rows.at(-1)) w.rows.push('');
+  if (typeof w.active === 'number' && w.active >= w.rows.length) w.active = w.rows.length - 1;
+}
+
+const lastFilledRow = (w) => [...w.rows].reverse().find((r) => r) ?? '';
+
+function writtenAnswer(w) {
+  return w.answer === 'quotient' ? w.q : lastFilledRow(w);
+}
+
+const writtenReady = (w) => !!writtenAnswer(w);
+
+// Що зберегти в результаті: кожен рядок порівнюємо з рядком правильного
+// розв'язку з тим самим номером (зайві рядки — kind 'extra').
+function writtenResult(w) {
+  const slots = w.expected.filter((f) => f.kind !== 'q');
+  const rows = w.rows.filter((r, i) => r || i < w.rows.length - 1);
+  const list = rows.map((given, i) => ({ kind: slots[i]?.kind ?? 'extra', value: slots[i]?.value ?? null, given }));
+  if (w.type !== 'div') return list;
+  const quotient = w.expected.filter((f) => f.kind === 'q').map((f) => f.value).join('');
+  return [{ kind: 'q', value: Number(quotient), given: w.q }, ...list];
+}
+
+// Після відповіді: позначки для полів { q, 0, 1, … }.
+function writtenMarks(w) {
+  const marks = {};
+  writtenResult(w).forEach((r, i) => {
+    marks[w.type === 'div' ? (i === 0 ? 'q' : i - 1) : i] = r.given !== '' && Number(r.given) === r.value;
+  });
+  return marks;
+}
+
+// Цифри — в активне поле. У діленні (і в полі частки) курсор завжди праворуч від
+// останньої цифри, ⌫ стирає справа наліво. Множення рахують від одиниць — там
+// цифри йдуть у вибраному напрямі (типово справа наліво).
 function pressWrittenKey(key) {
   const w = state.written;
-  const value = w.values[w.active] ?? '';
   if (key === 'ok') {
-    if (!value) return;
-    if (w.active < w.fields.length - 1) {
-      w.active += 1;
-      w.reached = Math.max(w.reached, w.active);
-      return renderSession();
-    }
-    return answer(w.type === 'div' ? quotientOf(w.fields, w.values) : value);
+    if (writtenReady(w)) answer(writtenAnswer(w));
+    return;
   }
-  // Множення рахують від одиниць, тож там цифри йдуть у вибраному напрямі (типово справа наліво).
+  const value = w.active === 'q' ? w.q : w.rows[w.active] ?? '';
   const rtl = w.type === 'mul' && state.inputDir === 'rtl';
-  if (key === 'del') w.values[w.active] = rtl ? value.slice(1) : value.slice(0, -1);
-  else if (/^\d$/.test(key) && value.length < (w.fields[w.active].kind === 'q' ? 1 : 7)) w.values[w.active] = rtl ? key + value : value + key;
-  if (state.dirTip === 'shown' && w.values[w.active]) state.dirTip = 'done';
-  // Цифра частки — одна, тож після неї одразу переходимо до наступного поля (issue #4).
-  if (w.fields[w.active].kind === 'q' && w.values[w.active] && w.active < w.fields.length - 1) {
-    w.active += 1;
-    w.reached = Math.max(w.reached, w.active);
-  }
+  let next = value;
+  if (key === 'del') next = rtl ? value.slice(1) : value.slice(0, -1);
+  else if (/^\d$/.test(key) && value.length < 7) next = rtl ? key + value : value + key;
+  if (w.active === 'q') w.q = next;
+  else w.rows[w.active] = next;
+  tidyRows(w);
+  if (state.dirTip === 'shown' && next) state.dirTip = 'done';
   state.lastInputAt = Date.now();
   renderSession();
 }
@@ -844,7 +900,7 @@ function answer(given) {
   const chosen = chosenStep(item);
   const { session, result } = submitAnswer(state.session, given, Date.now() - state.questionStartedAt,
     { hintUsed: state.hint.used, step: chosen,
-      written: state.written ? state.written.fields.map((f, i) => ({ ...f, given: state.written.values[i] ?? '' })) : null });
+      written: state.written ? writtenResult(state.written) : null });
   state.session = session;
   state.input = given;
   state.hint.open = false;

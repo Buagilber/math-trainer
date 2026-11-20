@@ -185,69 +185,76 @@ export function divisionHtml({ dividend, divisor }, answerBox, label = '') {
     </div>`;
 }
 
-// Розписане ділення кутом: ділене, дільник, частка по цифрах і проміжні рядки
-// (поля з core/long-division.js). Сітка: колонка знака, по колонці на цифру
-// діленого, колонка дільника. Поля з'являються по черзі (до reached включно).
-// marks — після відповіді: для кожного поля true / false (зелене / червоне).
-export function writtenDivisionHtml({ dividend, divisor }, { fields, values, active, reached }, marks = null) {
+// ---------- розписаний запис: конструктор (docs/EQUATION-STEPS.md) ----------
+//
+// Запис — інструмент дитини, а не шаблон відповіді: одне поле частки під
+// дільником (будь-скільки цифр) і рядки під діленим / множниками. Заповнений
+// рядок додає під собою ще один порожній, тож кількість рядків задає дитина.
+// w = { expected, q, rows, active }: expected — правильний розв'язок
+// (core/long-division.js, core/long-multiplication.js), з нього беремо лише
+// розташування рядків (під якими розрядами); active — 'q' або номер рядка.
+// marks — після відповіді: { q, 0, 1, … } → true / false (зелене / червоне).
+
+// Колонки рядка: правий край — за правильним розв'язком; ширина — за введеним
+// числом (активне чи порожнє поле — не вужче за слот, щоб було куди дописати).
+function rowSpan(slot, value, active) {
+  const len = Math.max(value.length, 1);
+  const from = active || !value ? Math.min(slot.from, slot.to - len + 1) : slot.to - len + 1;
+  return { from: Math.max(0, from), to: slot.to };
+}
+
+const fieldCls = (key, active, marks, extra = '') =>
+  `ld-field${extra}${!marks && active === key ? ' active' : ''}${marks ? (marks[key] ? ' ok' : ' bad') : ''}`;
+
+// Порожній останній рядок після відповіді не показуємо.
+const shownRows = (rows, marks) => (marks && rows.length && !rows.at(-1) ? rows.slice(0, -1) : rows);
+
+// Ділення кутом: ділене | дільник, під дільником поле частки, під діленим — рядки
+// (від'ємник з «−» і рискою, різниця зі знесеними цифрами, …).
+export function writtenDivisionHtml({ dividend, divisor }, w, marks = null) {
   const digits = String(dividend).split('');
-  const col = (i) => i + 2; // колонка цифри i діленого в сітці
-  // Наступне поле видно заздалегідь (бліде), щоб було зрозуміло, куди писати далі.
-  const cls = (i) => `ld-field${i > reached ? ' ghost' : ''}${!marks && i === active ? ' active' : ''}${marks ? (marks[i] ? ' ok' : ' bad') : ''}`;
-  const last = marks ? reached : reached + 1;
-  const content = (i) => esc(values[i] ?? '');
+  const col = (i) => i + 2; // колонка цифри i діленого в сітці (1 — для «−»)
+  const slots = w.expected.filter((f) => f.kind !== 'q');
   const cells = digits.map((d, i) => `<span class="ld-digit" style="grid-column:${col(i)};grid-row:1">${esc(d)}</span>`);
-  const quotient = [];
-  let row = 2;
-  fields.forEach((f, i) => {
-    if (i > last) return;
-    if (f.kind === 'q') {
-      quotient.push(`<span class="${cls(i)} ld-q" data-ld="${i}">${content(i)}</span>`);
-      return;
-    }
-    const span = `grid-column:${col(f.from)} / ${col(f.to) + 1};grid-row:${row}`;
-    if (f.kind === 'p') cells.push(`<span class="ld-minus" style="grid-column:${col(f.from) - 1};grid-row:${row}">−</span>`);
-    cells.push(`<span class="${cls(i)} ld-${f.kind}" data-ld="${i}" style="${span}">${content(i)}</span>`);
-    row += 1;
+  shownRows(w.rows, marks).forEach((value, i) => {
+    const slot = slots[i] ?? slots.at(-1);
+    const kind = slots[i]?.kind ?? (i % 2 ? 'd' : 'p'); // від'ємник / різниця по черзі
+    const { from, to } = rowSpan(slot, value, !marks && w.active === i);
+    // Знак і риска — лише коли в рядку вже є число: порожній рядок нічого не підказує.
+    if (kind === 'p' && value) cells.push(`<span class="ld-minus" style="grid-column:${col(from) - 1};grid-row:${i + 2}">−</span>`);
+    cells.push(`<span class="${fieldCls(i, w.active, marks, value ? ` ld-${kind}` : '')}" data-row="${i}" style="grid-column:${col(from)} / ${col(to) + 1};grid-row:${i + 2}">${esc(value)}</span>`);
   });
   return `<div class="ld" style="grid-template-columns:auto repeat(${digits.length}, 1ch) auto">
       ${cells.join('')}
       <span class="ld-divisor" style="grid-column:${col(digits.length)};grid-row:1">${esc(String(divisor))}</span>
-      <span class="ld-quotient" style="grid-column:${col(digits.length)};grid-row:2">${quotient.join('')}</span>
+      <span class="ld-quotient" style="grid-column:${col(digits.length)};grid-row:2"><span class="${fieldCls('q', w.active, marks, ' ld-qfield')}" data-row="q">${esc(w.q)}</span></span>
     </div>`;
 }
 
-// Розписане множення стовпчиком: множники, неповні добутки зі зсувом і сума
-// (поля з core/long-multiplication.js). Сітка — колонка знака й по колонці на
-// цифру добутку; поля з'являються по черзі (до reached включно).
-// rtl — цифри вводяться справа наліво (курсор ліворуч від числа).
-export function writtenMultiplicationHtml(a, b, sign, { fields, values, active, reached }, { marks = null, rtl = true, toggle = '' } = {}) {
-  const width = fields.at(-1).width;
-  const col = (i) => i + 2; // колонка розряду i (зліва, з 0)
+// Множення стовпчиком: множники, риска, рядки (неповні добутки зі зсувом, сума).
+// rtl — цифри вводяться справа наліво.
+export function writtenMultiplicationHtml(a, b, sign, w, { marks = null, rtl = true, toggle = '' } = {}) {
+  const slots = w.expected; // неповні добутки…, сума
+  const width = slots.at(-1).width;
+  const sumIndex = slots.length - 1;
+  const col = (i) => i + 2;
   const number = (n, row) => String(n).split('').map((d, i, all) =>
     `<span class="ld-digit" style="grid-column:${col(width - all.length + i)};grid-row:${row}">${esc(d)}</span>`).join('');
-  const cls = (i) => `ld-field${rtl ? ' rtl' : ''}${i > reached ? ' ghost' : ''}${!marks && i === active ? ' active' : ''}${marks ? (marks[i] ? ' ok' : ' bad') : ''}`;
-  const last = marks ? reached : reached + 1;
-  const content = (i) => esc(values[i] ?? '');
   const cells = [
     number(a, 1),
-    `<span class="lm-sign" style="grid-column:1;grid-row:2">${opHtml(sign)}</span>`,
+    `<span class="lm-sign" style="grid-column:1;grid-row:1 / 3">${opHtml(sign)}</span>`, // × — між множниками
     number(b, 2),
     `<span class="lm-line" style="grid-column:2 / ${col(width)};grid-row:3"></span>`,
   ];
   let row = 4;
-  const partials = fields.filter((f) => f.kind === 'pp').length;
-  fields.forEach((f, i) => {
-    if (i > last) return;
-    if (f.kind === 'sum') {
-      if (partials > 1) cells.push(`<span class="lm-line" style="grid-column:2 / ${col(width)};grid-row:${row}"></span>`);
-      row += 1;
-    } else if (i === 1) {
-      cells.push(`<span class="lm-sign lm-plus" style="grid-column:1;grid-row:${row}">${opHtml('+')}</span>`);
-    }
-    const end = width - f.shift; // колонка після останньої цифри рядка
-    cells.push(`<span class="${cls(i)}" data-ld="${i}" style="grid-column:${col(end - f.width)} / ${col(end)};grid-row:${row}">${content(i)}</span>`);
-    row += 1;
+  shownRows(w.rows, marks).forEach((value, i) => {
+    const slot = slots[i] ?? slots.at(-1);
+    // Риска перед сумою і «+» — лише коли в рядку вже є число.
+    if (i === sumIndex && i > 0) cells.push(`<span class="lm-line${value ? '' : ' lm-line-empty'}" style="grid-column:2 / ${col(width)};grid-row:${row++}"></span>`);
+    if (i === 1 && sumIndex > 1 && value) cells.push(`<span class="lm-sign lm-plus" style="grid-column:1;grid-row:${row}">${opHtml('+')}</span>`);
+    const end = width - 1 - slot.shift; // остання колонка рядка
+    const { from, to } = rowSpan({ from: end - slot.width + 1, to: end }, value, !marks && w.active === i);
+    cells.push(`<span class="${fieldCls(i, w.active, marks, rtl ? ' rtl' : '')}" data-row="${i}" style="grid-column:${col(from)} / ${col(to) + 1};grid-row:${row++}">${esc(value)}</span>`);
   });
   return `<div class="ld lm" style="grid-template-columns:auto repeat(${width}, 1ch)">
       ${cells.join('')}
@@ -256,7 +263,8 @@ export function writtenMultiplicationHtml(a, b, sign, { fields, values, active, 
 }
 
 // Клавіатура під тип відповіді.
-export function keypadHtml(item, input, disabled) {
+// written — розписаний запис ділення/множення: { ok } — чи можна відповідати (✓).
+export function keypadHtml(item, input, disabled, written = null) {
   const dis = disabled ? 'disabled' : '';
   if (item.answerType === 'choice') {
     return `<div class="choices">${item.choices.map((c) => `<button class="key choice" data-choice="${esc(c)}" ${dis}>${esc(c)}</button>`).join('')}</div>`;
@@ -266,6 +274,10 @@ export function keypadHtml(item, input, disabled) {
   const zero = `<button class="key" data-key="0" ${dis}>0</button>`;
   const ok = (wide) => `<button class="key key-ok${wide ? ' key-wide' : ''}" data-key="ok" ${disabled || !isComplete(item, input) ? 'disabled' : ''} aria-label="Перевірити">✓</button>`;
 
+  if (written) {
+    return `<div class="numpad numpad-compact">${digits}${del}${zero}`
+      + `<button class="key key-ok" data-key="ok" ${disabled || !written.ok ? 'disabled' : ''} aria-label="Перевірити">✓</button></div>`;
+  }
   if (item.answerType === 'decimal') {
     return `<div class="numpad">${digits}<button class="key key-extra" data-key="," ${dis} aria-label="Кома">,</button>${zero}${del}${ok(true)}</div>`;
   }

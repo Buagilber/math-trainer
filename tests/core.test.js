@@ -471,6 +471,10 @@ test('ділення з остачею: крок «Обрати дію» і ді
   const [, a, b] = item.text.match(/^(\d+) = (\d+)/).map(Number);
   eq(item.steps.options.find((o) => o.correct).value, item.answer, 'правильна дія дає відповідь');
   eq([item.steps.canonical.left, item.steps.canonical.right], [a, b]);
+  const rem = divisionSteps(76, 3, 1, createRng(2), { find: 'remainder' });
+  eq([rem.question, rem.find], ['Як знайти остачу?', 'remainder']);
+  eq(rem.options.filter((o) => o.correct).map((o) => `${o.left} ${o.sign} ${o.right}`), ['76 : 3'], 'остача: правильне 76 : 3');
+  eq(rem.options.find((o) => o.correct).value, 1, 'значення ділення — остача');
   const html = divisionHtml({ dividend: 745, divisor: 8 }, '<i>q</i>');
   assert(html.includes('div-dividend">745') && html.includes('div-divisor">8') && html.includes('<i>q</i>'), 'кут: ділене, дільник, поле частки');
 });
@@ -478,14 +482,14 @@ test('ділення з остачею: крок «Обрати дію» і ді
 test('ділення кутом: проміжні рядки', () => {
   const short = (fs) => fs.map((f) => (f.kind === 'q' ? `q${f.value}` : `${f.kind}${f.value}@${f.from}-${f.to}`)).join(' ');
   eq(short(longDivision(745, 8)), 'q9 p72@0-1 d25@1-2 q3 p24@1-2 r1@2-2');
-  eq(short(longDivision(816, 8)), 'q1 p8@0-0 q0 d16@0-2 q2 p16@0-2 r0@2-2', '0 у частці');
-  eq(short(longDivision(803, 8)), 'q1 p8@0-0 q0 q0 r3@0-2', 'нулі в кінці частки');
+  eq(short(longDivision(816, 8)), 'q1 p8@0-0 d16@0-2 q0 q2 p16@0-2 r0@2-2', '0 у частці');
+  eq(short(longDivision(803, 8)), 'q1 p8@0-0 r3@0-2 q0 q0', 'нулі в кінці частки');
   eq(short(longDivision(8, 163)), 'q0 r8@0-0', 'ділене менше за дільник');
   eq(short(longDivision(948, 23)), 'q4 p92@0-1 d28@0-2 q1 p23@0-2 r5@1-2', 'двоцифровий дільник');
   for (const [a, b] of [[745, 8], [816, 8], [803, 8], [999, 7], [100, 3], [948, 23]]) {
     const fs = longDivision(a, b);
     eq(Number(quotientOf(fs, fs.map((f) => String(f.value)))), Math.floor(a / b), `${a} : ${b} — частка`);
-    eq(fs.at(-1).value, a % b, `${a} : ${b} — остача`);
+    eq(fs.find((f) => f.kind === 'r').value, a % b, `${a} : ${b} — остача`);
   }
   const fs = longDivision(745, 8);
   eq(quotientOf(fs, ['9', '72', '25']), '9', 'частка з уже введених цифр');

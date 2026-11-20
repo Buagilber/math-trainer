@@ -109,7 +109,14 @@
           "a % b != 0"
         ],
         "answer": "a % b",
-        "unit": "цук."
+        "unit": "цук.",
+        "divideSteps": {
+          "args": [
+            "a",
+            "b"
+          ],
+          "find": "remainder"
+        }
       }
     },
     {
