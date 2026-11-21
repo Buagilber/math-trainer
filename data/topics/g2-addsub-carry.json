@@ -4,6 +4,11 @@
   "icon": "💯",
   "prompt": "Знайди значення виразу.",
   "hint": "Спочатку додавай чи віднімай десятки, а потім одиниці частинами — через круглий десяток.",
+  "levelNotes": {
+    "1": "Двоцифрове й одноцифрове",
+    "2": "Двоцифрове й двоцифрове",
+    "3": "Частинами, округлення, пропущене число"
+  },
   "sessionSize": 10,
   "exercises": [
     {
@@ -136,7 +141,7 @@
       "id": "parts-add-100",
       "kind": "generator",
       "generator": "template",
-      "difficulty": 2,
+      "difficulty": 3,
       "prompt": "Обчисли частинами: яке число пропущено?",
       "hint": {
         "rules": [
@@ -169,7 +174,7 @@
       "id": "parts-sub-100",
       "kind": "generator",
       "generator": "template",
-      "difficulty": 2,
+      "difficulty": 3,
       "prompt": "Обчисли частинами: яке число пропущено?",
       "hint": {
         "rules": [

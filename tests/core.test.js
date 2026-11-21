@@ -618,6 +618,32 @@ test('десяткові: ділення кутом і розписування 
   eq(mul.at(-1).value, 637, '1,3 · 4,9: неповні добутки й сума — як 13 · 49, у відповіді 6,37');
 });
 
+test('сесія: «мішок» — кожен вид по черзі, без повторів поспіль (issue #14)', () => {
+  const ex = (id) => ({ id, kind: 'generator', generator: 'template', params: { text: `${id} {a} = □`, vars: { a: [1, 99] }, answer: 'a' } });
+  const topic = { id: 't', title: 'T', exercises: ['a', 'b', 'c', 'd'].map(ex) };
+  for (let seed = 1; seed <= 30; seed++) {
+    const ids = buildSession(topic, 1, createRng(seed), 6).items.map((it) => it.exerciseId);
+    assert(ids.every((id, i) => i === 0 || id !== ids[i - 1]), `повтор поспіль: ${ids}`);
+    eq(new Set(ids.slice(0, 4)).size, 4, 'перші чотири — усі види');
+  }
+});
+
+test('вирази без переходу через десяток (issue #12)', () => {
+  const ex = { id: 'three', kind: 'generator', generator: 'expression', params: { expr: ['a + b + c', 'a + b - c', 'a - b - c'], vars: { a: [10, 60], b: [1, 30], c: [1, 30] }, result: [0, 100], steps: [0, 100], carry: 'forbidden' } };
+  const rng = createRng(7);
+  for (let i = 0; i < 300; i++) {
+    const it = generateInstance(ex, rng);
+    let t = it.order ?? null;
+    const m = it.text.replace(/\u00a0/g, ' ').match(/(\d+) ([+−]) (\d+) ([+−]) (\d+)/);
+    let acc = +m[1];
+    for (const [op, v] of [[m[2], +m[3]], [m[4], +m[5]]]) {
+      const carry = op === '+' ? (acc % 10) + (v % 10) >= 10 : acc % 10 < v % 10;
+      assert(!carry, `перехід у ${it.text}`);
+      acc = op === '+' ? acc + v : acc - v;
+    }
+  }
+});
+
 test('звернення: контекст і посилання на GitHub', () => {
   const ctx = contextText([['екран', '#/topic/g2-mul/play'], ['текст', '7 × □ = 42: "x"'], ['порожнє', ''], ['немає', undefined]]);
   eq(ctx, 'екран: "#/topic/g2-mul/play"\nтекст: "7 × □ = 42: \\"x\\""', 'YAML-рядки в лапках, порожні пропущено');

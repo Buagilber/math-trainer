@@ -8,7 +8,7 @@
 
 import { evaluate, formatExpression } from './expr.js';
 import { buildMultiStep } from './multistep.js';
-import { orderTokens } from './order-steps.js';
+import { orderTokens, allowedOps, reduceTokens, orderCalc } from './order-steps.js';
 import { pow10, formatDecimal, normalizeDecimal, compareDecimals } from './numbers.js';
 
 const BLANK = '□';
@@ -321,6 +321,18 @@ function template(params, rng) {
 
 // ---------- expression: обчисли значення виразу (порядок дій) ----------
 
+function noCarrySteps(tokens) {
+  let t = tokens;
+  while (t.length > 1) {
+    const i = allowedOps(t)[0];
+    if (i == null) return false;
+    const [a, op, b] = [t[i - 1].n, t[i].o, t[i + 1].n];
+    if (hasCarry(op, a, b)) return false;
+    t = reduceTokens(t, i, orderCalc(a, op, b));
+  }
+  return true;
+}
+
 function expression(params, rng) {
   const exprs = [].concat(params.expr);
   return retry(() => {
@@ -329,6 +341,9 @@ function expression(params, rng) {
     const { value, steps, valid } = evaluate(expr, vars);
     if (!valid || !Number.isInteger(value) || !inRange(value, params.result ?? [0, Infinity])) return null;
     if (params.steps && !steps.every((s) => inRange(s, params.steps))) return null;
+    // carry: "forbidden" — у жодній дії немає переходу через десяток (issue #12):
+    // рахуємо вираз по діях (за правилами порядку) і перевіряємо кожну + і −.
+    if (params.carry === 'forbidden' && !noCarrySteps(orderTokens(expr, vars))) return null;
     return {
       text: `${formatExpression(expr, vars)} = ${BLANK}`,
       answerType: 'number',

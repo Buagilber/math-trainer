@@ -436,6 +436,7 @@ function renderTopic(topicId) {
           <span class="level-name">${esc(levelName(level))}</span>
           ${starsHtml(p.stars ?? 0)}
         </span>
+        ${topic.levelNotes?.[level] ? `<span class="level-note">${esc(topic.levelNotes[level])}</span>` : ''}
         ${stats}
       </button>`;
   };

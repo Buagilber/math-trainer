@@ -27,20 +27,33 @@ export function buildSession(topic, level, rng, size = topic.sessionSize ?? DEFA
   const usedFixed = new Set();
   let guard = size * 20;
 
-  while (items.length < size && guard-- > 0) {
+  // «Мішок» (issue #14): спершу по одному прикладу кожного виду рівня (вага > 1 — кілька разів)
+  // у випадковому порядку, потім новий перемішаний набір. Той самий вид ніколи не йде двічі поспіль.
+  let bag = [];
+  let lastId = null;
+  const refill = () => {
     const available = pool.filter((e) => !(e.kind === 'fixed' && usedFixed.has(e.id)));
-    if (!available.length) break;
-    const exercise = rng.weighted(available, (e) => e.weight ?? 1);
+    bag = rng.shuffle(available.flatMap((e) => Array(Math.max(1, Math.round(e.weight ?? 1))).fill(e)));
+  };
+
+  while (items.length < size && guard-- > 0) {
+    if (!bag.length) refill();
+    if (!bag.length) break;
+    // Не той самий вид, що щойно був (якщо є інший).
+    let pickAt = bag.findIndex((e) => e.id !== lastId);
+    if (pickAt < 0) pickAt = 0;
+    const [exercise] = bag.splice(pickAt, 1);
     // Підказка: своя в завдання або запасна з розділу.
     const generated = generateInstance(exercise, rng);
     // Інструкція: своя в завдання, автоматична (порівняння) або, для завдань-записів,
     // спільна інструкція розділу («Знайди значення виразу.»).
     const prompt = generated.prompt ?? (isRecordTask(generated) ? topic.prompt : undefined);
     const instance = { ...generated, prompt, hint: exercise.hint ?? topic.hint, hintAfterSec: exercise.hintAfterSec };
-    if (seenTexts.has(instance.text) && guard > size) continue; // уникаємо повторів
+    if (seenTexts.has(instance.text) && guard > size) { bag.push(exercise); continue; } // уникаємо повторів
     if (exercise.kind === 'fixed') usedFixed.add(exercise.id);
     seenTexts.add(instance.text);
     items.push(instance);
+    lastId = exercise.id;
   }
 
   return {

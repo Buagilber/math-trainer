@@ -291,6 +291,8 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
   font-weight: 600;
 }
 .level-card:active { transform: scale(0.98); }
+/* Що на рівні (issue #13): «Двоцифрове й одноцифрове», «Частинами, пропущене число». */
+.level-note { font-size: 0.92rem; color: var(--text); text-align: left; }
 .level-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
 .level-stats { font-size: 0.9rem; font-weight: 400; color: var(--muted); }
 
