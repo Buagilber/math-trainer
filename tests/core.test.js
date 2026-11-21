@@ -14,7 +14,7 @@ import { topicProgress, levelProgress, compareTime, compareWithPrevious, session
 import { validateTopic } from '../js/core/validate.js';
 import { longDivision, quotientOf, divisionRows } from '../js/core/long-division.js';
 import { longMultiplication } from '../js/core/long-multiplication.js';
-import { buildMultiStep, askOptions, meaningOf, noteOptions, pathValid, multiSummary } from '../js/core/multistep.js';
+import { buildMultiStep, askOptions, meaningOf, noteOptions, pathValid, multiSummary, lineCalc, remainderOf } from '../js/core/multistep.js';
 import { orderTokens, evalTokens, reduceTokens, allowedOps, whyNotOp, orderCalc } from '../js/core/order-steps.js';
 
 const tests = [];
@@ -723,7 +723,7 @@ test('етап 3: у кожної задачі «по діях» план дає
               const ni = ms.numbers.findIndex((num) => num.expr === a);
               return ni >= 0 ? `n:${ni}` : 'x';
             });
-            const value = ({ '+': vals[0] + vals[1], '-': vals[0] - vals[1], '*': vals[0] * vals[1], '/': vals[0] / vals[1] })[step.op];
+            const value = ({ '+': vals[0] + vals[1], '-': vals[0] - vals[1], '*': vals[0] * vals[1], '/': ms.remainder ? Math.floor(vals[0] / vals[1]) : vals[0] / vals[1] })[step.op];
             lines.push({ expr: [vals[0], step.op, vals[1]], refs, given: String(value) });
             if (!Number.isInteger(value)) problems.push(`${topic.id}/${ex.id}: дія плану дає неціле ${value}`);
           }
@@ -735,6 +735,39 @@ test('етап 3: у кожної задачі «по діях» план дає
     }
   }
   assert(!problems.length, [...new Set(problems)].slice(0, 6).join('; '));
+});
+
+test('по діях з остачею (автобуси): «:» — неповна частка, остача поруч', () => {
+  const spec = { remainder: true, numbers: ['a', 'b'], plan: [{ op: '/', args: ['a', 'b'] }, { op: '+', args: ['#1', '1'] }], meanings: { '(a - a % b) / b + 1': 'усього' } };
+  const ms = buildMultiStep(spec, { a: 230, b: 45 }, '(a - a % b) / b + 1');
+  eq(lineCalc(ms, [230, '/', 45]), 5);
+  eq(remainderOf(ms, [230, '/', 45], '5'), 5, 'остача при правильній неповній частці');
+  eq(remainderOf(ms, [230, '/', 45], '4'), null, 'частка 4 — не неповна частка (остача 50 > 45)');
+  eq(remainderOf(ms, [230, '+', 45], '275'), null);
+  // Дитина склала сама: 230 : 45 = 5, 5 + 1 = 6 (1 — інше число).
+  const lines = [{ expr: [230, '/', 45], refs: ['n:0', 'n:1'], given: '5' }, { expr: [5, '+', 1], refs: ['l:0', 'x'], given: '6' }];
+  assert(pathValid(ms, lines, 1), 'шлях з остачею правильний');
+  assert(!pathValid(ms, lines.slice(0, 1), 0), 'лише повні автобуси — не відповідь');
+  const sum = multiSummary(ms, { mode: 'free', noteMode: 'auto', lines, finalLine: 1 }, '6');
+  eq(sum.lines.map((l) => l.calcOk), [true, true]);
+  eq(remainderOf(buildMultiStep({ numbers: ['a'], plan: [] }, { a: 1 }, 'a'), [7, '/', 2], '3'), null, 'без remainder остачі немає');
+});
+
+test('розбір помилок: правило кроку чи підказки завдання', () => {
+  const ex = { id: 'eq', kind: 'generator', generator: 'arithmetic', hint: 'Підказка завдання.', params: { op: '+', a: [100, 500], b: [100, 500], missing: 'a', unknown: 'x', steps: true } };
+  const topic = { id: 't', title: 't', exercises: [ex] };
+  const s = buildSession(topic, 1, createRng(5), 3);
+  const item = s.items[0];
+  let res;
+  assert(item.steps, 'у рівнянні є крок «Обрати дію»');
+  {
+    eq(item.steps.rule, 'Щоб знайти невідомий доданок, від суми відніми відомий доданок.');
+    const wrong = item.steps.options.find((o) => !o.correct);
+    ({ result: res } = submitAnswer(s, wrong.value, 1000, { step: wrong }));
+    eq(res.rules, [item.steps.rule], 'не та дія — правило кроку');
+  }
+  ({ result: res } = submitAnswer(s, item.answer + 1, 1000));
+  eq(res.rules, ['Підказка завдання.'], 'інакше — підказка завдання');
 });
 
 test('порядок дій по кроках: дозволені дії й правила', () => {

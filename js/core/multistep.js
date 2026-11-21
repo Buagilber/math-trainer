@@ -9,7 +9,9 @@
 //   numbers  — числа умови як вирази зі змінних шаблону, у порядку тексту: ["a", "b", "c"];
 //   plan     — дії схеми А: [{ op, args: ["b", "c"], question, ops? }], "#1" — результат дії 1;
 //   meanings — що означає проміжне число: { "b + c": "поїхало на екскурсію", … };
-//   spare    — пояснення-відволікачі: ["було в класі спочатку"].
+//   spare    — пояснення-відволікачі: ["було в класі спочатку"];
+//   remainder — ділення з остачею (автобуси): «:» дає неповну частку, остачу
+//              показуємо поруч — «230 : 45 = 5 (ост. 5)».
 // Відповідь задачі — params.answer (вираз від змінних): з нього й перевірка шляху.
 
 import { evaluate } from './expr.js';
@@ -18,7 +20,16 @@ export const MAX_EXTRA = 3; // скільки «інших чисел» може
 export const MULTI_SIGNS = { '+': '+', '-': '−', '*': '×', '/': ':' };
 const ALL_OPS = ['+', '-', '*', '/'];
 
-export const calc = (l, op, r) => ({ '+': l + r, '-': l - r, '*': l * r, '/': l / r })[op];
+export const calc = (l, op, r, { remainder = false } = {}) =>
+  (op === '/' && remainder ? Math.floor(l / r) : ({ '+': l + r, '-': l - r, '*': l * r, '/': l / r })[op]);
+// Значення дії задачі: у задачах на остачу «:» — неповна частка.
+export const lineCalc = (multi, [l, op, r]) => calc(l, op, r, { remainder: !!multi.remainder });
+// Остача для запису «(ост. r)»: лише коли частка дитини — справжня неповна частка й остача не 0.
+export function remainderOf(multi, [l, op, r], given) {
+  if (!multi.remainder || op !== '/' || given === '') return null;
+  const rest = l - Number(given) * r;
+  return Number.isInteger(Number(given)) && rest > 0 && rest < r ? rest : null;
+}
 
 // Дані для екземпляра задачі: числа, план і пояснення з поточними значеннями змінних.
 export function buildMultiStep(spec, numeric, answerExpr) {
@@ -28,6 +39,7 @@ export function buildMultiStep(spec, numeric, answerExpr) {
     plan: spec.plan.map((st) => ({ op: st.op, args: st.args.map(String), question: st.question, ops: st.ops })),
     meanings: Object.entries(spec.meanings ?? {}).map(([expr, text]) => ({ expr, text, value: val(expr) })),
     spare: spec.spare ?? [],
+    remainder: !!spec.remainder,
     answerExpr,
     env: { ...numeric },
   };
@@ -99,7 +111,7 @@ function matches(multi, lines, finalLine, asConst, env) {
       return lineValue(Number(r.slice(2)));
     });
     seen.delete(i);
-    return calc(a, l.expr[1], b);
+    return calc(a, l.expr[1], b, { remainder: !!multi.remainder });
   };
   const got = lineValue(finalLine);
   const want = evaluate(multi.answerExpr, env).value;
@@ -119,7 +131,7 @@ export function multiSummary(multi, state, given) {
     lines: lines.map((l) => ({
       expr: l.expr,
       given: l.given,
-      calcOk: Number(l.given) === calc(...l.expr),
+      calcOk: Number(l.given) === lineCalc(multi, l.expr),
       actionOk: state.mode === 'ask' ? !!l.rightOption : null,
       note: l.note ?? null,
       noteOk: state.noteMode === 'pick' && l.note ? meaningOf(multi, Number(l.given)) === l.note : null,

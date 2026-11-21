@@ -2,6 +2,7 @@
 // Чисті функції без DOM і сховища — стан передається явно.
 
 import { generateInstance, isRecordTask } from './generators.js';
+import { normalizeHint } from './hints.js';
 import { parseDecimal, decimalsEqual, fractionsEqual, formatFraction } from './numbers.js';
 
 export const DEFAULT_SESSION_SIZE = 10;
@@ -142,6 +143,9 @@ export function submitAnswer(session, given, ms = 0, { hintUsed = false, step = 
     stepCalcCorrect: step ? Number(given) === step.value : null,
     // Розписане ділення: кожен рядок і чи збігається він із правильним.
     multi,
+    // Правило для розбору помилки (дотик до ✕): обрано не ту дію — правило кроку,
+    // інакше — правила з підказки завдання.
+    rules: step && !step.correct && item.steps?.rule ? [item.steps.rule] : normalizeHint(item.hint)?.rules ?? null,
     written: written ? written.map(({ kind, value, given: g = '', correct }) => ({ kind, value, given: g, correct: correct ?? (g !== '' && Number(g) === value) })) : null,
   };
   return {

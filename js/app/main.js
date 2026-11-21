@@ -14,7 +14,7 @@ import { esc, mathHtml, emptyInput, applyKey, isComplete, isEmpty, selectField, 
 import { loadContent } from './content.js';
 import { longDivision, divisionRows } from '../core/long-division.js';
 import { longMultiplication } from '../core/long-multiplication.js';
-import { MAX_EXTRA, MULTI_SIGNS, calc, askOptions, meaningOf, noteOptions, multiSummary } from '../core/multistep.js';
+import { MAX_EXTRA, MULTI_SIGNS, lineCalc, remainderOf, askOptions, meaningOf, noteOptions, multiSummary } from '../core/multistep.js';
 import { ORDER_RULES, allowedOps, whyNotOp, reduceTokens, orderCalc } from '../core/order-steps.js';
 import { formatAgo } from './format.js';
 import { decimalsEqual, parseDecimal } from '../core/numbers.js';
@@ -651,14 +651,20 @@ const MARK = {
   bad: '<span class="mark bad" aria-label="неправильно">✕</span>',
 };
 
-function mistakeHtml(m) {
+// ✕ у розборі помилок — кнопка: дотик показує чи ховає правило з підручника.
+const whyMark = (i) => `<button class="mark bad m-why" data-why="${i}" aria-label="Неправильно — показати правило" aria-expanded="false">✕</button>`;
+
+function mistakeHtml(m, i) {
   const answerText = m.answerText ?? String(m.answer);
   const expr = (e) => `${e.left} ${e.sign} ${e.right}`;
   const prefix = m.answerPrefix ? `${esc(m.answerPrefix)} ` : '';
-  const given = `<span class="given">твоя відповідь: ${prefix}${mh(m.given)} ${MARK.bad}</span>`;
+  const bad = m.rules?.length ? whyMark(i) : MARK.bad;
+  const given = `<span class="given">твоя відповідь: ${prefix}${mh(m.given)} ${bad}</span>`;
   const step = m.step
-    ? `<span class="m-step ${m.step.correct ? 'ok' : 'bad'}">обрана дія: ${prefix}${mh(expr(m.step))} ${m.step.correct ? MARK.ok : MARK.bad}</span>`
+    ? `<span class="m-step ${m.step.correct ? 'ok' : 'bad'}">обрана дія: ${prefix}${mh(expr(m.step))} ${m.step.correct ? MARK.ok : bad}</span>`
     : '';
+  const rules = m.rules?.length
+    ? `<ul class="m-rule hint-rules" data-rule="${i}" hidden>${m.rules.map((r) => `<li>${mh(r)}</li>`).join('')}</ul>` : '';
   // Розписане ділення чи множення: проміжні рядки (без цифр частки й суми — їх видно з відповіді).
   // Неправильний рядок — правильне число й «у тебе …».
   const rows = (m.written ?? []).filter((r) => r.kind !== 'q' && r.kind !== 'sum'); // сума — це сама відповідь
@@ -684,11 +690,11 @@ function mistakeHtml(m) {
     // Правильна відповідь — у зеленій рамці на місці поля, щоб було видно,
     // яке саме число (чи знак) треба було знайти (issue #2).
     const answerBox = `<span class="m-answer">${mh(answerText)}</span>`;
-    return `<li><span>${mh(m.text, { ops: true }).replace('□', answerBox)}</span>${given}${step}${written}${multi}</li>`;
+    return `<li><span>${mh(m.text, { ops: true }).replace('□', answerBox)}</span>${given}${step}${written}${multi}${rules}</li>`;
   }
   const why = m.canonical ? `, бо ${prefix}${mh(expr(m.canonical), { ops: true })}` : '';
   return `<li><span>${mh(m.text, { ops: !!m.answerPrefix })}</span>${given}${step}${written}${multi}`
-    + `<span class="m-right">правильно: ${prefix}${mh(answerText)}${why}</span></li>`;
+    + `<span class="m-right">правильно: ${prefix}${mh(answerText)}${why}</span>${rules}</li>`;
 }
 
 // ---------- крок «Обрати дію» (docs/EQUATION-STEPS.md) ----------
@@ -1058,12 +1064,14 @@ function multiLineHtml(item, line, i, res) {
   const value = typing ? `<span class="ms-box active">${esc(state.multi.input)}${multiCaret}</span>` : `<b>${esc(line.given)}</b>`;
   const noteText = state.multi.noteMode === 'auto' ? (line.typing ? null : meaningOf(item.multi, Number(line.given))) : state.multi.noteMode === 'pick' ? line.note : null;
   const marks = res ? [
-    res.calcOk ? `<span class="ms-mark ok">${MARK.ok} пораховано</span>` : `<span class="ms-mark bad">${MARK.bad} має бути ${mh(String(+calc(...line.expr).toFixed(4)))}</span>`,
+    res.calcOk ? `<span class="ms-mark ok">${MARK.ok} пораховано</span>` : `<span class="ms-mark bad">${MARK.bad} має бути ${mh(String(+lineCalc(item.multi, line.expr).toFixed(4)))}</span>`,
     res.actionOk === false ? `<span class="ms-mark bad">${MARK.bad} дія</span>` : '',
     res.noteOk === true ? `<span class="ms-mark ok">${MARK.ok} пояснення</span>` : res.noteOk === false ? `<span class="ms-mark bad">${MARK.bad} пояснення</span>` : '',
   ].join(' ') : '';
   const cls = res ? (res.calcOk && res.actionOk !== false && res.noteOk !== false ? ' ok' : ' bad') : '';
-  return `<div class="ms-line${cls}"><span class="ms-no">${i + 1})</span> ${multiExpr(line.expr)} = ${value}${noteText ? ` <span class="ms-note">— ${esc(noteText)}</span>` : ''}${marks ? ` <span class="ms-marks">${marks}</span>` : ''}</div>`;
+  const rest = typing ? null : remainderOf(item.multi, line.expr, line.given);
+  const restText = rest != null ? ` ${mh(`(ост. ${rest})`)}` : '';
+  return `<div class="ms-line${cls}"><span class="ms-no">${i + 1})</span> ${multiExpr(line.expr)} = ${value}${restText}${noteText ? ` <span class="ms-note">— ${esc(noteText)}</span>` : ''}${marks ? ` <span class="ms-marks">${marks}</span>` : ''}</div>`;
 }
 
 function multiWorkHtml(item) {
@@ -1414,7 +1422,7 @@ function renderSummary() {
           : `<p class="trend slow">▼ Повільніше, ніж минулого разу, на ${formatDuration(cmp.speed.diffMs)}</p>`;
 
   const mistakes = sum.mistakes.length
-    ? `<h2>Помилки</h2><ul class="mistakes">${sum.mistakes.map(mistakeHtml).join('')}</ul>`
+    ? `<h2>Помилки</h2>${sum.mistakes.some((m) => m.rules?.length) ? '<p class="muted m-tip">Торкнись ✕, щоб побачити правило.</p>' : ''}<ul class="mistakes">${sum.mistakes.map(mistakeHtml).join('')}</ul>`
     : '';
 
   root.innerHTML = `
@@ -1435,6 +1443,12 @@ function renderSummary() {
         <button class="btn" id="to-grade">До розділів</button>
       </div>
     </main>`;
+
+  root.querySelectorAll('.m-why').forEach((btn) => btn.addEventListener('click', () => {
+    const rule = root.querySelector(`.m-rule[data-rule="${btn.dataset.why}"]`);
+    rule.hidden = !rule.hidden;
+    root.querySelectorAll(`.m-why[data-why="${btn.dataset.why}"]`).forEach((b) => b.setAttribute('aria-expanded', String(!rule.hidden)));
+  }));
 
   const gradeId = gradeOfTopic(s.topicId)?.id;
   root.querySelector('#again').addEventListener('click', () => startSession(topic, s.level, { replace: true }));

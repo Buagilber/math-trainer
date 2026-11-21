@@ -642,7 +642,7 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .step-parts { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 14px; font-weight: 500; }
 .step-parts span { white-space: nowrap; }
 .mistakes { list-style: none; padding: 0; margin: 0; text-align: left; display: flex; flex-direction: column; gap: 8px; }
-.mistakes li { padding: 12px 16px; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 4px; }
+.mistakes > li { padding: 12px 16px; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 4px; }
 .mistakes .given { color: var(--bad); font-size: 0.9rem; }
 .mistakes .m-step { font-size: 0.9rem; }
 /* Рядки зі значками ✕/✓ — значок по центру висоти рядка. */
@@ -665,6 +665,11 @@ h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .mistakes .m-written { color: var(--muted); }
 .mistakes .m-written .ok { color: var(--ok); display: inline-flex; align-items: center; gap: 0.25em; }
 .mistakes .m-written .bad { color: var(--bad); display: inline-flex; align-items: center; gap: 0.25em; }
+.mistakes .m-why { border: 0; padding: 0; font-family: inherit; width: 1.5em; height: 1.5em; cursor: pointer; box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 25%, transparent); }
+.mistakes .m-why[aria-expanded="true"] { box-shadow: 0 0 0 3px var(--bad); }
+.mistakes .m-rule { margin: 4px 0 0; padding: 8px 12px; background: var(--bg); border-radius: 8px; font-size: 0.9rem; color: var(--text); }
+.mistakes .m-rule[hidden] { display: none; }
+.m-tip { margin: -4px 0 8px; font-size: 0.9rem; }
 .mistakes .m-right { font-size: 0.9rem; color: var(--muted); }
 .mark {
   display: inline-flex;

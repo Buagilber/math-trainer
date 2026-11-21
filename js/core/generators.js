@@ -96,6 +96,15 @@ const COMPONENT_QUESTION = {
   '/': (hide) => (hide === 'a' ? 'Як знайти невідоме ділене?' : 'Як знайти невідомий дільник?'),
 };
 
+// Правило з підручника до кроку — у розборі помилок, коли обрано не ту дію
+// (Скворцова, 2 кл.; Мерзляк, 5 кл. — ті самі формулювання).
+const COMPONENT_RULE = {
+  '+': () => 'Щоб знайти невідомий доданок, від суми відніми відомий доданок.',
+  '-': (hide) => (hide === 'a' ? 'Щоб знайти невідоме зменшуване, до різниці додай від\'ємник.' : 'Щоб знайти невідомий від\'ємник, від зменшуваного відніми різницю.'),
+  '*': () => 'Щоб знайти невідомий множник, добуток поділи на відомий множник.',
+  '/': (hide) => (hide === 'a' ? 'Щоб знайти невідоме ділене, частку помнож на дільник.' : 'Щоб знайти невідомий дільник, ділене поділи на частку.'),
+};
+
 // minDigits — поріг кроку (за замовчуванням STEPS_MIN_DIGITS); inline — обчислення
 // в рядок, без стовпчика (2 клас: пропущене число «□ + 53 = 87»).
 export function equationSteps(op, hide, a, b, c, rng, { minDigits = STEPS_MIN_DIGITS, inline = false } = {}) {
@@ -114,6 +123,7 @@ export function equationSteps(op, hide, a, b, c, rng, { minDigits = STEPS_MIN_DI
     options: rng.shuffle(options),
     canonical: { op: cOp, sign: SIGNS[cOp], left: cLeft, right: cRight },
     question: COMPONENT_QUESTION[op](hide),
+    rule: COMPONENT_RULE[op](hide),
     ...(inline ? { inline: true, label: '' } : {}),
   };
 }
