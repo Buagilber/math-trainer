@@ -1064,12 +1064,13 @@ function multiLineHtml(item, line, i, res) {
   const value = typing ? `<span class="ms-box active">${esc(state.multi.input)}${multiCaret}</span>` : `<b>${esc(line.given)}</b>`;
   const noteText = state.multi.noteMode === 'auto' ? (line.typing ? null : meaningOf(item.multi, Number(line.given))) : state.multi.noteMode === 'pick' ? line.note : null;
   const marks = res ? [
-    res.calcOk ? `<span class="ms-mark ok">${MARK.ok} пораховано</span>` : `<span class="ms-mark bad">${MARK.bad} має бути ${mh(String(+lineCalc(item.multi, line.expr).toFixed(4)))}</span>`,
+    res.calcOk ? `<span class="ms-mark ok">${MARK.ok} пораховано</span>` : `<span class="ms-mark bad">${MARK.bad} має бути ${mh(String(+(item.multi ? lineCalc(item.multi, line.expr) : orderCalc(...line.expr)).toFixed(4)))}</span>`,
     res.actionOk === false ? `<span class="ms-mark bad">${MARK.bad} дія</span>` : '',
     res.noteOk === true ? `<span class="ms-mark ok">${MARK.ok} пояснення</span>` : res.noteOk === false ? `<span class="ms-mark bad">${MARK.bad} пояснення</span>` : '',
   ].join(' ') : '';
   const cls = res ? (res.calcOk && res.actionOk !== false && res.noteOk !== false ? ' ok' : ' bad') : '';
-  const rest = typing ? null : remainderOf(item.multi, line.expr, line.given);
+  // Остача — лише в задачах «по діях» (item.multi); у порядку дій (item.order) її немає.
+  const rest = typing || !item.multi ? null : remainderOf(item.multi, line.expr, line.given);
   const restText = rest != null ? ` ${mh(`(ост. ${rest})`)}` : '';
   return `<div class="ms-line${cls}"><span class="ms-no">${i + 1})</span> ${multiExpr(line.expr)} = ${value}${restText}${noteText ? ` <span class="ms-note">— ${esc(noteText)}</span>` : ''}${marks ? ` <span class="ms-marks">${marks}</span>` : ''}</div>`;
 }
